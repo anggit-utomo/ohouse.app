@@ -1,164 +1,156 @@
 <?php
 
-use App\Actions\CloseMonth;
-use App\Enums\TransactionTypeEnum;
 use App\Models\Budget;
 use App\Models\BudgetMonth;
 use App\Models\Household;
 use App\Models\Transaction;
-use Carbon\Carbon;
+use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 
-function monthWith(Household $h, string $name, int $allocated, array $spend = [], int $carriedIn = 0): BudgetMonth
+beforeEach(function () {
+    $this->travelTo('2026-11-02 09:00:00');
+    $this->household = Household::factory()->create();
+    $this->owner = $this->household->owner;
+    $this->url = "/h/{$this->household->id}/close";
+});
+
+function closeBudget(Household $h, string $name, int $allocated, int $spent = 0, string $period = '2026-10-01', int $sort = 0): BudgetMonth
 {
-    $budget = Budget::factory()->for($h)->create(['name' => $name, 'default_amount' => $allocated]);
-    $month = BudgetMonth::factory()->for($budget)->create([
-        'period_start' => '2026-10-01',
-        'allocated' => $allocated,
-        'carried_in' => $carriedIn,
-    ]);
+    $budget = Budget::factory()->for($h)->create(['name' => $name, 'default_amount' => $allocated, 'sort' => $sort]);
+    $month = BudgetMonth::factory()->for($budget)->create(['period_start' => $period, 'allocated' => $allocated, 'carried_in' => 0]);
 
-    foreach ($spend as $amount) {
-        Transaction::factory()
-            ->create([
-                'household_id' => $h->id,
-                'budget_month_id' => $month->id,
-                'amount' => $amount,
-            ]);
+    if ($spent) {
+        Transaction::factory()->create(['household_id' => $h->id, 'budget_month_id' => $month->id, 'amount' => $spent, 'occurred_at' => "{$period} 12:00:00"]);
     }
 
     return $month;
 }
 
-function nextMonth(BudgetMonth $october): ?BudgetMonth
+function closeScenario(Household $h): array
 {
-    return BudgetMonth::where('budget_id', $october->budget_id)->whereDate('period_start', '2026-11-01')->first();
+    $ids = [];
+
+    foreach ([['Food', 2_000_000, 1_640_000], ['Internet', 400_000, 400_000], ['Kitchen items', 800_000, 530_000], ['Gasoline', 700_000, 590_000], ['Transport', 600_000, 710_000]] as $i => [$n, $a, $s]) {
+        $ids[$n] = closeBudget($h, $n, $a, $s, sort: $i)->budget_id;
+    }
+
+    return $ids;
 }
 
-beforeEach(function () {
-    $this->household = Household::factory()->create();
-    $this->period = Carbon::parse('2026-10-01');
-    $this->close = app(CloseMonth::class);
+it('lists what is left per budget for the month to close', function () {
+    closeScenario($this->household);
+
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
+        ->component('close/show')
+        ->where('periodLabel', 'October')->where('nextLabel', 'November')->where('closesOn', '1 November')->where('canClose', true)
+        ->where('rows.0.name', 'Food')->where('rows.0.leftover', 360_000)->where('rows.0.next_allocated', 2_000_000)
+        ->where('rows.1.leftover', 0)
+        ->where('rows.4.name', 'Transport')->where('rows.4.leftover', -110_000));
 });
 
-it('carries the leftover into next month', function () {
-    $food = monthWith($this->household, 'Food', 2_000_000, [1_640_000]);
+it('closes the month with the choices made and reaches the November total from the screen', function () {
+    $ids = closeScenario($this->household);
 
-    $this->close->handle($this->household, $this->period, [$food->budget_id => 'carry']);
-
-    expect(nextMonth($food))
-        ->carried_in->toBe(360_000)
-        ->allocated->toBe(2_000_000)
-        ->and($food->fresh()->closed_at)->not->toBeNull()
-        ->and($food->fresh()->carry_decision)->toBe('carry');
-});
-
-it('starts fresh when the budget is reset', function () {
-    $gas = monthWith($this->household, 'Gasoline', 700_000, [590_000]);
-
-    $this->close->handle($this->household, $this->period, [$gas->budget_id => 'reset']);
-
-    expect(nextMonth($gas)->carried_in)->toBe(0);
-});
-
-it('carries a deficit as a negative amount', function () {
-    $transport = monthWith($this->household, 'Transport', 600_000, [710_000]);
-
-    $this->close->handle($this->household, $this->period, [$transport->budget_id => 'carry']);
-
-    expect(nextMonth($transport)->carried_in)->toBe(-110_000);
-});
-
-it('counts income and transfers in the leftover', function () {
-    $food = monthWith($this->household, 'Food', 1_000_000, [200_000]);
-
-    foreach (
-        [
-            [TransactionTypeEnum::INCOME, 100_000],
-            [TransactionTypeEnum::TRANSFER_OUT, 50_000],
-            [TransactionTypeEnum::TRANSFER_IN, 20_000],
-        ] as [$type, $amount]
-    ) {
-        Transaction::factory()->type($type)->create([
-            'household_id' => $this->household->id,
-            'budget_month_id' => $food->id,
-            'amount' => $amount,
-        ]);
-    }
-
-    // 1_000_000 - 200_000 + 100_000 - 50_000 + 20_000
-    $this->close->handle($this->household, $this->period, [$food->budget_id => 'carry']);
-
-    expect(nextMonth($food)->carried_in)->toBe(870_000);
-});
-
-it('gives the November total shown on the Close October screen', function () {
-    $plan = [
-        'Food' => [2_000_000, 1_640_000, 'carry'],
-        'Internet' => [400_000, 400_000, 'carry'],
-        'Kitchen items' => [800_000, 530_000, 'carry'],
-        'Gasoline' => [700_000, 590_000, 'reset'],
-        'Transport' => [600_000, 710_000, 'carry'],
-    ];
-
-    $decisions = [];
-    foreach ($plan as $name => [$allocated, $spent, $decision]) {
-        $decisions[monthWith($this->household, $name, $allocated, [$spent])->budget_id] = $decision;
-    }
-
-    $this->close->handle($this->household, $this->period, $decisions);
+    $this->actingAs($this->owner)->post($this->url, [
+        'period' => '2026-10',
+        'decisions' => [$ids['Food'] => 'carry', $ids['Internet'] => 'carry', $ids['Kitchen items'] => 'carry', $ids['Gasoline'] => 'reset', $ids['Transport'] => 'carry'],
+    ])->assertRedirect("/h/{$this->household->id}");
 
     $total = BudgetMonth::whereDate('period_start', '2026-11-01')->get()->sum(fn ($m) => $m->allocated + $m->carried_in);
 
-    expect($total)->toBe(5_020_000);
+    expect($total)->toBe(5_020_000)
+        ->and(BudgetMonth::whereDate('period_start', '2026-10-01')->whereNull('closed_at')->count())->toBe(0);
+
+    $this->actingAs($this->owner)->get("/h/{$this->household->id}")->assertInertia(fn (Assert $p) => $p->where('banner', null));
 });
 
-it('ignores months that are already closed', function () {
-    $food = monthWith($this->household, 'Food', 2_000_000, [1_640_000]);
+it('goes back to Home when there is nothing to close', function () {
+    $this->travelTo('2026-10-15 09:00:00');
+    closeScenario($this->household);
 
-    $this->close->handle($this->household, $this->period, [$food->budget_id => 'carry']);
-    $this->close->handle($this->household, $this->period, [$food->budget_id => 'reset']);
-
-    expect(nextMonth($food)->carried_in)->toBe(360_000)
-        ->and($food->fresh()->carry_decision)->toBe('carry');
+    $this->actingAs($this->owner)->get($this->url)->assertRedirect("/h/{$this->household->id}");
 });
 
-it('saves nothing when a decision is missing', function () {
-    $food = monthWith($this->household, 'Food', 2_000_000, [1_000_000]);
-    $gas = monthWith($this->household, 'Gasoline', 700_000, [500_000]);
+it('previews in the last 5 days but refuses to close before the month is over', function () {
+    $this->travelTo('2026-10-29 09:00:00');
+    $ids = closeScenario($this->household);
 
-    expect(fn () => $this->close->handle($this->household, $this->period, [$food->budget_id => 'carry']))
-        ->toThrow(InvalidArgumentException::class);
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p->where('canClose', false)->where('closesOn', '1 November'));
 
-    expect($food->fresh()->closed_at)->toBeNull()
-        ->and($gas->fresh()->closed_at)->toBeNull()
-        ->and(BudgetMonth::whereDate('period_start', '2026-11-01')->count())->toBe(0);
+    $this->actingAs($this->owner)->post($this->url, ['period' => '2026-10', 'decisions' => collect($ids)->map(fn () => 'carry')->mapWithKeys(fn ($v, $k) => [$ids[$k] => $v])->all()])
+        ->assertSessionHasErrors('period');
+
+    expect(BudgetMonth::whereNotNull('closed_at')->count())->toBe(0);
 });
 
-it('keeps an amount already set for next month', function () {
-    $food = monthWith($this->household, 'Food', 2_000_000, [1_640_000]);
-    BudgetMonth::factory()->for($food->budget)->create(['period_start' => '2026-11-01', 'allocated' => 750_000, 'carried_in' => 0]);
+it('needs a decision for every budget and saves nothing otherwise', function () {
+    $ids = closeScenario($this->household);
 
-    $this->close->handle($this->household, $this->period, [$food->budget_id => 'carry']);
+    $this->actingAs($this->owner)->post($this->url, ['period' => '2026-10', 'decisions' => [$ids['Food'] => 'carry']])
+        ->assertSessionHasErrors('decisions');
 
-    expect(nextMonth($food))->allocated->toBe(750_000)->carried_in->toBe(360_000)
-        ->and(BudgetMonth::where('budget_id', $food->budget_id)->count())->toBe(2);
+    expect(BudgetMonth::whereNotNull('closed_at')->count())->toBe(0);
 });
 
-it('locks transactions in a closed month', function () {
-    $food = monthWith($this->household, 'Food', 2_000_000, [100_000]);
-    $this->close->handle($this->household, $this->period, [$food->budget_id => 'carry']);
+it('rejects unknown choices and a month that is not the pending one', function () {
+    $ids = closeScenario($this->household);
+    $all = fn (string $c) => collect($ids)->mapWithKeys(fn ($id) => [$id => $c])->all();
 
-    expect(fn () => Transaction::first()->update(['note' => 'changed']))->toThrow(LogicException::class);
-    expect(fn () => Transaction::first()->delete())->toThrow(LogicException::class);
-    expect(fn () => Transaction::factory()->create(['household_id' => $this->household->id, 'budget_month_id' => $food->id]))
-        ->toThrow(LogicException::class);
+    $this->actingAs($this->owner)->post($this->url, ['period' => '2026-10', 'decisions' => $all('maybe')])->assertSessionHasErrors('decisions.'.reset($ids));
+    $this->actingAs($this->owner)->post($this->url, ['period' => '2026-09', 'decisions' => $all('carry')])->assertSessionHasErrors('period');
+    $this->actingAs($this->owner)->post($this->url, ['period' => '2026-12', 'decisions' => $all('carry')])->assertSessionHasErrors('period');
+});
+
+it('cannot be submitted twice', function () {
+    $ids = closeScenario($this->household);
+    $all = collect($ids)->mapWithKeys(fn ($id) => [$id => 'carry'])->all();
+
+    $this->actingAs($this->owner)->post($this->url, ['period' => '2026-10', 'decisions' => $all])->assertRedirect();
+    $this->actingAs($this->owner)->post($this->url, ['period' => '2026-10', 'decisions' => $all])->assertSessionHasErrors('period');
+
+    expect(BudgetMonth::whereDate('period_start', '2026-11-01')->count())->toBe(5);
+});
+
+it('offers the oldest unclosed month first', function () {
+    closeBudget($this->household, 'Food', 1_000_000, 100_000, '2026-09-01');
+    closeBudget($this->household, 'Gas', 500_000, 0, '2026-10-01');
+
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p->where('periodLabel', 'September')->where('nextLabel', 'October'));
+});
+
+it('shows an overdue banner on Home for a finished month that is still open', function () {
+    closeScenario($this->household);
+
+    $this->actingAs($this->owner)->get("/h/{$this->household->id}")->assertInertia(fn (Assert $p) => $p
+        ->where('banner.label', 'October')->where('banner.overdue', true)->where('banner.daysLeft', null));
+});
+
+it('ignores archived budgets', function () {
+    $month = closeBudget($this->household, 'Old', 100_000);
+    $month->budget->update(['archived_at' => now()]);
+
+    $this->actingAs($this->owner)->get($this->url)->assertRedirect("/h/{$this->household->id}");
 });
 
 it('does not touch another household', function () {
-    $mine = monthWith($this->household, 'Food', 1_000_000, [100_000]);
-    $theirs = monthWith(Household::factory()->create(), 'Food', 1_000_000, [100_000]);
+    $other = Household::factory()->create();
+    $theirs = closeBudget($other, 'Food', 1_000_000, 100_000);
+    $ids = closeScenario($this->household);
 
-    $this->close->handle($this->household, $this->period, [$mine->budget_id => 'carry']);
+    $this->actingAs($this->owner)->post($this->url, [
+        'period' => '2026-10',
+        'decisions' => collect($ids)->mapWithKeys(fn ($id) => [$id => 'carry'])->all() + [$theirs->budget_id => 'reset'],
+    ])->assertRedirect();
 
     expect($theirs->fresh()->closed_at)->toBeNull();
+});
+
+it('lets viewers do nothing here and hides the screen from outsiders', function () {
+    $viewer = User::factory()->create();
+    $this->household->members()->attach($viewer->id, ['role' => 'viewer']);
+    closeScenario($this->household);
+
+    $this->actingAs($viewer)->get($this->url)->assertForbidden();
+    $this->actingAs($viewer)->post($this->url, ['period' => '2026-10', 'decisions' => []])->assertForbidden();
+    $this->actingAs(User::factory()->create())->get($this->url)->assertNotFound();
 });

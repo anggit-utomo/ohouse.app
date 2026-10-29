@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CloseMonth;
 use App\Models\BudgetMonth;
 use App\Models\Household;
 use Illuminate\Http\Request;
@@ -10,7 +11,7 @@ use Inertia\Response;
 
 class HomeController extends Controller
 {
-    public function __invoke(Request $request, Household $household): Response
+    public function __invoke(Request $request, Household $household, CloseMonth $close): Response
     {
         $user = $request->user();
 
@@ -33,6 +34,9 @@ class HomeController extends Controller
         $daysLeft = now()->daysInMonth - now()->day; // 0 on the last day
         $canEdit = $user->can('edit', $household);
 
+        $pending = $canEdit ? $close->pending($household) : null;
+        $overdue = $pending?->lt(now()->startOfMonth()) ?? false;
+
         return Inertia::render('home', [
             'household' => ['id' => $household->id],
             'monthLabel' => now()->format('F Y'),
@@ -43,9 +47,11 @@ class HomeController extends Controller
                 'pct' => $available > 0 ? min(100, (int) round($spent / $available * 100)) : 0,
             ],
             // last 5 days of the month, only for people who can close it, and only while something is still open
-            'banner' => $canEdit && $daysLeft <= 4 && $months->contains(fn ($m) => ! $m->isClosed())
-                ? ['daysLeft' => $daysLeft]
-                : null,
+            'banner' => $pending ? [
+                'label' => $pending->format('F'),
+                'overdue' => $overdue,
+                'daysLeft' => $overdue ? null : $daysLeft,
+            ] : null,
             'budgets' => $rows,
             'members' => $household->members()->get(['users.id', 'users.name'])->map->only(['id', 'name'])->values(),
             'canEdit' => $canEdit,

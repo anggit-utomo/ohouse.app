@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\CloseMonthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransferController;
@@ -41,6 +42,14 @@ Route::middleware(['auth', 'verified', 'household.member'])
                 Route::get('/create', 'create')->name('create');
                 Route::post('/', 'store')->name('store');
                 Route::delete('/{transfer}', 'destroy')->whereUuid('transfer')->name('destroy');
+            });
+
+        Route::controller(CloseMonthController::class)
+            ->prefix('close')
+            ->name('close.')
+            ->group(function () {
+                Route::get('/', 'show')->name('show');
+                Route::post('/', 'store')->name('store');
             });
     });
 

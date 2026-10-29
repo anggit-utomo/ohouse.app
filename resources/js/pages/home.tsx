@@ -19,7 +19,7 @@ type Props = {
     household: { id: number };
     monthLabel: string;
     summary: { left: number; spent: number; available: number; pct: number };
-    banner: { daysLeft: number } | null;
+    banner: { label: string; overdue: boolean; daysLeft: number | null } | null;
     budgets: Budget[];
     members: { id: number; name: string }[];
     canEdit: boolean;
@@ -92,11 +92,14 @@ export default function Home({
                     <div className="flex items-center justify-between gap-3 rounded-xl border p-3">
                         <div>
                             <p className="font-semibold">
-                                {monthLabel.split(' ')[0]}{' '}
-                                {endsText(banner.daysLeft)}
+                                {banner.overdue
+                                    ? `${banner.label} is finished`
+                                    : `${banner.label} ${endsText(banner.daysLeft ?? 0)}`}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                                Carry over or reset each budget
+                                {banner.overdue
+                                    ? 'Close it to start the new month'
+                                    : 'Carry over or reset each budget'}
                             </p>
                         </div>
                         <Button size="sm" variant="outline" asChild>
