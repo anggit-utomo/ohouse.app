@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Casts\EncryptedInteger;
+use Database\Factories\BudgetMonthFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable(['budget_id', 'period_start', 'allocated', 'carried_in', 'carry_decision', 'closed_at'])]
 class BudgetMonth extends Model
 {
+    /** @use HasFactory<BudgetMonthFactory> */
+    use HasFactory;
+
     protected $casts = [
         'period_start' => 'date',
         'allocated' => EncryptedInteger::class,

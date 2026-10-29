@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Casts\EncryptedInteger;
+use Database\Factories\TransactionFactory;
 use App\Enums\TransactionTypeEnum;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -24,7 +26,8 @@ use LogicException;
 ])]
 class Transaction extends Model
 {
-    use SoftDeletes;
+    /** @use HasFactory<TransactionFactory> */
+    use SoftDeletes, HasFactory;
 
     protected $casts = [
         'type' => TransactionTypeEnum::class,

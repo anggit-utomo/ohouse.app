@@ -69,15 +69,14 @@ class CloseMonth
             return;
         }
 
-        $nextMonth = BudgetMonth::firstOrNew([
-            'budget_id' => $budget->id,
-            'period_start' => $next->toDateString(),
-        ]);
-
-        // Keep an amount already set for next month; otherwise reuse the default.
-        if (! $nextMonth->exists) {
-            $nextMonth->allocated = $budget->repeat_monthly ? $budget->default_amount : 0;
-        }
+        $nextMonth = BudgetMonth::where('budget_id', $budget->id)
+            ->whereDate('period_start', $next->toDateString())
+            ->first()
+            ?? new BudgetMonth([
+                'budget_id' => $budget->id,
+                'period_start' => $next->toDateString(),
+                'allocated' => $budget->repeat_monthly ? $budget->default_amount : 0,
+            ]);
 
         $nextMonth->carried_in = $carry;
         $nextMonth->save();
