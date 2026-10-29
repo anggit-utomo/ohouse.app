@@ -14,7 +14,7 @@ class HouseholdInvite extends Model
     protected $casts = [
         'expires_at' => 'datetime',
         'used_at' => 'datetime',
-        'revoked_at' => 'datetime'
+        'revoked_at' => 'datetime',
     ];
 
     public function household(): BelongsTo
@@ -38,7 +38,7 @@ class HouseholdInvite extends Model
         $household->invites()->active()->update(['revoked_at' => now()]);
 
         do {
-            $code = Str::upper(Str::random(3)) . '-' . random_int(1000, 9999);
+            $code = Str::upper(Str::random(3)).'-'.random_int(1000, 9999);
         } while (static::where('code', $code)->exists());
 
         return static::create([

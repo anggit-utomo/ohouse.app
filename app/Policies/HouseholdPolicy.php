@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\HouseholdRole;
 use App\Enums\HouseholdRoleEnum;
 use App\Models\Household;
 use App\Models\User;

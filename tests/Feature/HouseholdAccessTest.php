@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\BudgetMonth;
 use App\Models\Household;
 use App\Models\Transaction;
-use App\Models\BudgetMonth;
 use App\Models\User;
 
 it('lets only members view a household', function () {

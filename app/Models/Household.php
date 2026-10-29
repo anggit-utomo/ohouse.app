@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 #[Fillable(['name', 'currency', 'month_start_day', 'owner_id'])]
 class Household extends Model
@@ -41,5 +42,20 @@ class Household extends Model
     public function invites(): HasMany
     {
         return $this->hasMany(HouseholdInvite::class);
+    }
+
+    /** Active budgets with what is left this month, for pickers. */
+    public function budgetBalances(): Collection
+    {
+        $period = now()->startOfMonth()->toDateString();
+
+        return $this->budgets()->active()->orderBy('sort')
+            ->with(['months' => fn ($q) => $q->whereDate('period_start', $period)->with('transactions')])
+            ->get()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'name' => $b->name,
+                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? $b->default_amount : 0),
+            ])->values();
     }
 }

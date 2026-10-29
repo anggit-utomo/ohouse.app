@@ -20,6 +20,6 @@ class HouseholdFactory extends Factory
 
     public function configure(): static
     {
-        return $this->afterCreating(fn(Household $h) => $h->members()->syncWithoutDetaching([$h->owner_id => ['role' => 'owner']]));
+        return $this->afterCreating(fn (Household $h) => $h->members()->syncWithoutDetaching([$h->owner_id => ['role' => 'owner']]));
     }
 }

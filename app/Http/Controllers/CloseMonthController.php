@@ -23,7 +23,7 @@ class CloseMonthController extends Controller
             'decisions.*' => ['in:carry,reset'],
         ]);
 
-        $close->handle($household, Carbon::parse($data['period'] . '-01'), $data['decisions']);
+        $close->handle($household, Carbon::parse($data['period'].'-01'), $data['decisions']);
 
         return back();
     }

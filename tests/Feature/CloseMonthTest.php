@@ -22,7 +22,7 @@ function monthWith(Household $h, string $name, int $allocated, array $spend = []
             ->create([
                 'household_id' => $h->id,
                 'budget_month_id' => $month->id,
-                'amount' => $amount
+                'amount' => $amount,
             ]);
     }
 
@@ -75,7 +75,7 @@ it('counts income and transfers in the leftover', function () {
         [
             [TransactionTypeEnum::INCOME, 100_000],
             [TransactionTypeEnum::TRANSFER_OUT, 50_000],
-            [TransactionTypeEnum::TRANSFER_IN, 20_000]
+            [TransactionTypeEnum::TRANSFER_IN, 20_000],
         ] as [$type, $amount]
     ) {
         Transaction::factory()->type($type)->create([
@@ -107,7 +107,7 @@ it('gives the November total shown on the Close October screen', function () {
 
     $this->close->handle($this->household, $this->period, $decisions);
 
-    $total = BudgetMonth::whereDate('period_start', '2026-11-01')->get()->sum(fn($m) => $m->allocated + $m->carried_in);
+    $total = BudgetMonth::whereDate('period_start', '2026-11-01')->get()->sum(fn ($m) => $m->allocated + $m->carried_in);
 
     expect($total)->toBe(5_020_000);
 });
@@ -126,7 +126,7 @@ it('saves nothing when a decision is missing', function () {
     $food = monthWith($this->household, 'Food', 2_000_000, [1_000_000]);
     $gas = monthWith($this->household, 'Gasoline', 700_000, [500_000]);
 
-    expect(fn() => $this->close->handle($this->household, $this->period, [$food->budget_id => 'carry']))
+    expect(fn () => $this->close->handle($this->household, $this->period, [$food->budget_id => 'carry']))
         ->toThrow(InvalidArgumentException::class);
 
     expect($food->fresh()->closed_at)->toBeNull()
@@ -148,9 +148,9 @@ it('locks transactions in a closed month', function () {
     $food = monthWith($this->household, 'Food', 2_000_000, [100_000]);
     $this->close->handle($this->household, $this->period, [$food->budget_id => 'carry']);
 
-    expect(fn() => Transaction::first()->update(['note' => 'changed']))->toThrow(LogicException::class);
-    expect(fn() => Transaction::first()->delete())->toThrow(LogicException::class);
-    expect(fn() => Transaction::factory()->create(['household_id' => $this->household->id, 'budget_month_id' => $food->id]))
+    expect(fn () => Transaction::first()->update(['note' => 'changed']))->toThrow(LogicException::class);
+    expect(fn () => Transaction::first()->delete())->toThrow(LogicException::class);
+    expect(fn () => Transaction::factory()->create(['household_id' => $this->household->id, 'budget_month_id' => $food->id]))
         ->toThrow(LogicException::class);
 });
 

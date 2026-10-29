@@ -17,16 +17,16 @@ class CloseMonth
     {
         return BudgetMonth::query()
             ->whereDate('period_start', $period->copy()->startOfMonth()->toDateString())
-            ->whereHas('budget', fn($q) => $q->where('household_id', $household->id))
+            ->whereHas('budget', fn ($q) => $q->where('household_id', $household->id))
             ->with(['budget', 'transactions'])
-            ->when($lock, fn($q) => $q->lockForUpdate())
+            ->when($lock, fn ($q) => $q->lockForUpdate())
             ->get();
     }
 
     /** Leftover per budget, for the Close screen. Negative means over budget. */
     public function preview(Household $household, CarbonInterface $period): Collection
     {
-        return $this->months($household, $period)->map(fn(BudgetMonth $m) => [
+        return $this->months($household, $period)->map(fn (BudgetMonth $m) => [
             'budget_id' => $m->budget_id,
             'name' => $m->budget->name,
             'leftover' => $m->balance(),
@@ -34,7 +34,7 @@ class CloseMonth
     }
 
     /**
-     * @param array<int, string> $decisions budget_id => 'carry' | 'reset'
+     * @param  array<int, string>  $decisions  budget_id => 'carry' | 'reset'
      */
     public function handle(Household $household, CarbonInterface $period, array $decisions): void
     {
