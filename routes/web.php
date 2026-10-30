@@ -6,6 +6,7 @@ use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HouseholdSettingsController;
 use App\Http\Controllers\JoinController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\TransferController;
 use Illuminate\Http\Request;
@@ -104,6 +105,10 @@ Route::middleware(['auth', 'verified', 'household.member'])
                 Route::delete('/', 'destroy');
             });
         // household settings end
+
+        // report
+        Route::get('report', ReportController::class)->name('report');
+        // report end
     });
 // main app route end
 
