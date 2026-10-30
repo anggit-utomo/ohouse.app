@@ -11,7 +11,6 @@ use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -82,7 +81,7 @@ class TransactionController extends Controller
 
     public function create(Request $request, Household $household): Response
     {
-        Gate::authorize('edit', $household);
+        $this->authorize('edit', $household);
 
         $preselected = $household->budgets()->active()->whereKey($request->integer('budget'))->value('id');
 
@@ -124,7 +123,7 @@ class TransactionController extends Controller
 
     public function show(Household $household, Transaction $transaction): Response
     {
-        Gate::authorize('view', $transaction);
+        $this->authorize('view', $transaction);
 
         $transaction->load(['budgetMonth.transactions', 'budgetMonth.budget', 'user']);
         $month = $transaction->budgetMonth;
@@ -166,7 +165,7 @@ class TransactionController extends Controller
 
     public function edit(Household $household, Transaction $transaction): Response|RedirectResponse
     {
-        Gate::authorize('update', $transaction);
+        $this->authorize('update', $transaction);
 
         if (
             $transaction->budgetMonth->isClosed() ||
@@ -200,7 +199,7 @@ class TransactionController extends Controller
 
     public function destroy(Household $household, Transaction $transaction, SaveTransaction $save): RedirectResponse
     {
-        Gate::authorize('delete', $transaction);
+        $this->authorize('delete', $transaction);
 
         $month = $transaction->occurred_at->format('Y-m');
         $save->delete($transaction);

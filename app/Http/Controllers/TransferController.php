@@ -7,7 +7,6 @@ use App\Http\Requests\MoveMoneyRequest;
 use App\Models\Household;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,7 +14,7 @@ class TransferController extends Controller
 {
     public function create(Request $request, Household $household): Response
     {
-        Gate::authorize('edit', $household);
+        $this->authorize('edit', $household);
 
         $budgets = $household->budgetBalances();
         $valid = fn (string $key) => $budgets->contains('id', $request->integer($key)) ? (string) $request->integer($key) : '';
@@ -41,7 +40,7 @@ class TransferController extends Controller
         $rows = $household->transactions()->where('transfer_id', $transfer)->get();
 
         abort_if($rows->isEmpty(), 404);
-        Gate::authorize('delete', $rows->first());
+        $this->authorize('delete', $rows->first());
 
         $move->undo($rows);
 

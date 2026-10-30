@@ -8,7 +8,6 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -43,7 +42,7 @@ class FamilyController extends Controller
     /** Makes a fresh code and revokes any older one. */
     public function invite(Request $request, Household $household): RedirectResponse
     {
-        Gate::authorize('manage', $household);
+        $this->authorize('manage', $household);
 
         HouseholdInvite::generate($household, $request->user());
 
@@ -52,7 +51,7 @@ class FamilyController extends Controller
 
     public function update(Request $request, Household $household, int $member): RedirectResponse
     {
-        Gate::authorize('manage', $household);
+        $this->authorize('manage', $household);
 
         $data = $request->validate(['role' => ['required', 'in:editor,viewer']]);
         $target = $household->members()->whereKey($member)->firstOrFail();
@@ -73,7 +72,7 @@ class FamilyController extends Controller
         $leaving = $target->id === $request->user()->id;
 
         if (! $leaving) {
-            Gate::authorize('manage', $household);
+            $this->authorize('manage', $household);
         }
 
         if ($target->pivot->role === 'owner') {

@@ -65,21 +65,28 @@ export default function Family({
         router.post(`${base}/family/invite`, {}, { preserveScroll: true });
 
     const copy = async () => {
-        await navigator.clipboard.writeText(invite!.code);
+        if (!invite) return;
+
+        await navigator.clipboard.writeText(invite.code);
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
     };
 
-    const share = () =>
-        navigator.share
-            ? navigator
-                  .share({
-                      title: 'Join our budget',
-                      text: `Pair code ${invite!.code}`,
-                      url: invite!.url,
-                  })
-                  .catch(() => undefined)
-            : navigator.clipboard.writeText(invite!.url);
+    const share = async () => {
+        if (!invite) return;
+
+        if (navigator.share) {
+            await navigator
+                .share({
+                    title: 'Join our budget',
+                    text: `Pair code ${invite.code}`,
+                    url: invite.url,
+                })
+                .catch(() => undefined);
+        } else {
+            await navigator.clipboard.writeText(invite.url);
+        }
+    };
 
     const remove = (m: Member) => {
         const message = m.you

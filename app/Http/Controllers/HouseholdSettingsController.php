@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Household;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -23,7 +22,7 @@ class HouseholdSettingsController extends Controller
 
     public function update(Request $request, Household $household): RedirectResponse
     {
-        Gate::authorize('manage', $household);
+        $this->authorize('manage', $household);
 
         $household->update($request->validate(['name' => ['required', 'string', 'max:50']]));
 
@@ -33,7 +32,7 @@ class HouseholdSettingsController extends Controller
     /** Deletes the household and everything in it. */
     public function destroy(Request $request, Household $household): RedirectResponse
     {
-        Gate::authorize('manage', $household);
+        $this->authorize('manage', $household);
 
         $request->validate(['confirm' => ['required', 'string']]);
 
