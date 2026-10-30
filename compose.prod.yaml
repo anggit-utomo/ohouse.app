@@ -1,0 +1,43 @@
+services:
+    app:
+        build: .
+        image: localhost/budget-app:latest
+        container_name: budget-app
+        restart: unless-stopped
+        env_file: .env
+        environment:
+            SERVER_NAME: ${APP_DOMAIN}
+        ports:
+            - '80:80'
+            - '443:443'
+            - '443:443/udp'
+        volumes:
+            - caddy_data:/data
+            - caddy_config:/config
+        depends_on:
+            - db
+
+    scheduler:
+        image: localhost/budget-app:latest
+        container_name: budget-scheduler
+        restart: unless-stopped
+        env_file: .env
+        command: php artisan schedule:work
+        depends_on:
+            - db
+
+    db:
+        image: docker.io/library/postgres:17-alpine
+        container_name: budget-db
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: ${DB_DATABASE}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+
+volumes:
+    pgdata:
+    caddy_data:
+    caddy_config:
