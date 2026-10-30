@@ -3,7 +3,7 @@
 FROM docker.io/dunglas/frankenphp:1.13.4-php8.4-alpine AS build
 RUN install-php-extensions pdo_pgsql intl zip bcmath
 COPY --from=docker.io/library/composer:2 /usr/bin/composer /usr/bin/composer
-RUN apk add --no-cache nodejs npm
+RUN apk add --no-cache nodejs npm && npm install -g pnpm@12
 WORKDIR /app
 
 # dummy key, build stage only. The real key comes from .env when the container starts.
@@ -11,11 +11,11 @@ ENV APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
 RUN composer install --no-dev --optimize-autoloader
-RUN npm run build && rm -rf node_modules
+RUN pnpm run build && rm -rf node_modules
 
 # --- runtime
 FROM docker.io/dunglas/frankenphp:1.13.4-php8.4-alpine
