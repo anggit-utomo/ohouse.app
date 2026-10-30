@@ -36,6 +36,7 @@ class FamilyController extends Controller
                 'you' => $m->id === $user->id,
                 'joined_at' => Carbon::parse($m->pivot->joined_at)->toIso8601String(),
             ])->values(),
+            'canEdit' => $request->user()->can('edit', $household),
         ]);
     }
 

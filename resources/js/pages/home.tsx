@@ -181,7 +181,11 @@ export default function Home({
                 ))}
             </div>
 
-            <BottomNav householdId={household.id} active="home" />
+            <BottomNav
+                householdId={household.id}
+                active="home"
+                canAdd={canEdit}
+            />
         </>
     );
 }

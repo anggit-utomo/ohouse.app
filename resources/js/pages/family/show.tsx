@@ -26,6 +26,7 @@ type Props = {
     canManage: boolean;
     invite: { code: string; url: string; expires_at: string } | null;
     members: Member[];
+    canEdit: boolean;
 };
 
 const secondsLeft = (iso?: string) =>
@@ -53,6 +54,7 @@ export default function Family({
     canManage,
     invite,
     members,
+    canEdit,
 }: Props) {
     const base = `/h/${household.id}`;
     const seconds = useSeconds(invite?.expires_at);
@@ -221,7 +223,11 @@ export default function Family({
                 </Button>
             </div>
 
-            <BottomNav householdId={household.id} active="family" />
+            <BottomNav
+                householdId={household.id}
+                active="family"
+                canAdd={canEdit}
+            />
         </>
     );
 }

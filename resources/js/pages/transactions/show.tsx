@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
@@ -37,6 +37,9 @@ export default function ShowTransaction({
         if (confirm('Undo this move? Both budgets go back to how they were.'))
             router.delete(`/h/${household.id}/transfers/${transferId}`);
     };
+
+    const { errors } = usePage().props as { errors: Record<string, string> };
+    const problem = errors.transfer ?? errors.occurred_at ?? errors.type;
 
     const remove = () => {
         if (confirm('Delete this transaction? The budget balance will update.'))
@@ -105,6 +108,10 @@ export default function ShowTransaction({
                     />
                 </div>
 
+                {problem && (
+                    <p className="text-sm text-destructive">{problem}</p>
+                )}
+
                 {locked && (
                     <p className="text-sm text-muted-foreground">
                         This month is closed, so the entry is locked. Add a
@@ -120,7 +127,7 @@ export default function ShowTransaction({
             </div>
 
             {canEdit && !isTransfer && (
-                <div className="fixed inset-x-0 bottom-0 border-t bg-background p-4 pb-6">
+                <div className="fixed inset-x-0 bottom-0 border-t bg-background p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
                     <div className="mx-auto flex max-w-md gap-2">
                         {isTransfer ? (
                             <Button

@@ -14,12 +14,20 @@ class JoinController extends Controller
     /** The QR code points here. */
     public function show(string $code): RedirectResponse
     {
+        $code = HouseholdInvite::normalize($code);
+
+        session(['join_code' => $code]);
+
+        if (! auth()->check()) {
+            return redirect()->route('join.create');
+        }
+
         return redirect()->route('join.create', ['code' => $code]);
     }
 
     public function create(Request $request): Response
     {
-        $code = (string) $request->query('code', '');
+        $code = (string) ($request->query('code') ?: session('join_code', ''));
         $invite = $code !== '' ? HouseholdInvite::findActive($code) : null;
 
         return Inertia::render('join/create', [
@@ -38,6 +46,7 @@ class JoinController extends Controller
         $data = $request->validate(['code' => ['required', 'string', 'max:20']]);
 
         $household = $join->handle($request->user(), $data['code']);
+        session()->forget('join_code');
 
         return redirect()->route('households.home', $household);
     }

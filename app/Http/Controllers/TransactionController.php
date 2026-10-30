@@ -76,6 +76,7 @@ class TransactionController extends Controller
                 'amount' => $t->amount,
                 'occurred_at' => $t->occurred_at->toIso8601String(),
             ]),
+            'canEdit' => $request->user()->can('edit', $household),
         ]);
     }
 

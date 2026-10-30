@@ -33,6 +33,7 @@ type Props = {
     members: { id: number; name: string }[];
     totals: { expense: number; income: number };
     transactions: Tx[];
+    canEdit: boolean;
 };
 
 const dayLabel = (iso: string) => {
@@ -54,6 +55,7 @@ export default function History({
     members,
     totals,
     transactions,
+    canEdit,
 }: Props) {
     const url = `/h/${household.id}/transactions`;
     const [q, setQ] = useState(filters.q);
@@ -204,7 +206,11 @@ export default function History({
                 ))}
             </div>
 
-            <BottomNav householdId={household.id} active="history" />
+            <BottomNav
+                householdId={household.id}
+                active="history"
+                canAdd={canEdit}
+            />
         </>
     );
 }

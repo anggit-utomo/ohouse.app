@@ -76,16 +76,22 @@ it('previews the household for a valid code only', function () {
     famInvite($this->household);
 
     $this->actingAs($this->guest)->get('/join?code=ktr4829')->assertInertia(fn (Assert $p) => $p
-        ->component('join/create')->where('code', 'KTR-4829')->where('preview.budgets', 2)->where('preview.members', 1)->where('invalid', false));
+        ->component('join/create')
+        ->where('code', 'KTR-4829')
+        ->where('preview.budgets', 2)
+        ->where('preview.members', 1)
+        ->where('invalid', false));
 
-    $this->actingAs($this->guest)->get('/join?code=NOP-0000')->assertInertia(fn (Assert $p) => $p->where('preview', null)->where('invalid', true));
+    $this->actingAs($this->guest)->get('/join?code=NOP-0000')
+        ->assertInertia(fn (Assert $p) => $p->where('preview', null)->where('invalid', true));
 });
 
 it('sends the QR link to the join page and asks guests to sign in first', function () {
     $this->actingAs($this->guest)->get('/join/KTR-4829')->assertRedirect('/join?code=KTR-4829');
 
     auth()->logout();
-    $this->get('/join/KTR-4829')->assertRedirect('/login');
+
+    $this->get('/join')->assertRedirect('/login');
 });
 
 it('limits how fast codes can be tried', function () {
@@ -197,4 +203,9 @@ it('hides family and settings from outsiders', function () {
     $this->actingAs($this->guest)->get("{$this->base}/family")->assertNotFound();
     $this->actingAs($this->guest)->get("{$this->base}/settings")->assertNotFound();
     $this->actingAs($this->guest)->post("{$this->base}/family/invite")->assertNotFound();
+});
+
+it('remembers the QR code, then makes guests sign in', function () {
+    $this->get('/join/ktr-4829')->assertRedirect('/join')->assertSessionHas('join_code', 'KTR-4829');
+    $this->get('/join')->assertRedirect('/login');
 });

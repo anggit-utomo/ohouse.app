@@ -54,7 +54,9 @@ class HouseholdInvite extends Model
     {
         $clean = preg_replace('/[^A-Z0-9]/', '', Str::upper($code));
 
-        return strlen($clean) === 7 ? substr($clean, 0, 3).'-'.substr($clean, 3) : Str::upper(trim($code));
+        return strlen($clean) === 7
+            ? substr($clean, 0, 3).'-'.substr($clean, 3)
+            : Str::upper(trim($code));
     }
 
     public static function findActive(string $code): ?self

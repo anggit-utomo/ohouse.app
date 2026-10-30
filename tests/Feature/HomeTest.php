@@ -15,13 +15,29 @@ beforeEach(function () {
     $this->url = "/h/{$this->household->id}";
 });
 
-function homeBudget(Household $h, string $name, int $allocated, int $spent = 0, int $carried = 0, int $sort = 0): BudgetMonth
-{
+function homeBudget(
+    Household $h,
+    string $name,
+    int $allocated,
+    int $spent = 0,
+    int $carried = 0,
+    int $sort = 0
+): BudgetMonth {
     $budget = Budget::factory()->for($h)->create(['name' => $name, 'default_amount' => $allocated, 'sort' => $sort]);
-    $month = BudgetMonth::factory()->for($budget)->create(['period_start' => '2026-10-01', 'allocated' => $allocated, 'carried_in' => $carried]);
+    $month = BudgetMonth::factory()->for($budget)
+        ->create([
+            'period_start' => '2026-10-01',
+            'allocated' => $allocated,
+            'carried_in' => $carried,
+        ]);
 
     if ($spent) {
-        Transaction::factory()->create(['household_id' => $h->id, 'budget_month_id' => $month->id, 'amount' => $spent, 'occurred_at' => '2026-10-10 12:00:00']);
+        Transaction::factory()->create([
+            'household_id' => $h->id,
+            'budget_month_id' => $month->id,
+            'amount' => $spent,
+            'occurred_at' => '2026-10-10 12:00:00',
+        ]);
     }
 
     return $month;
@@ -64,7 +80,8 @@ it('counts carried-in money and income', function () {
 it('hides archived budgets and shows an empty list for a new household', function () {
     homeBudget($this->household, 'Old', 100_000)->budget->update(['archived_at' => now()]);
 
-    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p->has('budgets', 0)->where('summary.left', 0)->where('canEdit', true));
+    $this->actingAs($this->owner)->get($this->url)
+        ->assertInertia(fn (Assert $p) => $p->has('budgets', 0)->where('summary.left', 0)->where('canEdit', true));
 });
 
 it('shows the month-end banner only in the last 5 days', function () {
@@ -103,7 +120,7 @@ it('sends people to their household from the dashboard', function () {
 });
 
 it('keeps the starter dashboard for people without a household', function () {
-    $this->actingAs(User::factory()->create())->get('/dashboard')->assertOk();
+    $this->actingAs(User::factory()->create())->get('/setup')->assertOk();
 });
 
 it('hides the household from outsiders', function () {
@@ -122,10 +139,19 @@ it('shows one budget with only its own transactions', function () {
 
 it('opens a past month of a budget and clamps future months', function () {
     $food = homeBudget($this->household, 'Food', 2_000_000);
-    BudgetMonth::factory()->for($food->budget)->create(['period_start' => '2026-09-01', 'allocated' => 1_500_000, 'closed_at' => now()]);
+    BudgetMonth::factory()->for($food->budget)
+        ->create([
+            'period_start' => '2026-09-01',
+            'allocated' => 1_500_000,
+            'closed_at' => now(),
+        ]);
 
     $this->actingAs($this->owner)->get("{$this->url}/budgets/{$food->budget_id}?month=2026-09")
-        ->assertInertia(fn (Assert $p) => $p->where('monthLabel', 'September 2026')->where('closed', true)->where('summary.available', 1_500_000));
+        ->assertInertia(
+            fn (Assert $p) => $p->where('monthLabel', 'September 2026')
+                ->where('closed', true)
+                ->where('summary.available', 1_500_000)
+        );
 
     $this->actingAs($this->owner)->get("{$this->url}/budgets/{$food->budget_id}?month=2027-05")
         ->assertInertia(fn (Assert $p) => $p->where('monthLabel', 'October 2026'));
@@ -142,5 +168,10 @@ it('lets viewers see a budget but not the action buttons', function () {
     $viewer = User::factory()->create();
     $this->household->members()->attach($viewer->id, ['role' => 'viewer']);
 
-    $this->actingAs($viewer)->get("{$this->url}/budgets/{$food->budget_id}")->assertInertia(fn (Assert $p) => $p->where('canEdit', false));
+    $this->actingAs($viewer)->get("{$this->url}/budgets/{$food->budget_id}")
+        ->assertInertia(fn (Assert $p) => $p->where('canEdit', false));
+});
+
+it('sends people without a household to set one up', function () {
+    $this->actingAs(User::factory()->create())->get('/dashboard')->assertRedirect('/setup');
 });

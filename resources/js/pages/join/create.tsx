@@ -61,7 +61,7 @@ export default function Join({ code, preview, invalid }: Props) {
                 )}
             </div>
 
-            <div className="fixed inset-x-0 bottom-0 border-t bg-background p-4 pb-6">
+            <div className="fixed inset-x-0 bottom-0 border-t bg-background p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
                 <div className="mx-auto max-w-md">
                     <Button
                         className="h-11 w-full"
