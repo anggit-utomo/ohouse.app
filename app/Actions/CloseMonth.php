@@ -13,7 +13,7 @@ use InvalidArgumentException;
 
 class CloseMonth
 {
-    /** Budget months of a household for one period, with transactions loaded for balance(). */
+    /** @return \Illuminate\Database\Eloquent\Collection<int, BudgetMonth> */
     public function months(Household $household, CarbonInterface $period, bool $lock = false): Collection
     {
         return BudgetMonth::query()
@@ -24,7 +24,7 @@ class CloseMonth
             ->get();
     }
 
-    /** Unclosed budget months of a period, in budget order. */
+    /** @return Collection<int, BudgetMonth> */
     public function open(Household $household, CarbonInterface $period): Collection
     {
         return $this->months($household, $period)
@@ -33,16 +33,22 @@ class CloseMonth
             ->values();
     }
 
-    /** What the Close screen lists: what is left per budget and what next month starts at. */
+    /** @return Collection<int, array{budget_id: int, name: string, leftover: int, next_allocated: int}> */
     public function preview(Household $household, CarbonInterface $period): Collection
     {
+        $open = $this->open($household, $period);
         $next = $period->copy()->startOfMonth()->addMonthNoOverflow()->toDateString();
 
-        return $this->open($household, $period)->map(fn (BudgetMonth $m) => [
+        $nextMonths = BudgetMonth::whereIn('budget_id', $open->pluck('budget_id'))
+            ->whereDate('period_start', $next)
+            ->get()
+            ->keyBy('budget_id');
+
+        return $open->map(fn (BudgetMonth $m) => [
             'budget_id' => $m->budget_id,
             'name' => $m->budget->name,
             'leftover' => $m->balance(),
-            'next_allocated' => BudgetMonth::where('budget_id', $m->budget_id)->whereDate('period_start', $next)->first()?->allocated
+            'next_allocated' => $nextMonths->get($m->budget_id)?->allocated
                 ?? ($m->budget->repeat_monthly ? $m->budget->default_amount : 0),
         ]);
     }

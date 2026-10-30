@@ -4,6 +4,7 @@ namespace App\Actions;
 
 use App\Models\BudgetMonth;
 use App\Models\Household;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -56,7 +57,7 @@ class MoveMoney
         });
     }
 
-    /** Deletes both sides of a move. */
+    /** @param \Illuminate\Database\Eloquent\Collection<int, Transaction> $rows */
     public function undo(Collection $rows): void
     {
         $rows->load('budgetMonth');

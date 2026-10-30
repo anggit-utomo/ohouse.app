@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -44,11 +45,13 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         'two_factor_confirmed_at' => 'datetime',
     ];
 
+    /** @return BelongsToMany<Household, $this, Pivot, 'pivot'> */
     public function households(): BelongsToMany
     {
         return $this->belongsToMany(Household::class)->withPivot('role', 'joined_at');
     }
 
+    /** @return BelongsTo<Household, $this> */
     public function currentHousehold(): BelongsTo
     {
         return $this->belongsTo(Household::class, 'current_household_id');

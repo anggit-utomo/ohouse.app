@@ -49,21 +49,25 @@ class Transaction extends Model
         static::deleting($guard);
     }
 
+    /** @return BelongsTo<Household, $this> */
     public function household(): BelongsTo
     {
         return $this->belongsTo(Household::class);
     }
 
+    /** @return BelongsTo<BudgetMonth, $this> */
     public function budgetMonth(): BelongsTo
     {
         return $this->belongsTo(BudgetMonth::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<Transaction, $this> */
     public function corrects(): BelongsTo
     {
         return $this->belongsTo(self::class, 'corrects_transaction_id');
@@ -74,6 +78,10 @@ class Transaction extends Model
         return $this->type->sign() * $this->amount;
     }
 
+    /**
+     * @param  Builder<Transaction>  $q
+     * @return Builder<Transaction>
+     */
     public function scopeBetween(Builder $q, mixed $from, mixed $to): Builder
     {
         return $q->whereBetween('occurred_at', [$from, $to]);

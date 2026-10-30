@@ -2,19 +2,23 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ResolvesHousehold;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class MoveMoneyRequest extends FormRequest
 {
+    use ResolvesHousehold;
+
     public function authorize(): bool
     {
-        return $this->user()->can('edit', $this->route('household'));
+        return $this->user()->can('edit', $this->household());
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
-        $own = Rule::exists('budgets', 'id')->where('household_id', $this->route('household')->id);
+        $own = Rule::exists('budgets', 'id')->where('household_id', $this->household()->id);
 
         return [
             'from_budget_id' => ['required', 'integer', $own],

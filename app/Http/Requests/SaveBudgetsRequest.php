@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ResolvesHousehold;
 use App\Models\BudgetMonth;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
@@ -10,14 +11,17 @@ use Illuminate\Validation\Validator;
 
 class SaveBudgetsRequest extends FormRequest
 {
+    use ResolvesHousehold;
+
     public function authorize(): bool
     {
-        return $this->user()->can('edit', $this->route('household'));
+        return $this->user()->can('edit', $this->household());
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
-        $household = $this->route('household');
+        $household = $this->household();
 
         return [
             'period' => ['required', 'date_format:Y-m'],
@@ -29,6 +33,7 @@ class SaveBudgetsRequest extends FormRequest
         ];
     }
 
+    /** @return array<int, \Closure(Validator): void> */
     public function after(): array
     {
         return [function (Validator $validator) {
@@ -44,7 +49,7 @@ class SaveBudgetsRequest extends FormRequest
                 return;
             }
 
-            $closed = BudgetMonth::whereHas('budget', fn ($q) => $q->where('household_id', $this->route('household')->id))
+            $closed = BudgetMonth::whereHas('budget', fn ($q) => $q->where('household_id', $this->household()->id))
                 ->whereDate('period_start', $period->toDateString())
                 ->whereNotNull('closed_at')
                 ->exists();

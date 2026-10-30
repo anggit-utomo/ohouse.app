@@ -2,23 +2,29 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ResolvesHousehold;
+use App\Models\Transaction;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class TransactionRequest extends FormRequest
 {
+    use ResolvesHousehold;
+
     public function authorize(): bool
     {
+        /** @var Transaction|null $transaction */
         $transaction = $this->route('transaction');
 
         return $transaction
             ? $this->user()->can('update', $transaction)
-            : $this->user()->can('edit', $this->route('household'));
+            : $this->user()->can('edit', $this->household());
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
-        $id = $this->route('household')->id;
+        $id = $this->household()->id;
 
         return [
             'type' => ['required', Rule::in(['expense', 'income'])],

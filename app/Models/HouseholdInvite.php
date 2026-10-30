@@ -17,11 +17,16 @@ class HouseholdInvite extends Model
         'revoked_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Household, $this> */
     public function household(): BelongsTo
     {
         return $this->belongsTo(Household::class);
     }
 
+    /**
+     * @param  Builder<HouseholdInvite>  $q
+     * @return Builder<HouseholdInvite>
+     */
     public function scopeActive(Builder $q): Builder
     {
         return $q->whereNull('used_at')->whereNull('revoked_at')->where('expires_at', '>', now());

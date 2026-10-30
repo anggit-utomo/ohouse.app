@@ -24,16 +24,22 @@ class Budget extends Model
         'archived_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Household, $this> */
     public function household(): BelongsTo
     {
         return $this->belongsTo(Household::class);
     }
 
+    /** @return HasMany<BudgetMonth, $this> */
     public function months(): HasMany
     {
         return $this->hasMany(BudgetMonth::class);
     }
 
+    /**
+     * @param  Builder<Budget>  $q
+     * @return Builder<Budget>
+     */
     public function scopeActive(Builder $q): Builder
     {
         return $q->whereNull('archived_at');

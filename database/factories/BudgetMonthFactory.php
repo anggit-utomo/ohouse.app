@@ -3,8 +3,10 @@
 namespace Database\Factories;
 
 use App\Models\Budget;
+use App\Models\BudgetMonth;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/** @extends Factory<BudgetMonth> */
 class BudgetMonthFactory extends Factory
 {
     public function definition(): array

@@ -2,9 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Budget;
 use App\Models\Household;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/** @extends Factory<Budget> */
 class BudgetFactory extends Factory
 {
     public function definition(): array

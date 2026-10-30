@@ -23,11 +23,13 @@ class BudgetMonth extends Model
         'closed_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Budget, $this> */
     public function budget(): BelongsTo
     {
         return $this->belongsTo(Budget::class);
     }
 
+    /** @return HasMany<Transaction, $this> */
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
@@ -54,7 +56,11 @@ class BudgetMonth extends Model
         return $this->allocated + $this->carried_in + $net;
     }
 
-    /** Numbers for one budget this month. Amounts are encrypted, so this runs in PHP. */
+    /**
+     * Numbers for one budget this month. Amounts are encrypted, so this runs in PHP.
+     *
+     * @return array{spent: int, left: int, available: int, pct: int, over: bool}
+     */
     public function summary(): array
     {
         $spent = $this->spent();

@@ -6,16 +6,25 @@ use App\Enums\TransactionTypeEnum;
 use App\Models\Household;
 use App\Models\Transaction;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BuildReport
 {
-    /** Spending of one calendar month, grouped by budget and by person. Amounts are encrypted, so this sums in PHP. */
+    /**
+     * @return array{
+     *      has_data: bool,
+     *      spent: int,
+     *      income: int,
+     *      budgets: list<array{id: int, name: string, spent: int, pct: int}>,
+     *      people: list<array{id: int, name: string, spent: int, pct: int}>
+     * }
+     */
     public function handle(Household $household, CarbonInterface $month): array
     {
         $rows = $household->transactions()
             ->whereIn('type', [TransactionTypeEnum::EXPENSE->value, TransactionTypeEnum::INCOME->value]) // moves are not spending
             ->whereBetween('occurred_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
-            ->with(['budgetMonth.budget', 'user', 'corrects' => fn ($q) => $q->withTrashed()])
+            ->with(['budgetMonth.budget', 'user', 'corrects' => fn (BelongsTo $q) => $q->withTrashed()])
             ->get();
 
         $spent = $income = 0;
@@ -56,7 +65,10 @@ class BuildReport
         };
     }
 
-    /** Biggest first, with each one's share of what was spent. Refunds that net below zero are left out of the lists. */
+    /**
+     * @param  array<int, array{id: int, name: string, spent: int}>  $items
+     * @return list<array{id: int, name: string, spent: int, pct: int}>
+     */
     private function share(array $items): array
     {
         $items = collect($items)->filter(fn ($i) => $i['spent'] > 0)->sortByDesc('spent')->values();

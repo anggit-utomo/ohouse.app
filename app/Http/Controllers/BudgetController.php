@@ -59,7 +59,7 @@ class BudgetController extends Controller
             ->with('transactions.user')
             ->first();
 
-        abort_unless($month, 404);
+        abort_if($month === null, 404);
 
         return Inertia::render('budgets/show', [
             'household' => ['id' => $household->id],

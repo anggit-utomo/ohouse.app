@@ -207,6 +207,7 @@ class TransactionController extends Controller
         return redirect()->route('transactions.index', [$household, 'month' => $month]);
     }
 
+    /** @param array<string, mixed> $defaults */
     private function form(Household $household, string $mode, array $defaults, ?int $id = null): Response
     {
         $period = now()->startOfMonth()->toDateString();

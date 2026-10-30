@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class SaveTransaction
 {
-    /** @param array{budget_id:int,user_id:int,type:string,amount:int,note?:?string,occurred_at:string,corrects_transaction_id?:?int} $d */
+    /** @param array<string, mixed> $d */
     public function create(Household $household, array $d): Transaction
     {
         $budget = $household->budgets()->active()->findOrFail($d['budget_id']);
@@ -30,6 +30,7 @@ class SaveTransaction
         ]);
     }
 
+    /** @param array<string, mixed> $d */
     public function update(Transaction $transaction, array $d): Transaction
     {
         $this->guardEditable($transaction);

@@ -4,16 +4,18 @@ namespace Database\Factories;
 
 use App\Enums\TransactionTypeEnum;
 use App\Models\BudgetMonth;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/** @extends Factory<Transaction> */
 class TransactionFactory extends Factory
 {
     public function definition(): array
     {
         return [
             'budget_month_id' => BudgetMonth::factory(),
-            'household_id' => fn (array $a) => BudgetMonth::find($a['budget_month_id'])->budget->household_id,
+            'household_id' => fn (array $a) => BudgetMonth::query()->findOrFail($a['budget_month_id']),
             'user_id' => User::factory(),
             'type' => TransactionTypeEnum::EXPENSE,
             'amount' => 50_000,

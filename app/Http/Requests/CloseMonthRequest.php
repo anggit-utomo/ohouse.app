@@ -3,16 +3,20 @@
 namespace App\Http\Requests;
 
 use App\Actions\CloseMonth;
+use App\Http\Requests\Concerns\ResolvesHousehold;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
 class CloseMonthRequest extends FormRequest
 {
+    use ResolvesHousehold;
+
     public function authorize(): bool
     {
-        return $this->user()->can('edit', $this->route('household'));
+        return $this->user()->can('edit', $this->household());
     }
 
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
@@ -22,6 +26,7 @@ class CloseMonthRequest extends FormRequest
         ];
     }
 
+    /** @return array<int, \Closure(Validator): void> */
     public function after(): array
     {
         return [function (Validator $validator) {
@@ -29,7 +34,7 @@ class CloseMonthRequest extends FormRequest
                 return;
             }
 
-            $household = $this->route('household');
+            $household = $this->household();
             $close = app(CloseMonth::class);
             $pending = $close->pending($household);
 

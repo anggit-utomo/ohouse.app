@@ -6,6 +6,7 @@ use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 
+/** @implements CastsAttributes<int, int|string> */
 class EncryptedInteger implements CastsAttributes
 {
     /**

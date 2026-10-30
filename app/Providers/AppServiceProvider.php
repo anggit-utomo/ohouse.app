@@ -27,11 +27,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
-
-        RateLimiter::for(
-            'join',
-            fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip())
-        );
     }
 
     /**
@@ -54,6 +49,21 @@ class AppServiceProvider extends ServiceProvider
                     ->symbols()
                     ->uncompromised()
                 : null,
+        );
+
+        RateLimiter::for(
+            'join',
+            fn (Request $request) => Limit::perMinute(10)->by($request->user()?->id ?: $request->ip())
+        );
+
+        RateLimiter::for(
+            'household',
+            fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip())
+        );
+
+        RateLimiter::for(
+            'invites',
+            fn (Request $request) => Limit::perMinute(6)->by($request->user()?->id ?: $request->ip())
         );
     }
 }

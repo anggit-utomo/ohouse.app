@@ -54,7 +54,7 @@ Route::middleware(['auth', 'verified'])
 // join end
 
 // main app route group
-Route::middleware(['auth', 'verified', 'household.member'])
+Route::middleware(['auth', 'verified', 'household.member', 'throttle:household'])
     ->prefix('h/{household}')
     ->scopeBindings() // {budget} and {transaction} only resolve inside this household
     ->group(function () {
@@ -100,6 +100,7 @@ Route::middleware(['auth', 'verified', 'household.member'])
 
         // family
         Route::controller(FamilyController::class)
+            ->middleware('throttle:invites')
             ->prefix('family')
             ->name('family.')
             ->group(function () {
