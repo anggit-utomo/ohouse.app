@@ -48,4 +48,17 @@ class HouseholdInvite extends Model
             'expires_at' => now()->addMinutes($minutes),
         ]);
     }
+
+    /** "ktr 4829", "KTR4829" and "ktr-4829" are all KTR-4829. */
+    public static function normalize(string $code): string
+    {
+        $clean = preg_replace('/[^A-Z0-9]/', '', Str::upper($code));
+
+        return strlen($clean) === 7 ? substr($clean, 0, 3).'-'.substr($clean, 3) : Str::upper(trim($code));
+    }
+
+    public static function findActive(string $code): ?self
+    {
+        return static::active()->where('code', static::normalize($code))->with('household')->first();
+    }
 }
