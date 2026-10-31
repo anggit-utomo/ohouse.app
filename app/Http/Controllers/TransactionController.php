@@ -7,8 +7,7 @@ use App\Enums\TransactionTypeEnum;
 use App\Http\Requests\TransactionRequest;
 use App\Models\Household;
 use App\Models\Transaction;
-use Carbon\Carbon;
-use Carbon\CarbonInterface;
+use App\Support\Periods;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -19,14 +18,14 @@ class TransactionController extends Controller
 {
     public function index(Request $request, Household $household): Response
     {
-        $month = $this->month($request->query('month'));
+        $period = Periods::find($household, $request->query('month'));
         $type = in_array($request->query('type'), ['expense', 'income'], true) ? $request->query('type') : null;
         $person = $request->integer('person') ?: null;
         $q = trim((string) $request->query('q', ''));
 
         $rows = $household->transactions()
             ->with(['budgetMonth.budget', 'user'])
-            ->whereBetween('occurred_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+            ->whereBetween('occurred_at', [$period->start->startOfDay(), $period->endOrNow()])
             ->when($type, fn ($x) => $x->where('type', $type))
             ->when($person, fn ($x) => $x->where('user_id', $person))
             ->orderByDesc('occurred_at')->orderByDesc('id')
@@ -53,11 +52,12 @@ class TransactionController extends Controller
 
         return Inertia::render('transactions/index', [
             'household' => ['id' => $household->id],
-            'month' => $month->format('Y-m'),
-            'months' => collect(range(0, 5))->map(fn ($i) => [
-                'value' => now()->startOfMonth()->subMonthsNoOverflow($i)->format('Y-m'),
-                'label' => now()->startOfMonth()->subMonthsNoOverflow($i)->format('F Y'),
-            ])->all(),
+            'month' => $period->key(),
+            'months' => Periods::all($household)
+                ->take(12)
+                ->map(fn ($p) => ['value' => $p->key(), 'label' => $p->label()])
+                ->values()
+                ->all(),
             'filters' => ['type' => $type, 'person' => $person, 'q' => $q],
             'members' => $household->members()->get(['users.id', 'users.name'])->map->only(['id', 'name'])->values(),
             'totals' => [
@@ -117,7 +117,7 @@ class TransactionController extends Controller
 
         return redirect()->route('transactions.index', [
             $household,
-            'month' => $transaction->occurred_at->format('Y-m'),
+            'month' => $transaction->budgetMonth->period_start->toDateString(),
         ]);
     }
 
@@ -201,7 +201,7 @@ class TransactionController extends Controller
     {
         $this->authorize('delete', $transaction);
 
-        $month = $transaction->occurred_at->format('Y-m');
+        $month = $transaction->budgetMonth->period_start->toDateString();
         $save->delete($transaction);
 
         return redirect()->route('transactions.index', [$household, 'month' => $month]);
@@ -230,16 +230,5 @@ class TransactionController extends Controller
             'defaults' => $defaults,
             'today' => now()->toDateString(),
         ]);
-    }
-
-    private function month(?string $month): CarbonInterface
-    {
-        $max = now()->startOfMonth();
-
-        if (! $month || ! preg_match('/^\d{4}-\d{2}$/', $month)) {
-            return $max;
-        }
-
-        return Carbon::parse($month.'-01')->min($max);
     }
 }

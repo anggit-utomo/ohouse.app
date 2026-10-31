@@ -25,7 +25,9 @@ Route::get('dashboard', function (Request $request) {
     }
 
     // someone who scanned a QR code before registering carries on to joining
-    return session()->has('join_code') ? redirect()->route('join.create') : redirect()->route('setup.create');
+    return session()->has('join_code')
+        ? redirect()->route('join.create')
+        : redirect()->route('setup.create');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // join

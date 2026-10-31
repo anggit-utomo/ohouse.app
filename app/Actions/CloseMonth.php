@@ -2,10 +2,10 @@
 
 namespace App\Actions;
 
-use App\Models\Budget;
 use App\Models\BudgetMonth;
 use App\Models\Household;
-use Carbon\Carbon;
+use App\Models\Transaction;
+use App\Support\Periods;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -13,117 +13,116 @@ use InvalidArgumentException;
 
 class CloseMonth
 {
-    /** @return \Illuminate\Database\Eloquent\Collection<int, BudgetMonth> */
-    public function months(Household $household, CarbonInterface $period, bool $lock = false): Collection
-    {
-        return BudgetMonth::query()
-            ->whereDate('period_start', $period->copy()->startOfMonth()->toDateString())
-            ->whereHas('budget', fn ($q) => $q->where('household_id', $household->id))
+    /** Unclosed rows of the current period, in budget order. */
+    public function open(
+        Household $household,
+        bool $lock = false,
+        bool $withArchived = false
+    ): Collection {
+        return BudgetMonth::forHousehold($household)
+            ->whereDate('period_start', Periods::current($household)->key())
+            ->whereNull('closed_at')
+            ->when(! $withArchived, fn ($q) => $q->whereHas('budget', fn ($b) => $b->active()))
             ->with(['budget', 'transactions'])
             ->when($lock, fn ($q) => $q->lockForUpdate())
-            ->get();
-    }
-
-    /** @return Collection<int, BudgetMonth> */
-    public function open(Household $household, CarbonInterface $period): Collection
-    {
-        return $this->months($household, $period)
-            ->reject(fn (BudgetMonth $m) => $m->isClosed() || $m->budget->archived_at)
+            ->get()
             ->sortBy(fn (BudgetMonth $m) => [$m->budget->sort, $m->budget_id])
             ->values();
     }
 
-    /** @return Collection<int, array{budget_id: int, name: string, leftover: int, next_allocated: int}> */
-    public function preview(Household $household, CarbonInterface $period): Collection
+    /**
+     * What a budget has left if the new period starts on $start:
+     * entries dated on or after it move on.
+     */
+    private function leftoverBefore(BudgetMonth $m, CarbonInterface $start): int
     {
-        $open = $this->open($household, $period);
-        $next = $period->copy()->startOfMonth()->addMonthNoOverflow()->toDateString();
+        $day = $start->copy()->startOfDay();
 
-        $nextMonths = BudgetMonth::whereIn('budget_id', $open->pluck('budget_id'))
-            ->whereDate('period_start', $next)
-            ->get()
-            ->keyBy('budget_id');
-
-        return $open->map(fn (BudgetMonth $m) => [
-            'budget_id' => $m->budget_id,
-            'name' => $m->budget->name,
-            'leftover' => $m->balance(),
-            'next_allocated' => $nextMonths->get($m->budget_id)?->allocated
-                ?? ($m->budget->repeat_monthly ? $m->budget->default_amount : 0),
-        ]);
-    }
-
-    /** The month waiting to be closed: the oldest unclosed past month, else the current month in its last 5 days. */
-    public function pending(Household $household): ?CarbonInterface
-    {
-        $thisMonth = now()->startOfMonth();
-
-        $unclosed = fn () => BudgetMonth::query()->whereNull('closed_at')
-            ->whereHas('budget', fn ($q) => $q->active()->where('household_id', $household->id));
-
-        $oldest = $unclosed()->whereDate('period_start', '<', $thisMonth->toDateString())->orderBy('period_start')->value('period_start');
-
-        if ($oldest) {
-            return Carbon::parse($oldest)->startOfMonth();
-        }
-
-        $inLastDays = now()->daysInMonth - now()->day <= 4;
-
-        return $inLastDays && $unclosed()->whereDate('period_start', $thisMonth->toDateString())->exists() ? $thisMonth : null;
-    }
-
-    /** A month can be closed once it is over. */
-    public function canClose(CarbonInterface $period): bool
-    {
-        return $period->copy()->endOfMonth()->isPast();
+        return $m->allocated + $m->carried_in + $m->transactions
+            ->filter(fn (Transaction $t) => $t->occurred_at < $day)
+            ->sum(fn (Transaction $t) => $t->signedAmount());
     }
 
     /**
-     * @param  array<int, string>  $decisions  budget_id => 'carry' | 'reset'
+     * For the screen: repeating budgets with their leftovers,
+     * and the one-off budgets that end.
      */
-    public function handle(Household $household, CarbonInterface $period, array $decisions): void
+    public function preview(Household $household, CarbonInterface $start): array
     {
-        $period = $period->copy()->startOfMonth();
-        $next = $period->copy()->addMonthNoOverflow();
+        $day = $start->copy()->startOfDay();
+        $open = $this->open($household);
+        $hasLater = fn (BudgetMonth $m) => $m->transactions->contains(fn (Transaction $t) => $t->occurred_at >= $day);
 
-        DB::transaction(function () use ($household, $period, $next, $decisions) {
-            foreach ($this->months($household, $period, lock: true) as $month) {
-                if ($month->isClosed()) {
-                    continue; // safe to run twice
-                }
-
-                $decision = $decisions[$month->budget_id]
-                    ?? throw new InvalidArgumentException("Missing decision for budget {$month->budget_id}.");
-
-                if (! in_array($decision, ['carry', 'reset'], true)) {
-                    throw new InvalidArgumentException("Invalid decision '{$decision}'.");
-                }
-
-                $carry = $decision === 'carry' ? $month->balance() : 0; // can be negative
-
-                $month->update(['carry_decision' => $decision, 'closed_at' => now()]);
-
-                $this->openNextMonth($month->budget, $next, $carry);
-            }
-        });
+        return [
+            'rows' => $open->filter(
+                fn (BudgetMonth $m) => $m->budget->repeat_monthly
+            )->map(fn (BudgetMonth $m) => [
+                'budget_id' => $m->budget_id,
+                'name' => $m->budget->name,
+                'leftover' => $this->leftoverBefore($m, $day),
+                'next_allocated' => $m->budget->default_amount,
+            ])->values()->all(),
+            'ending' => $open->reject(
+                fn (BudgetMonth $m) => $m->budget->repeat_monthly || $hasLater($m)
+            )
+                ->map(fn (BudgetMonth $m) => $m->budget->name)->values()->all(),
+        ];
     }
 
-    private function openNextMonth(Budget $budget, CarbonInterface $next, int $carry): void
+    /**
+     * Starts the next period on $start.
+     *
+     * @param  array<int, string>  $decisions  budget_id => 'carry' | 'reset', for repeating budgets only
+     */
+    public function handle(Household $household, CarbonInterface $start, array $decisions): void
     {
-        if ($budget->archived_at) {
-            return;
-        }
+        $day = $start->copy()->startOfDay();
 
-        $nextMonth = BudgetMonth::where('budget_id', $budget->id)
-            ->whereDate('period_start', $next->toDateString())
-            ->first()
-            ?? new BudgetMonth([
-                'budget_id' => $budget->id,
-                'period_start' => $next->toDateString(),
-                'allocated' => $budget->repeat_monthly ? $budget->default_amount : 0,
-            ]);
+        DB::transaction(function () use ($household, $day, $decisions) {
+            foreach ($this->open($household, lock: true, withArchived: true) as $month) {
+                $budget = $month->budget;
+                $active = $budget->archived_at === null;
+                $repeats = $active && $budget->repeat_monthly;
+                $moved = $month->transactions->filter(fn (Transaction $t) => $t->occurred_at >= $day);
 
-        $nextMonth->carried_in = $carry;
-        $nextMonth->save();
+                $decision = null;
+
+                if ($repeats) {
+                    $decision = $decisions[$month->budget_id]
+                        ?? throw new InvalidArgumentException(
+                            "Missing decision for budget {$month->budget_id}."
+                        );
+
+                    if (! in_array($decision, ['carry', 'reset'], true)) {
+                        throw new InvalidArgumentException("Invalid decision '{$decision}'.");
+                    }
+                }
+
+                $carry = $decision === 'carry' ? $this->leftoverBefore($month, $day) : 0; // can be negative
+
+                if ($repeats || $moved->isNotEmpty()) {
+                    $next = BudgetMonth::create([
+                        'budget_id' => $budget->id,
+                        'period_start' => $day->toDateString(),
+                        'allocated' => $repeats ? $budget->default_amount : 0,
+                        'carried_in' => $carry,
+                    ]);
+
+                    // entries dated on or after payday belong to the new period
+                    Transaction::whereKey($moved->modelKeys())
+                        ->update(['budget_month_id' => $next->id]);
+                } elseif ($active) {
+                    $budget->update(['archived_at' => now()]); // a one-off budget ends with its period
+                }
+
+                $month->update([
+                    'carry_decision' => $decision,
+                    'closed_at' => now(),
+                    'period_end' => $day->copy()->subDay()->toDateString(),
+                ]);
+            }
+
+            $household->update(['period_start' => $day->toDateString()]);
+        });
     }
 }

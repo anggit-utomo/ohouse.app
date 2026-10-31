@@ -1,49 +1,35 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { Plus, Trash2 } from 'lucide-react';
+import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { PageHeader } from '@/components/page-header';
+import { rupiah } from '@/lib/money';
 
-type Row = { id: number | null; name: string; amount: string };
+type Row = { id: number | null; name: string; amount: string; repeat: boolean };
 
 type Props = {
-    household: { id: number; currency: string };
-    period: string;
-    periods: { value: string; label: string }[];
-    budgets: { id: number; name: string; amount: number }[];
-    repeat: boolean;
+    household: { id: number };
+    periodLabel: string;
+    justStarted: boolean;
+    budgets: { id: number; name: string; amount: number; repeat: boolean }[];
     canEdit: boolean;
 };
 
-const rupiah = (value: number) =>
-    'Rp ' + new Intl.NumberFormat('id-ID').format(value);
-
 export default function EditBudgets({
     household,
-    period,
-    periods,
+    periodLabel,
+    justStarted,
     budgets,
-    repeat,
     canEdit,
 }: Props) {
     const url = `/h/${household.id}/budgets`;
-
-    const form = useForm<{ period: string; repeat: boolean; budgets: Row[] }>({
-        period,
-        repeat,
+    const form = useForm<{ budgets: Row[] }>({
         budgets: budgets.map((b) => ({
             id: b.id,
             name: b.name,
             amount: String(b.amount),
+            repeat: b.repeat,
         })),
     });
 
@@ -51,9 +37,8 @@ export default function EditBudgets({
         (sum, b) => sum + Number(b.amount || 0),
         0,
     );
-    const error = (i: number, field: 'name' | 'amount') =>
+    const error = (i: number, field: string) =>
         (form.errors as Record<string, string>)[`budgets.${i}.${field}`];
-
     const setRow = (i: number, patch: Partial<Row>) =>
         form.setData(
             'budgets',
@@ -64,7 +49,6 @@ export default function EditBudgets({
 
     const save = () => {
         form.transform((d) => ({
-            ...d,
             budgets: d.budgets.map((b) => ({
                 ...b,
                 amount: Number(b.amount || 0),
@@ -78,42 +62,30 @@ export default function EditBudgets({
         <>
             <Head title="Set budgets" />
 
-            <PageHeader title="Set budgets" href={`/h/${household.id}`} />
-
             <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-28">
-                <div className="grid gap-2">
-                    <Label>Month</Label>
-                    <Select
-                        value={form.data.period}
-                        onValueChange={(month) => router.get(url, { month })}
-                    >
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {periods.map((p) => (
-                                <SelectItem key={p.value} value={p.value}>
-                                    {p.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    {form.errors.period && (
-                        <p className="text-sm text-destructive">
-                            {form.errors.period}
-                        </p>
-                    )}
-                </div>
+                <PageHeader title="Set budgets" href={`/h/${household.id}`} />
+                <p className="-mt-2 text-sm text-muted-foreground">
+                    {periodLabel}
+                </p>
+
+                {justStarted && (
+                    <p className="rounded-lg border p-3 text-sm">
+                        New period started. Budgets that repeat are filled in.
+                        Add the ones that don't repeat below.
+                    </p>
+                )}
 
                 <div className="flex items-center justify-between rounded-xl border p-4">
                     <span className="text-muted-foreground">Total budget</span>
                     <span className="text-xl font-bold">{rupiah(total)}</span>
                 </div>
 
-                <div className="grid gap-3">
-                    <Label>Categories</Label>
+                <div className="grid gap-4">
                     {form.data.budgets.map((row, i) => (
-                        <div key={row.id ?? `new-${i}`} className="grid gap-1">
+                        <div
+                            key={row.id ?? `new-${i}`}
+                            className="grid gap-2 rounded-xl border p-3"
+                        >
                             <div className="flex items-center gap-2">
                                 <Input
                                     aria-label="Category name"
@@ -170,6 +142,20 @@ export default function EditBudgets({
                                     </Button>
                                 )}
                             </div>
+
+                            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Switch
+                                    checked={row.repeat}
+                                    disabled={!canEdit}
+                                    onCheckedChange={(v) =>
+                                        setRow(i, { repeat: v })
+                                    }
+                                />
+                                {row.repeat
+                                    ? 'Repeats every period'
+                                    : 'One-off: ends with this period'}
+                            </label>
+
                             {(error(i, 'name') || error(i, 'amount')) && (
                                 <p className="text-sm text-destructive">
                                     {error(i, 'name') ?? error(i, 'amount')}
@@ -185,28 +171,18 @@ export default function EditBudgets({
                             onClick={() =>
                                 form.setData('budgets', [
                                     ...form.data.budgets,
-                                    { id: null, name: '', amount: '' },
+                                    {
+                                        id: null,
+                                        name: '',
+                                        amount: '',
+                                        repeat: true,
+                                    },
                                 ])
                             }
                         >
                             <Plus className="size-4" /> Add category
                         </Button>
                     )}
-                </div>
-
-                <div className="flex items-center justify-between">
-                    <div>
-                        <Label htmlFor="repeat">Repeat every month</Label>
-                        <p className="text-sm text-muted-foreground">
-                            Reuse these amounts next month
-                        </p>
-                    </div>
-                    <Switch
-                        id="repeat"
-                        checked={form.data.repeat}
-                        disabled={!canEdit}
-                        onCheckedChange={(v: any) => form.setData('repeat', v)}
-                    />
                 </div>
             </div>
 

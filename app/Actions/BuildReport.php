@@ -5,7 +5,7 @@ namespace App\Actions;
 use App\Enums\TransactionTypeEnum;
 use App\Models\Household;
 use App\Models\Transaction;
-use Carbon\CarbonInterface;
+use App\Support\Period;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BuildReport
@@ -19,11 +19,14 @@ class BuildReport
      *      people: list<array{id: int, name: string, spent: int, pct: int}>
      * }
      */
-    public function handle(Household $household, CarbonInterface $month): array
+    public function handle(Household $household, Period $period): array
     {
         $rows = $household->transactions()
-            ->whereIn('type', [TransactionTypeEnum::EXPENSE->value, TransactionTypeEnum::INCOME->value]) // moves are not spending
-            ->whereBetween('occurred_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+            ->whereIn(
+                'type',
+                [TransactionTypeEnum::EXPENSE->value, TransactionTypeEnum::INCOME->value]
+            ) // moves are not spending
+            ->whereBetween('occurred_at', [$period->start->startOfDay(), $period->endOrNow()])
             ->with(['budgetMonth.budget', 'user', 'corrects' => fn (BelongsTo $q) => $q->withTrashed()])
             ->get();
 

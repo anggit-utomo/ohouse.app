@@ -7,6 +7,7 @@ use App\Models\Budget;
 use App\Models\BudgetMonth;
 use App\Models\Household;
 use App\Models\Transaction;
+use App\Support\Periods;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
@@ -67,25 +68,33 @@ class SaveTransaction
 
     public function openMonth(Budget $budget, CarbonInterface $when): BudgetMonth
     {
-        $period = $when->copy()->startOfMonth()->toDateString();
+        $period = Periods::containing($budget->household, $when)
+            ?? throw ValidationException::withMessages(['occurred_at' => 'There is no budget period for that date.']);
 
-        $month = BudgetMonth::where('budget_id', $budget->id)->whereDate('period_start', $period)->first();
+        $month = BudgetMonth::where('budget_id', $budget->id)
+            ->whereDate('period_start', $period->key())
+            ->first();
 
-        if (! $month && $when->isSameMonth(now())) {
+        // a budget created mid-period may not have a row yet
+        if (! $month && $period->isCurrent()) {
             $month = BudgetMonth::create([
                 'budget_id' => $budget->id,
-                'period_start' => $period,
+                'period_start' => $period->key(),
                 'allocated' => $budget->repeat_monthly ? $budget->default_amount : 0,
                 'carried_in' => 0,
             ]);
         }
 
         if (! $month) {
-            throw ValidationException::withMessages(['occurred_at' => 'There is no budget for that month.']);
+            throw ValidationException::withMessages([
+                'occurred_at' => 'There is no budget for that period.',
+            ]);
         }
 
         if ($month->isClosed()) {
-            throw ValidationException::withMessages(['occurred_at' => 'That month is closed. Add a correction dated today instead.']);
+            throw ValidationException::withMessages([
+                'occurred_at' => 'That period is closed. Add a correction dated today instead.',
+            ]);
         }
 
         return $month;
@@ -93,12 +102,20 @@ class SaveTransaction
 
     private function guardEditable(Transaction $transaction): void
     {
-        if (in_array($transaction->type, [TransactionTypeEnum::TRANSFER_IN, TransactionTypeEnum::TRANSFER_OUT], true)) {
-            throw ValidationException::withMessages(['type' => 'Moved money cannot be edited here.']);
+        if (in_array(
+            $transaction->type,
+            [TransactionTypeEnum::TRANSFER_IN, TransactionTypeEnum::TRANSFER_OUT],
+            true
+        )) {
+            throw ValidationException::withMessages([
+                'type' => 'Moved money cannot be edited here.',
+            ]);
         }
 
         if ($transaction->budgetMonth->isClosed()) {
-            throw ValidationException::withMessages(['occurred_at' => 'This month is closed. Add a correction instead.']);
+            throw ValidationException::withMessages([
+                'occurred_at' => 'This month is closed. Add a correction instead.',
+            ]);
         }
     }
 }

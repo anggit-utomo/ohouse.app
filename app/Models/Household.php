@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Periods;
 use Database\Factories\HouseholdFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,13 +13,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Collection;
 
-#[Fillable(['name', 'currency', 'month_start_day', 'owner_id'])]
+#[Fillable(['name', 'currency', 'month_start_day', 'owner_id', 'period_start'])]
 class Household extends Model
 {
     /** @use HasFactory<HouseholdFactory> */
     use HasFactory;
 
-    protected $casts = ['name' => 'encrypted'];
+    protected $casts = ['name' => 'encrypted', 'period_start' => 'date'];
 
     /** @return BelongsTo<User, $this> */
     public function owner(): BelongsTo
@@ -57,7 +58,7 @@ class Household extends Model
      */
     public function budgetBalances(): Collection
     {
-        $period = now()->startOfMonth()->toDateString();
+        $period = Periods::current($this)->key();
 
         return $this->budgets()->active()->orderBy('sort')
             ->with(['months' => fn ($q) => $q->whereDate('period_start', $period)->with('transactions')])

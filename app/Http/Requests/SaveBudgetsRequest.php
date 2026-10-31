@@ -24,12 +24,15 @@ class SaveBudgetsRequest extends FormRequest
         $household = $this->household();
 
         return [
-            'period' => ['required', 'date_format:Y-m'],
-            'repeat' => ['required', 'boolean'],
             'budgets' => ['present', 'array', 'max:30'],
-            'budgets.*.id' => ['nullable', 'integer', Rule::exists('budgets', 'id')->where('household_id', $household->id)],
+            'budgets.*.id' => [
+                'nullable',
+                'integer',
+                Rule::exists('budgets', 'id')->where('household_id', $household->id),
+            ],
             'budgets.*.name' => ['required', 'string', 'max:50'],
             'budgets.*.amount' => ['required', 'integer', 'min:0', 'max:100000000000'],
+            'budgets.*.repeat' => ['required', 'boolean'],
         ];
     }
 

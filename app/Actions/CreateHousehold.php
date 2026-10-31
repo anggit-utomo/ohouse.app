@@ -18,11 +18,12 @@ class CreateHousehold
                 'currency' => $currency,
                 'month_start_day' => $monthStartDay,
                 'owner_id' => $user->id,
+                'period_start' => now()->toDateString(),
             ]);
 
             $household->members()->attach($user->id, ['role' => HouseholdRoleEnum::OWNER->value]);
 
-            $period = now()->startOfMonth()->toDateString();
+            $period = now()->toDateString();
 
             foreach (array_values($budgetNames) as $i => $budgetName) {
                 $budget = $household->budgets()->create([

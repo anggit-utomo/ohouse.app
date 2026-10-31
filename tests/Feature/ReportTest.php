@@ -49,11 +49,11 @@ function repScenario(Household $h, User $me, User $wife): array
     return $m->all();
 }
 
-it('totals the month by budget and by person, biggest first', function () {
+it('totals the period by budget and by person, biggest first', function () {
     repScenario($this->household, $this->owner, $this->wife);
 
     $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
-        ->component('report/show')->where('month', '2026-10')->where('hasData', true)->where('spent', 3_870_000)->where('income', 0)
+        ->component('report/show')->where('month', '2026-10-01')->where('hasData', true)->where('spent', 3_870_000)->where('income', 0)
         ->where('budgets.0.name', 'Food')->where('budgets.0.spent', 1_640_000)->where('budgets.0.pct', 42)
         ->where('budgets.1.name', 'Transport')->where('budgets.1.pct', 18)
         ->where('budgets.2.name', 'Gasoline')->where('budgets.2.spent', 590_000)->where('budgets.2.pct', 15)
@@ -81,21 +81,24 @@ it('ignores deleted entries', function () {
     $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p->where('spent', 100_000));
 });
 
-it('compares with the month before', function () {
+it('compares with the period before', function () {
     repScenario($this->household, $this->owner, $this->wife);
-    repEntry(repMonth($this->household, 'Food', '2026-09-01'), $this->owner, 3_990_000);
+
+    $september = repMonth($this->household, 'Food', '2026-09-01');
+    repEntry($september, $this->owner, 3_990_000);
+    $september->update(['closed_at' => now()]);
 
     $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
         ->where('previous.label', 'September')->where('previous.spent', 3_990_000)->where('change', -120_000));
 });
 
-it('has no comparison when the month before is empty', function () {
+it('has no comparison when there is no period before', function () {
     repScenario($this->household, $this->owner, $this->wife);
 
     $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p->where('previous', null)->where('change', null));
 });
 
-it('subtracts a correction from what it corrects, even from a closed month', function () {
+it('subtracts a correction from what it corrects, even from a closed period', function () {
     $september = repMonth($this->household, 'Food', '2026-09-01');
     $wrongExpense = repEntry($september, $this->owner, 100_000);
     $september->update(['closed_at' => now()]);
@@ -115,15 +118,18 @@ it('subtracts an expense that corrects an income from income', function () {
     $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p->where('spent', 0)->where('income', 380_000));
 });
 
-it('opens a past month and clamps the rest to this month', function () {
-    repEntry(repMonth($this->household, 'Food', '2026-09-01'), $this->owner, 250_000);
+it('opens a past period and clamps the rest to the open one', function () {
+    $september = repMonth($this->household, 'Food', '2026-09-01');
+    repEntry($september, $this->owner, 250_000);
+    $september->update(['closed_at' => now()]);
+    repMonth($this->household, 'Gas'); // the open period, starting 2026-10-01
 
-    $this->actingAs($this->owner)->get("{$this->url}?month=2026-09")->assertInertia(fn (Assert $p) => $p->where('month', '2026-09')->where('spent', 250_000));
-    $this->actingAs($this->owner)->get("{$this->url}?month=2027-03")->assertInertia(fn (Assert $p) => $p->where('month', '2026-10'));
-    $this->actingAs($this->owner)->get("{$this->url}?month=garbage")->assertInertia(fn (Assert $p) => $p->where('month', '2026-10'));
+    $this->actingAs($this->owner)->get("{$this->url}?month=2026-09")->assertInertia(fn (Assert $p) => $p->where('month', '2026-09-01')->where('spent', 250_000));
+    $this->actingAs($this->owner)->get("{$this->url}?month=2027-03")->assertInertia(fn (Assert $p) => $p->where('month', '2026-10-01'));
+    $this->actingAs($this->owner)->get("{$this->url}?month=garbage")->assertInertia(fn (Assert $p) => $p->where('month', '2026-10-01'));
 });
 
-it('shows an empty month', function () {
+it('shows an empty period', function () {
     $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
         ->where('hasData', false)->where('spent', 0)->has('budgets', 0)->has('people', 0));
 });

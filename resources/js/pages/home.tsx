@@ -18,25 +18,21 @@ type Budget = {
 type Props = {
     household: { id: number };
     monthLabel: string;
+    periodRange: string;
     summary: { left: number; spent: number; available: number; pct: number };
-    banner: { label: string; overdue: boolean; daysLeft: number | null } | null;
+    banner: { days: number } | null;
     budgets: Budget[];
     members: { id: number; name: string }[];
     canEdit: boolean;
 };
 
-const endsText = (days: number) =>
-    days === 0
-        ? 'ends today'
-        : days === 1
-          ? 'ends tomorrow'
-          : `ends in ${days} days`;
 const leftText = (left: number) =>
     left < 0 ? `Over by ${rupiah(-left)}` : `${rupiah(left)} left`;
 
 export default function Home({
     household,
     monthLabel,
+    periodRange,
     summary,
     banner,
     budgets,
@@ -51,7 +47,12 @@ export default function Home({
 
             <div className="mx-auto flex w-full max-w-md flex-col gap-3 p-4 pb-28">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-xl font-semibold">{monthLabel}</h1>
+                    <div className="flex flex-col gap-0.5">
+                        <h1 className="text-xl font-semibold">{monthLabel}</h1>
+                        <p className="text-xs text-muted-foreground">
+                            {periodRange}
+                        </p>
+                    </div>
                     <div className="flex -space-x-2">
                         {members.slice(0, 3).map((m) => (
                             <span
@@ -92,18 +93,14 @@ export default function Home({
                     <div className="flex items-center justify-between gap-3 rounded-xl border p-3">
                         <div>
                             <p className="font-semibold">
-                                {banner.overdue
-                                    ? `${banner.label} is finished`
-                                    : `${banner.label} ${endsText(banner.daysLeft ?? 0)}`}
+                                This period has run {banner.days} days
                             </p>
                             <p className="text-xs text-muted-foreground">
-                                {banner.overdue
-                                    ? 'Close it to start the new month'
-                                    : 'Carry over or reset each budget'}
+                                Got paid? Start the new period.
                             </p>
                         </div>
                         <Button size="sm" variant="outline" asChild>
-                            <Link href={`${base}/close`}>Review</Link>
+                            <Link href={`${base}/close`}>Start new</Link>
                         </Button>
                     </div>
                 )}

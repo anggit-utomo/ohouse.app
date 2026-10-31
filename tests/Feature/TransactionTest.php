@@ -6,7 +6,6 @@ use App\Models\BudgetMonth;
 use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -70,18 +69,15 @@ it('stores amount and note encrypted', function () {
         ->and(DB::table('transactions')->value('note'))->not->toBe('Groceries');
 });
 
-it('creates the month row on the first transaction of a new month', function () {
+it('files entries in the open period even after the calendar month has changed', function () {
     $this->travelTo('2026-11-02 10:00:00');
-    $this->household->budgets()->first()->update(['repeat_monthly' => true]);
 
     $this->actingAs($this->owner)->post($this->base, payload($this->food, ['occurred_at' => '2026-11-02']))->assertRedirect();
 
-    $november = BudgetMonth::where('budget_id', $this->food->budget_id)->whereDate('period_start', '2026-11-01')->first();
-
-    expect($november)->not->toBeNull()->and($november->allocated)->toBe(2_000_000);
+    expect(Transaction::first()->budget_month_id)->toBe($this->food->id);
 });
 
-it('rejects a date in a closed month', function () {
+it('rejects a date in a closed period', function () {
     $september = octoberBudget($this->household, 'Gas', 700_000, '2026-09-01');
     $september->update(['closed_at' => now()]);
 
@@ -91,7 +87,7 @@ it('rejects a date in a closed month', function () {
     expect(Transaction::count())->toBe(0);
 });
 
-it('rejects a past month that has no budget', function () {
+it('rejects a date before any period exists', function () {
     $this->actingAs($this->owner)->post($this->base, payload($this->food, ['occurred_at' => '2026-08-10']))
         ->assertSessionHasErrors('occurred_at');
 });
@@ -108,11 +104,10 @@ it('rejects a budget from another household and a payer who is not a member', fu
     $this->actingAs($this->owner)->post($this->base, payload($this->food, ['user_id' => User::factory()->create()->id]))->assertSessionHasErrors('user_id');
 });
 
-it('adds a correction in the current month for a locked entry', function () {
+it('adds a correction in the open period for a locked entry', function () {
     $september = octoberBudget($this->household, 'Gas', 700_000, '2026-09-01');
     $old = entry($september, ['amount' => 100_000, 'occurred_at' => '2026-09-10 12:00:00']);
     $september->update(['closed_at' => now()]);
-    octoberBudget($this->household, 'Spare', 1);
     $gasOctober = BudgetMonth::factory()->for($september->budget)->create(['period_start' => '2026-10-01', 'allocated' => 700_000]);
 
     $this->actingAs($this->owner)->get("{$this->base}/create?corrects={$old->id}")
@@ -137,7 +132,7 @@ it('edits an open entry, including moving it to another budget', function () {
         ->and(leftIn($gas))->toBe(630_000);
 });
 
-it('refuses to edit or delete entries of a closed month', function () {
+it('refuses to edit or delete entries of a closed period', function () {
     $t = entry($this->food, ['amount' => 50_000]);
     $this->food->update(['closed_at' => now()]);
 
@@ -192,7 +187,7 @@ it('does not open another household\'s transaction through your own url', functi
     $this->actingAs($this->owner)->delete("{$this->base}/{$foreign->id}")->assertNotFound();
 });
 
-it('filters history by month, type, person and search text', function () {
+it('filters history by period, type, person and search text', function () {
     $wife = User::factory()->create();
     $this->household->members()->attach($wife->id, ['role' => 'editor']);
     $gas = octoberBudget($this->household, 'Gasoline', 700_000);
@@ -202,6 +197,7 @@ it('filters history by month, type, person and search text', function () {
     entry($this->food, ['note' => 'Bonus', 'type' => TransactionTypeEnum::INCOME, 'amount' => 500_000, 'user_id' => $wife->id]);
     entry($gas, ['note' => 'Petrol', 'amount' => 50_000, 'user_id' => $wife->id]);
     entry($sept, ['note' => 'Last month', 'occurred_at' => '2026-09-10 12:00:00']);
+    $sept->update(['closed_at' => now()]); // a past period only exists once it is closed
 
     $titles = fn (string $query) => $this->actingAs($this->owner)->get("{$this->base}{$query}")
         ->viewData('page')['props']['transactions'] ?? [];

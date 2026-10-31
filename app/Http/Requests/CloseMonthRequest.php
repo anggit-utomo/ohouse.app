@@ -4,6 +4,8 @@ namespace App\Http\Requests;
 
 use App\Actions\CloseMonth;
 use App\Http\Requests\Concerns\ResolvesHousehold;
+use App\Support\Periods;
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -20,8 +22,8 @@ class CloseMonthRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'period' => ['required', 'date_format:Y-m'],
-            'decisions' => ['required', 'array'],
+            'start' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'decisions' => ['present', 'array'],
             'decisions.*' => ['in:carry,reset'],
         ];
     }
@@ -34,26 +36,27 @@ class CloseMonthRequest extends FormRequest
                 return;
             }
 
-            $household = $this->household();
-            $close = app(CloseMonth::class);
-            $pending = $close->pending($household);
+            $household = $this->route('household');
+            $current = Periods::current($household);
 
-            if (! $pending || $pending->format('Y-m') !== $this->input('period')) {
-                $validator->errors()->add('period', 'There is nothing to close for that month.');
-
-                return;
-            }
-
-            if (! $close->canClose($pending)) {
-                $validator->errors()->add('period', $pending->format('F').' can be closed from 1 '.$pending->copy()->addMonthNoOverflow()->format('F').'.');
+            if (Carbon::parse($this->input('start'))->lte($current->start)) {
+                $validator->errors()
+                    ->add(
+                        'start',
+                        'The new period must start after '.$current->start->format('j M').'.'
+                    );
 
                 return;
             }
 
-            $missing = $close->open($household, $pending)->pluck('budget_id')->diff(array_keys($this->input('decisions')));
+            $missing = app(CloseMonth::class)->open($household)
+                ->filter(fn ($m) => $m->budget->repeat_monthly)
+                ->pluck('budget_id')
+                ->diff(array_keys($this->input('decisions')));
 
             if ($missing->isNotEmpty()) {
-                $validator->errors()->add('decisions', 'Choose carry over or reset for every budget.');
+                $validator->errors()
+                    ->add('decisions', 'Choose carry over or reset for every budget.');
             }
         }];
     }

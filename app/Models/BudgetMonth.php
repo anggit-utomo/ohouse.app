@@ -5,12 +5,21 @@ namespace App\Models;
 use App\Casts\EncryptedInteger;
 use Database\Factories\BudgetMonthFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['budget_id', 'period_start', 'allocated', 'carried_in', 'carry_decision', 'closed_at'])]
+#[Fillable([
+    'budget_id',
+    'period_start',
+    'period_end',
+    'allocated',
+    'carried_in',
+    'carry_decision',
+    'closed_at',
+])]
 class BudgetMonth extends Model
 {
     /** @use HasFactory<BudgetMonthFactory> */
@@ -18,6 +27,7 @@ class BudgetMonth extends Model
 
     protected $casts = [
         'period_start' => 'date',
+        'period_end' => 'date',
         'allocated' => EncryptedInteger::class,
         'carried_in' => EncryptedInteger::class,
         'closed_at' => 'datetime',
@@ -74,5 +84,11 @@ class BudgetMonth extends Model
             'pct' => $available > 0 ? min(100, (int) round($spent / $available * 100)) : ($spent > 0 ? 100 : 0),
             'over' => $left < 0,
         ];
+    }
+
+    /** @return Builder<BudgetMonth> for the given household, via the budget relation. */
+    public function scopeForHousehold(Builder $q, Household $household): Builder
+    {
+        return $q->whereHas('budget', fn ($b) => $b->where('household_id', $household->id));
     }
 }
