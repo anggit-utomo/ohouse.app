@@ -132,7 +132,7 @@ export default function TransactionForm({
                         value={form.data.budget_id}
                         onValueChange={(v) => form.setData('budget_id', v)}
                     >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                             <SelectValue placeholder="Choose a budget" />
                         </SelectTrigger>
                         <SelectContent>
@@ -198,7 +198,7 @@ export default function TransactionForm({
                             value={form.data.user_id}
                             onValueChange={(v) => form.setData('user_id', v)}
                         >
-                            <SelectTrigger>
+                            <SelectTrigger className="w-full">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
