@@ -2,6 +2,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
+import { PageHeader } from '@/components/page-header';
 
 type Props = {
     household: { id: number };
@@ -65,6 +66,11 @@ export default function ShowTransaction({
         <>
             <Head title="Transaction" />
 
+            <PageHeader
+                title="Transaction"
+                href={`${base}?month=${t.occurred_at.slice(0, 7)}`}
+            />
+
             <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-28">
                 <div className="py-4 text-center">
                     <Badge variant="outline">{t.budget}</Badge>
@@ -126,7 +132,7 @@ export default function ShowTransaction({
                 )}
             </div>
 
-            {canEdit && !isTransfer && (
+            {canEdit && (!isTransfer || !locked) && (
                 <div className="fixed inset-x-0 bottom-0 border-t bg-background p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
                     <div className="mx-auto flex max-w-md gap-2">
                         {isTransfer ? (

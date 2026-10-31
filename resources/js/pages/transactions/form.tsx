@@ -10,6 +10,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { rupiah } from '@/lib/money';
+import { PageHeader } from '@/components/page-header';
 
 type Defaults = {
     type: 'expense' | 'income';
@@ -62,6 +63,11 @@ export default function TransactionForm({
         <>
             <Head
                 title={mode === 'edit' ? 'Edit transaction' : 'New transaction'}
+            />
+
+            <PageHeader
+                title={mode === 'edit' ? 'Edit transaction' : 'New transaction'}
+                href={mode === 'edit' ? `${base}/${transactionId}` : base}
             />
 
             <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-28">

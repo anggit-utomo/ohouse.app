@@ -11,6 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { PageHeader } from '@/components/page-header';
 
 type Row = { id: number | null; name: string; amount: string };
 
@@ -76,6 +77,8 @@ export default function EditBudgets({
     return (
         <>
             <Head title="Set budgets" />
+
+            <PageHeader title="Set budgets" href={`/h/${household.id}`} />
 
             <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-28">
                 <div className="grid gap-2">
