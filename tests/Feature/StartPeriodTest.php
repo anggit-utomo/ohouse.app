@@ -188,6 +188,7 @@ it('saves the budgets of the current period with a repeat choice for each', func
     $trip = $this->household->budgets()->get()->firstWhere('name', 'Trip');
 
     expect($food->fresh()->allocated)->toBe(2_000_000)
+        ->and($food->fresh()->period_start->toDateString())->toBe('2026-10-27')
         ->and($trip->repeat_monthly)->toBeFalse()
         ->and(BudgetMonth::where('budget_id', $trip->id)->first()->period_start->toDateString())->toBe('2026-10-27')
         ->and($old->budget->fresh()->archived_at)->not->toBeNull();

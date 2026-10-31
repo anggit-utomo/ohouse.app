@@ -68,6 +68,12 @@ export default function EditBudgets({
                     {periodLabel}
                 </p>
 
+                {form.errors.period && (
+                    <p className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive">
+                        {form.errors.period}
+                    </p>
+                )}
+
                 {justStarted && (
                     <p className="rounded-lg border p-3 text-sm">
                         New period started. Budgets that repeat are filled in.

@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\ResolvesHousehold;
 use App\Models\BudgetMonth;
-use Carbon\Carbon;
+use App\Support\Periods;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -39,32 +39,22 @@ class SaveBudgetsRequest extends FormRequest
     /** @return array<int, \Closure(Validator): void> */
     public function after(): array
     {
-        return [function (Validator $validator) {
-            if ($validator->errors()->has('period')) {
+        return [function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
                 return;
             }
 
-            $period = $this->period();
+            $household = $this->household();
+            $period = Periods::current($household);
 
-            if ($period->lt(now()->startOfMonth())) {
-                $validator->errors()->add('period', 'Past months are locked. Pick this month or a later one.');
-
-                return;
-            }
-
-            $closed = BudgetMonth::whereHas('budget', fn ($q) => $q->where('household_id', $this->household()->id))
-                ->whereDate('period_start', $period->toDateString())
+            $closed = BudgetMonth::forHousehold($household)
+                ->whereDate('period_start', $period->key())
                 ->whereNotNull('closed_at')
                 ->exists();
 
             if ($closed) {
-                $validator->errors()->add('period', 'This month is already closed.');
+                $validator->errors()->add('period', 'This period is already closed.');
             }
         }];
-    }
-
-    public function period(): Carbon
-    {
-        return Carbon::parse($this->input('period').'-01');
     }
 }
