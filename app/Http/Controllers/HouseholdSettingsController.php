@@ -26,7 +26,7 @@ class HouseholdSettingsController extends Controller
 
         $household->update($request->validate(['name' => ['required', 'string', 'max:50']]));
 
-        return back();
+        return back()->with('success', 'Household name saved.');
     }
 
     /** Deletes the household and everything in it. */
@@ -42,6 +42,6 @@ class HouseholdSettingsController extends Controller
 
         $household->delete();
 
-        return redirect()->route('dashboard');
+        return redirect()->route('dashboard')->with('success', 'Household deleted.');
     }
 }

@@ -55,8 +55,9 @@ export default function TransactionForm({
             budget_id: Number(d.budget_id),
             user_id: Number(d.user_id),
         }));
-        if (mode === 'edit') form.put(`${base}/${transactionId}`);
-        else form.post(base);
+        if (mode === 'edit')
+            form.put(`${base}/${transactionId}`, { replace: true });
+        else form.post(base, { replace: true });
     };
 
     return (

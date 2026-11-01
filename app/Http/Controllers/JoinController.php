@@ -48,6 +48,7 @@ class JoinController extends Controller
         $household = $join->handle($request->user(), $data['code']);
         session()->forget('join_code');
 
-        return redirect()->route('households.home', $household);
+        return redirect()->route('households.home', $household)
+            ->with('success', 'You joined the household.');
     }
 }

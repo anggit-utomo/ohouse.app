@@ -160,7 +160,9 @@ export default function StartPeriod({
                     <Button
                         className="h-11 w-full"
                         disabled={!canStart || form.processing}
-                        onClick={() => form.post(`${base}/close`)}
+                        onClick={() =>
+                            form.post(`${base}/close`, { replace: true })
+                        }
                     >
                         {canStart
                             ? 'Start new period'

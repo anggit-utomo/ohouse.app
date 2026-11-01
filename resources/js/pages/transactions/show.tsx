@@ -44,7 +44,11 @@ export default function ShowTransaction({
 
     const remove = () => {
         if (confirm('Delete this transaction? The budget balance will update.'))
-            router.delete(`${base}/${t.id}`);
+            router.delete(`${base}/${t.id}`, {
+                preserveScroll: true,
+                replace: true,
+                preserveState: true,
+            });
     };
 
     const Row = ({

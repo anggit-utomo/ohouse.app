@@ -36,6 +36,7 @@ class SetupController extends Controller
         $household = $create->handle($request->user(), $data['name'], 'IDR', 1, $data['budgets'] ?? []);
 
         // amounts are still 0, so go straight to Set budgets
-        return redirect()->route('budgets.edit', $household);
+        return redirect()->route('budgets.edit', $household)
+            ->with('success', 'Household created. Set your budget amounts.');
     }
 }

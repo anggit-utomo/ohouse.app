@@ -46,7 +46,8 @@ class CloseMonthController extends Controller
         $close->handle($household, Carbon::parse($data['start']), $data['decisions']);
 
         // straight to Set budgets: repeating budgets are filled in, add the one-off ones
-        return redirect()->route('budgets.edit', [$household, 'new' => 1]);
+        return redirect()->route('budgets.edit', [$household, 'new' => 1])
+            ->with('success', 'New period started.');
     }
 
     /** Defaults to today and never goes into the future. */

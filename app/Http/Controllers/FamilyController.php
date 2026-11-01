@@ -46,7 +46,7 @@ class FamilyController extends Controller
 
         HouseholdInvite::generate($household, $request->user());
 
-        return back();
+        return back()->with('success', 'New pair code created.');
     }
 
     public function update(Request $request, Household $household, int $member): RedirectResponse
@@ -62,7 +62,7 @@ class FamilyController extends Controller
 
         $household->members()->updateExistingPivot($target->id, ['role' => $data['role']]);
 
-        return back();
+        return back()->with('success', 'New pair code created.');
     }
 
     /** The owner removes someone, or anyone but the owner leaves on their own. */
@@ -82,6 +82,8 @@ class FamilyController extends Controller
         $household->members()->detach($target->id);
         User::whereKey($target->id)->where('current_household_id', $household->id)->update(['current_household_id' => null]);
 
-        return $leaving ? redirect()->route('dashboard') : back();
+        return $leaving
+            ? redirect()->route('dashboard')->with('success', 'You left the household.')
+            : back()->with('success', 'Member removed.');
     }
 }

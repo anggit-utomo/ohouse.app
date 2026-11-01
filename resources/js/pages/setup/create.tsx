@@ -108,7 +108,7 @@ export default function Setup({ suggestions }: Props) {
                         disabled={
                             form.processing || form.data.name.trim() === ''
                         }
-                        onClick={() => form.post('/setup')}
+                        onClick={() => form.post('/setup', { replace: true })}
                     >
                         Continue to set amounts
                     </Button>

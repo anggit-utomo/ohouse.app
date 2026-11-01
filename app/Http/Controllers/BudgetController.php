@@ -43,7 +43,8 @@ class BudgetController extends Controller
     ): RedirectResponse {
         $save->handle($household, array_values($request->validated('budgets')));
 
-        return redirect()->route('budgets.edit', $household);
+        return redirect()->route('budgets.edit', $household)
+            ->with('success', 'Budgets saved.');
     }
 
     public function show(Request $request, Household $household, Budget $budget): Response

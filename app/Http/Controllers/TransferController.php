@@ -32,7 +32,8 @@ class TransferController extends Controller
 
         $move->handle($household, $request->user(), $d['from_budget_id'], $d['to_budget_id'], $d['amount'], $d['note'] ?? null);
 
-        return redirect()->route('households.home', $household);
+        return redirect()->route('households.home', $household)
+            ->with('success', 'Money moved.');
     }
 
     public function destroy(Household $household, string $transfer, MoveMoney $move): RedirectResponse
@@ -44,6 +45,7 @@ class TransferController extends Controller
 
         $move->undo($rows);
 
-        return redirect()->route('transactions.index', $household);
+        return redirect()->route('transactions.index', $household)
+            ->with('success', 'Move undone.');
     }
 }

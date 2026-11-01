@@ -118,7 +118,11 @@ class TransactionController extends Controller
         return redirect()->route('transactions.index', [
             $household,
             'month' => $transaction->budgetMonth->period_start->toDateString(),
-        ]);
+        ])
+            ->with(
+                'success',
+                $transaction->type === TransactionTypeEnum::INCOME ? 'Income saved.' : 'Expense saved.'
+            );
     }
 
     public function show(Household $household, Transaction $transaction): Response
@@ -194,7 +198,8 @@ class TransactionController extends Controller
     ): RedirectResponse {
         $save->update($transaction, $request->validated());
 
-        return redirect()->route('transactions.show', [$household, $transaction]);
+        return redirect()->route('transactions.show', [$household, $transaction])
+            ->with('success', 'Transaction updated.');
     }
 
     public function destroy(Household $household, Transaction $transaction, SaveTransaction $save): RedirectResponse
@@ -204,7 +209,8 @@ class TransactionController extends Controller
         $month = $transaction->budgetMonth->period_start->toDateString();
         $save->delete($transaction);
 
-        return redirect()->route('transactions.index', [$household, 'month' => $month]);
+        return redirect()->route('transactions.index', [$household, 'month' => $month])
+            ->with('success', 'Transaction deleted.');
     }
 
     /** @param array<string, mixed> $defaults */

@@ -68,7 +68,7 @@ export default function Join({ code, preview, invalid }: Props) {
                         disabled={
                             form.processing || form.data.code.trim() === ''
                         }
-                        onClick={() => form.post('/join')}
+                        onClick={() => form.post('/join', { replace: true })}
                     >
                         Join budget
                     </Button>
