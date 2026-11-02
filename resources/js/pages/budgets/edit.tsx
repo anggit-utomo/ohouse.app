@@ -63,6 +63,7 @@ export default function EditBudgets({
             <Head title="Set budgets" />
 
             <PageHeader title="Set budgets" href={`/h/${household.id}`} />
+
             <p className="-mt-2 text-sm text-muted-foreground">{periodLabel}</p>
 
             {form.errors.period && (

@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
+import HeadTitle from '@/components/head-title';
 
 type Props = {
     household: { id: number };
@@ -41,23 +42,28 @@ export default function ShowBudget({
         <>
             <Head title={budget.name} />
 
-            <div className="flex items-center justify-between">
-                <Link
-                    href={base}
-                    className="flex items-center gap-1 text-lg font-semibold"
-                >
-                    <ChevronLeft className="size-5" />
-                    {budget.name}
-                </Link>
-                {canEdit && !closed && (
+            <HeadTitle
+                left={
                     <Link
-                        href={`${base}/budgets`}
-                        className="text-sm font-medium"
+                        href={base}
+                        className="flex items-center gap-1 text-lg font-semibold"
                     >
-                        Edit budget
+                        <ChevronLeft className="size-5" />
+                        {budget.name}
                     </Link>
-                )}
-            </div>
+                }
+                right={
+                    canEdit &&
+                    !closed && (
+                        <Link
+                            href={`${base}/budgets`}
+                            className="text-sm font-medium"
+                        >
+                            Edit budget
+                        </Link>
+                    )
+                }
+            />
 
             <div className="rounded-xl border p-4">
                 <p className="text-muted-foreground">

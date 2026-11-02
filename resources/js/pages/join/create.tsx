@@ -24,7 +24,7 @@ export default function Join({ code, preview, invalid, household }: Props) {
             <PageHeader
                 title={
                     user && user !== undefined && household?.id !== null
-                        ? 'Family'
+                        ? 'Join'
                         : 'Setup'
                 }
                 href={base}

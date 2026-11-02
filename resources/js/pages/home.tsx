@@ -4,6 +4,7 @@ import { BottomNav } from '@/components/bottom-nav';
 import { BudgetBar } from '@/components/budget-bar';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
+import HeadTitle from '@/components/head-title';
 
 type Budget = {
     id: number;
@@ -45,25 +46,25 @@ export default function Home({
         <>
             <Head title="Home" />
 
-            <div className="flex items-center justify-between">
-                <div className="flex flex-col gap-0.5">
-                    <h1 className="text-xl font-semibold">{monthLabel}</h1>
-                    <p className="text-xs text-muted-foreground">
-                        {periodRange}
-                    </p>
-                </div>
-                <div className="flex -space-x-2">
-                    {members.slice(0, 3).map((m) => (
-                        <span
-                            key={m.id}
-                            title={m.name}
-                            className="flex size-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-semibold"
-                        >
-                            {m.name.charAt(0).toUpperCase()}
-                        </span>
-                    ))}
-                </div>
-            </div>
+            <HeadTitle
+                left={
+                    <>
+                        <h1 className="text-xl font-semibold">{monthLabel}</h1>
+                        <p className="text-xs text-muted-foreground">
+                            {periodRange}
+                        </p>
+                    </>
+                }
+                right={members.slice(0, 3).map((m) => (
+                    <span
+                        key={m.id}
+                        title={m.name}
+                        className="flex size-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-semibold"
+                    >
+                        {m.name.charAt(0).toUpperCase()}
+                    </span>
+                ))}
+            />
 
             <div className="rounded-xl border p-4">
                 <div className="flex items-center justify-between text-muted-foreground">

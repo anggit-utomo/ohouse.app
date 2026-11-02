@@ -1,5 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { ChevronLeft } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
 import { BudgetBar } from '@/components/budget-bar';
 import {
     Select,
@@ -9,6 +8,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { rupiah } from '@/lib/money';
+import { PageHeader } from '@/components/page-header';
 
 type Item = { id: number; name: string; spent: number; pct: number };
 
@@ -57,13 +57,7 @@ export default function Report({
         <>
             <Head title="Report" />
 
-            <Link
-                href={base}
-                className="flex items-center gap-1 text-lg font-semibold"
-            >
-                <ChevronLeft className="size-5" />
-                Report
-            </Link>
+            <PageHeader title="Report" href={base} />
 
             <Select
                 value={month}

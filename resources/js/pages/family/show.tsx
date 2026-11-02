@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import HeadTitle from '@/components/head-title';
 
 type Member = {
     id: number;
@@ -103,12 +104,14 @@ export default function Family({
         <>
             <Head title="Family" />
 
-            <div className="flex items-center justify-between">
-                <h1 className="text-xl font-semibold">Family</h1>
-                <Link href={`${base}/settings`} aria-label="Settings">
-                    <Settings className="size-5" />
-                </Link>
-            </div>
+            <HeadTitle
+                left={<h1 className="text-xl font-semibold">Family</h1>}
+                right={
+                    <Link href={`${base}/settings`} aria-label="Settings">
+                        <Settings className="size-5" />
+                    </Link>
+                }
+            />
 
             {canManage && (
                 <div className="rounded-xl border p-4 text-center">

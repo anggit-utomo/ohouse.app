@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { rupiah } from '@/lib/money';
 import { BottomNav } from '@/components/bottom-nav';
+import HeadTitle from '@/components/head-title';
 
 type Tx = {
     id: number;
@@ -95,12 +96,14 @@ export default function History({
         <>
             <Head title="History" />
 
-            <div className="flex items-center justify-between gap-3">
-                <h1 className="text-xl font-semibold">History</h1>
-                <Button size="sm" asChild>
-                    <Link href={`${url}/create`}>+ Add</Link>
-                </Button>
-            </div>
+            <HeadTitle
+                left={<h1 className="text-xl font-semibold">History</h1>}
+                right={
+                    <Button size="sm" asChild>
+                        <Link href={`${url}/create`}>+ Add</Link>
+                    </Button>
+                }
+            />
 
             <Select value={month} onValueChange={(m) => go({ month: m })}>
                 <SelectTrigger>
