@@ -98,7 +98,7 @@ export default function Settings({
             <Head title="Settings" />
 
             <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-10">
-                <PageHeader title="Settings" href={`${base}/family`} />
+                <PageHeader title="Family" href={`${base}/family`} />
 
                 <Section title="Your profile">
                     <div className="flex items-center gap-3">
@@ -228,7 +228,7 @@ export default function Settings({
                     </div>
                 </Section>
 
-                {/* <Section
+                <Section
                     title="Security"
                     hint="Password, two-factor authentication and passkeys."
                 >
@@ -237,7 +237,7 @@ export default function Settings({
                             Open security settings
                         </Link>
                     </Button>
-                </Section> */}
+                </Section>
 
                 <Button
                     variant="outline"

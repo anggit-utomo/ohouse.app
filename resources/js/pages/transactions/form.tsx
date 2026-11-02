@@ -66,12 +66,14 @@ export default function TransactionForm({
                 title={mode === 'edit' ? 'Edit transaction' : 'New transaction'}
             />
 
-            <PageHeader
-                title={mode === 'edit' ? 'Edit transaction' : 'New transaction'}
-                href={mode === 'edit' ? `${base}/${transactionId}` : base}
-            />
-
             <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-28">
+                <PageHeader
+                    title={
+                        mode === 'edit' ? 'Edit transaction' : 'New transaction'
+                    }
+                    href={mode === 'edit' ? `${base}/${transactionId}` : base}
+                />
+
                 <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
                     {(['expense', 'income'] as const).map((t) => (
                         <Button
