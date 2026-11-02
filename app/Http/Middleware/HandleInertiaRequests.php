@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Household;
+use App\Support\Currencies;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -47,6 +49,11 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'currency' => function () use ($request) {
+                $household = $request->route('household');
+
+                return Currencies::for($household instanceof Household ? $household->currency : null);
+            },
         ];
     }
 }

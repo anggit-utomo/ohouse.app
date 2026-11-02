@@ -6,6 +6,7 @@ use App\Models\BudgetMonth;
 use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\Currencies;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -16,8 +17,14 @@ class MoveMoney
     public function __construct(private SaveTransaction $transactions) {}
 
     /** Moves money between two budgets this month. Returns the transfer id shared by both entries. */
-    public function handle(Household $household, User $by, int $fromId, int $toId, int $amount, ?string $note = null): string
-    {
+    public function handle(
+        Household $household,
+        User $by,
+        int $fromId,
+        int $toId,
+        int $amount,
+        ?string $note = null
+    ): string {
         if ($fromId === $toId) {
             throw ValidationException::withMessages(['to_budget_id' => 'Pick two different budgets.']);
         }
@@ -37,7 +44,11 @@ class MoveMoney
 
             if ($amount > $left) {
                 throw ValidationException::withMessages([
-                    'amount' => sprintf('%s only has Rp %s left.', $budgets[$fromId]->name, number_format(max($left, 0), 0, ',', '.')),
+                    'amount' => sprintf(
+                        '%s only has %s left.',
+                        $budgets[$fromId]->name,
+                        Currencies::format(max($left, 0), $household->currency)
+                    ),
                 ]);
             }
 
@@ -63,7 +74,9 @@ class MoveMoney
         $rows->load('budgetMonth');
 
         if ($rows->contains(fn ($t) => $t->budgetMonth->isClosed())) {
-            throw ValidationException::withMessages(['transfer' => 'That month is closed, so the move is locked.']);
+            throw ValidationException::withMessages([
+                'transfer' => 'That month is closed, so the move is locked.',
+            ]);
         }
 
         DB::transaction(fn () => $rows->each->delete());

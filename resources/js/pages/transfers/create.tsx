@@ -10,7 +10,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { rupiah } from '@/lib/money';
+import { currency, plain, rupiah } from '@/lib/money';
 
 type Budget = { id: number; name: string; left: number };
 type Form = {
@@ -111,7 +111,7 @@ export default function MoveMoney({ household, budgets, defaults }: Props) {
                     </Label>
                     <div className="flex items-baseline justify-center gap-2">
                         <span className="text-xl text-muted-foreground">
-                            Rp
+                            {currency().symbol}
                         </span>
                         <input
                             id="amount"
@@ -120,9 +120,7 @@ export default function MoveMoney({ household, budgets, defaults }: Props) {
                             className="w-48 bg-transparent text-center text-4xl font-bold outline-none"
                             value={
                                 form.data.amount
-                                    ? new Intl.NumberFormat('id-ID').format(
-                                        Number(form.data.amount),
-                                    )
+                                    ? plain(Number(form.data.amount))
                                     : ''
                             }
                             onChange={(e) =>

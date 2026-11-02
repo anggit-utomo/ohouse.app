@@ -4,7 +4,7 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { rupiah } from '@/lib/money';
+import { currency, plain, rupiah } from '@/lib/money';
 
 type Row = { id: number | null; name: string; amount: string; repeat: boolean };
 
@@ -105,7 +105,7 @@ export default function EditBudgets({
                                 />
                                 <div className="relative flex-1">
                                     <span className="absolute top-2 left-3 text-sm text-muted-foreground">
-                                        Rp
+                                        {currency().symbol}
                                     </span>
                                     <Input
                                         aria-label="Amount"
@@ -113,9 +113,7 @@ export default function EditBudgets({
                                         className="pl-10 text-right font-semibold"
                                         value={
                                             row.amount
-                                                ? new Intl.NumberFormat(
-                                                      'id-ID',
-                                                  ).format(Number(row.amount))
+                                                ? plain(Number(row.amount))
                                                 : ''
                                         }
                                         disabled={!canEdit}

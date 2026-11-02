@@ -4,12 +4,15 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
-import SettingsLayout from '@/layouts/settings/layout';
 import { toast } from 'sonner';
-
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+import { setCurrency, type Currency } from './lib/money';
+import { createRoot } from 'react-dom/client';
 
 type Flash = { success?: string | null; error?: string | null };
+
+type WithCurrency = { currency?: Currency };
+
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 // a message the server flashed after an action
 router.on('success', (event) => {
@@ -48,7 +51,21 @@ router.on('exception', () =>
     toast.error('Could not reach the server. Check your connection.'),
 );
 
+router.on('navigate', (event) =>
+    setCurrency((event.detail.page.props as WithCurrency).currency),
+);
+
 void createInertiaApp({
+    setup({ el, App, props }) {
+        setCurrency((props.initialPage.props as WithCurrency).currency);
+
+        createRoot(el).render(
+            <TooltipProvider delayDuration={0}>
+                <App {...props} />
+                <Toaster position="top-center" />
+            </TooltipProvider>,
+        );
+    },
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
@@ -57,20 +74,12 @@ void createInertiaApp({
             case name.startsWith('auth/'):
                 return AuthLayout;
             case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
+                return [AppLayout];
             default:
                 return AppLayout;
         }
     },
     strictMode: true,
-    withApp(app) {
-        return (
-            <TooltipProvider delayDuration={0}>
-                {app}
-                <Toaster position="top-center" />
-            </TooltipProvider>
-        );
-    },
     progress: {
         color: '#4B5563',
     },

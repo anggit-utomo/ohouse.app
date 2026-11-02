@@ -9,7 +9,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { rupiah } from '@/lib/money';
+import { currency, plain, rupiah } from '@/lib/money';
 import { PageHeader } from '@/components/page-header';
 
 type Defaults = {
@@ -96,7 +96,9 @@ export default function TransactionForm({
                     </Label>
                     <div className="flex items-baseline justify-center gap-2">
                         <span className="text-xl text-muted-foreground">
-                            {isIncome ? '+Rp' : 'Rp'}
+                            {isIncome
+                                ? `+${currency().symbol}`
+                                : currency().symbol}
                         </span>
                         <input
                             id="amount"
@@ -105,9 +107,7 @@ export default function TransactionForm({
                             className={`w-48 bg-transparent text-center text-4xl font-bold outline-none ${isIncome ? 'text-green-700' : ''}`}
                             value={
                                 form.data.amount
-                                    ? new Intl.NumberFormat('id-ID').format(
-                                          Number(form.data.amount),
-                                      )
+                                    ? plain(Number(form.data.amount))
                                     : ''
                             }
                             onChange={(e) =>
