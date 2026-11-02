@@ -9,6 +9,7 @@ import AlertBanner from '@/components/organisms/home/alert-banner';
 import BudgetEmpty from '@/components/organisms/home/budget-empty';
 import BudgetList from '@/components/organisms/home/budget-list';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
+import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
 import { Budget, Defaults } from '@/types';
 
 type Props = {
@@ -37,7 +38,9 @@ export default function Home({
     today,
 }: Props) {
     const base = `/h/${household.id}`;
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isTransactionDrawerOpen, setIsTransactionDrawerOpen] =
+        useState(false);
+    const [isMoveDrawerOpen, setIsMoveDrawerOpen] = useState(false);
 
     return (
         <>
@@ -65,7 +68,10 @@ export default function Home({
 
             <BalanceComponent base={base} summary={summary} />
 
-            <Button type="button" onClick={() => setIsDrawerOpen(true)}>
+            <Button
+                type="button"
+                onClick={() => setIsTransactionDrawerOpen(true)}
+            >
                 <PlusIcon className="mr-1 size-4" /> Transaction
             </Button>
 
@@ -77,14 +83,15 @@ export default function Home({
                 right={
                     canEdit && (
                         <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" asChild>
-                                <Link
-                                    href={`${base}/transfers/create`}
-                                    className="text-xs"
-                                >
-                                    <ArrowRightLeftIcon className="size-4" />{' '}
-                                    Move money
-                                </Link>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                type="button"
+                                className="text-xs"
+                                onClick={() => setIsMoveDrawerOpen(true)}
+                            >
+                                <ArrowRightLeftIcon className="size-4" /> Move
+                                money
                             </Button>
                             <Button size="sm" variant="outline" asChild>
                                 <Link
@@ -108,13 +115,20 @@ export default function Home({
             <BottomNav householdId={household.id} active="home" />
 
             <TransactionDrawer
-                open={isDrawerOpen}
-                onOpenChange={setIsDrawerOpen}
+                open={isTransactionDrawerOpen}
+                onOpenChange={setIsTransactionDrawerOpen}
                 householdId={household.id}
                 defaults={defaults}
                 budgets={budgets}
                 members={members}
                 today={today}
+            />
+
+            <MoveMoneyDrawer
+                open={isMoveDrawerOpen}
+                onOpenChange={setIsMoveDrawerOpen}
+                householdId={household.id}
+                budgets={budgets}
             />
         </>
     );

@@ -84,7 +84,6 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
             ->prefix('transfers')
             ->name('transfers.')
             ->group(function () {
-                Route::get('/create', 'create')->name('create');
                 Route::post('/', 'store')->name('store');
                 Route::delete('/{transfer}', 'destroy')->whereUuid('transfer')->name('destroy');
             });

@@ -6,26 +6,9 @@ use App\Actions\MoveMoney;
 use App\Http\Requests\MoveMoneyRequest;
 use App\Models\Household;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class TransferController extends Controller
 {
-    public function create(Request $request, Household $household): Response
-    {
-        $this->authorize('edit', $household);
-
-        $budgets = $household->budgetBalances();
-        $valid = fn (string $key) => $budgets->contains('id', $request->integer($key)) ? (string) $request->integer($key) : '';
-
-        return Inertia::render('transfers/create', [
-            'household' => ['id' => $household->id],
-            'budgets' => $budgets,
-            'defaults' => ['from_budget_id' => $valid('from'), 'to_budget_id' => $valid('to'), 'amount' => '', 'note' => ''],
-        ]);
-    }
-
     public function store(MoveMoneyRequest $request, Household $household, MoveMoney $move): RedirectResponse
     {
         $d = $request->validated();
