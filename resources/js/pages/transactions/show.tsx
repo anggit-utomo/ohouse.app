@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
 import { PageHeader } from '@/components/page-header';
+import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
+import { Defaults } from '@/types';
 
 type Props = {
     household: { id: number };
@@ -21,6 +24,10 @@ type Props = {
     canEdit: boolean;
     moved: { from: string; to: string } | null;
     transferId: string | null;
+    budgets: { id: number; name: string; left: number }[];
+    members: { id: number; name: string }[];
+    defaults: Defaults;
+    today: string;
 };
 
 export default function ShowTransaction({
@@ -31,9 +38,15 @@ export default function ShowTransaction({
     canEdit,
     moved,
     transferId,
+    budgets,
+    members,
+    defaults,
+    today,
 }: Props) {
     const base = `/h/${household.id}/transactions`;
     const plus = t.type === 'income';
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+
     const removeMove = () => {
         if (confirm('Undo this move? Both budgets go back to how they were.'))
             router.delete(`/h/${household.id}/transfers/${transferId}`);
@@ -78,7 +91,9 @@ export default function ShowTransaction({
             <div className="py-4 text-center">
                 <Badge variant="outline">{t.budget}</Badge>
                 <p
-                    className={`mt-2 text-4xl font-bold ${plus ? 'text-green-700' : ''}`}
+                    className={`mt-2 text-4xl font-bold ${
+                        plus ? 'text-green-700' : ''
+                    }`}
                 >
                     {moved ? '' : plus ? '+' : '-'}
                     {rupiah(t.amount)}
@@ -112,16 +127,18 @@ export default function ShowTransaction({
                 />
             </div>
 
-            {problem && <p className="text-sm text-destructive">{problem}</p>}
+            {problem && (
+                <p className="mt-2 text-sm text-destructive">{problem}</p>
+            )}
 
             {locked && (
-                <p className="text-sm text-muted-foreground">
+                <p className="mt-2 text-sm text-muted-foreground">
                     This month is closed, so the entry is locked. Add a
                     correction in the current month instead.
                 </p>
             )}
             {isTransfer && !locked && (
-                <p className="text-sm text-muted-foreground">
+                <p className="mt-2 text-sm text-muted-foreground">
                     A move can't be edited. Undo it and move the right amount
                     instead.
                 </p>
@@ -149,11 +166,9 @@ export default function ShowTransaction({
                                 <Button
                                     variant="outline"
                                     className="h-11 flex-1"
-                                    asChild
+                                    onClick={() => setIsEditDrawerOpen(true)}
                                 >
-                                    <Link href={`${base}/${t.id}/edit`}>
-                                        Edit
-                                    </Link>
+                                    Edit
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -167,6 +182,19 @@ export default function ShowTransaction({
                     </div>
                 </div>
             )}
+
+            {/* Reusable Edit Drawer */}
+            <TransactionDrawer
+                open={isEditDrawerOpen}
+                onOpenChange={setIsEditDrawerOpen}
+                householdId={household.id}
+                mode="edit"
+                transactionId={t.id}
+                defaults={defaults}
+                budgets={budgets}
+                members={members}
+                today={today}
+            />
         </>
     );
 }

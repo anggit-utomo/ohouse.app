@@ -76,7 +76,7 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
         // budget end
 
         // transaction
-        Route::resource('transactions', TransactionController::class);
+        Route::resource('transactions', TransactionController::class)->except(['create', 'edit']);
         // transaction end
 
         // transfer

@@ -13,6 +13,8 @@ import {
 import { rupiah } from '@/lib/money';
 import { BottomNav } from '@/components/bottom-nav';
 import HeadTitle from '@/components/head-title';
+import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
+import { Defaults } from '@/types';
 
 type Tx = {
     id: number;
@@ -35,6 +37,9 @@ type Props = {
     totals: { expense: number; income: number };
     transactions: Tx[];
     canEdit: boolean;
+    budgets: { id: number; name: string; left: number }[];
+    defaults: Defaults;
+    today: string;
 };
 
 const dayLabel = (iso: string) => {
@@ -57,9 +62,13 @@ export default function History({
     totals,
     transactions,
     canEdit,
+    budgets,
+    defaults,
+    today,
 }: Props) {
     const url = `/h/${household.id}/transactions`;
     const [q, setQ] = useState(filters.q);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     const go = (patch: Record<string, string | number | null>) =>
         router.get(
@@ -99,9 +108,15 @@ export default function History({
             <HeadTitle
                 left={<h1 className="text-xl font-semibold">History</h1>}
                 right={
-                    <Button size="sm" asChild>
-                        <Link href={`${url}/create`}>+ Add</Link>
-                    </Button>
+                    canEdit && (
+                        <Button
+                            size="sm"
+                            type="button"
+                            onClick={() => setIsDrawerOpen(true)}
+                        >
+                            + Add
+                        </Button>
+                    )
                 }
             />
 
@@ -210,6 +225,18 @@ export default function History({
                 householdId={household.id}
                 active="history"
                 canAdd={canEdit}
+            />
+
+            {/* Reusable Create Transaction Drawer */}
+            <TransactionDrawer
+                open={isDrawerOpen}
+                onOpenChange={setIsDrawerOpen}
+                householdId={household.id}
+                mode="create"
+                defaults={defaults}
+                budgets={budgets}
+                members={members}
+                today={today}
             />
         </>
     );

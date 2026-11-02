@@ -30,7 +30,6 @@ class TransactionController extends Controller
             ->when($person, fn ($x) => $x->where('user_id', $person))
             ->orderByDesc('occurred_at')->orderByDesc('id')
             ->get()
-            // notes and budget names are encrypted, so searching happens here and not in SQL
             ->when($q !== '', fn ($c) => $c->filter(
                 fn (Transaction $t) => Str::contains(($t->note ?? '').' '.$t->budgetMonth->budget->name, $q, ignoreCase: true)
             ))
@@ -47,8 +46,29 @@ class TransactionController extends Controller
             return "Moved {$from} → {$to}";
         };
 
-        // both sides of a move are one row
         $rows = $rows->unique(fn (Transaction $t) => $t->transfer_id ?? "t{$t->id}")->values();
+
+        // Data required for TransactionDrawer
+        $startPeriod = now()->startOfMonth()->toDateString();
+        $budgets = $household->budgets()->active()->orderBy('sort')
+            ->with(['months' => fn ($q) => $q->whereDate('period_start', $startPeriod)->with('transactions')])
+            ->get()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'name' => $b->name,
+                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? $b->default_amount : 0),
+            ])->values();
+
+        $preselected = $household->budgets()->active()->whereKey($request->integer('budget'))->value('id');
+        $defaults = [
+            'type' => 'expense',
+            'budget_id' => $preselected ? (string) $preselected : '',
+            'amount' => '',
+            'note' => '',
+            'occurred_at' => now()->toDateString(),
+            'user_id' => (string) $request->user()->id,
+            'corrects_transaction_id' => null,
+        ];
 
         return Inertia::render('transactions/index', [
             'household' => ['id' => $household->id],
@@ -76,41 +96,10 @@ class TransactionController extends Controller
                 'occurred_at' => $t->occurred_at->toIso8601String(),
             ]),
             'canEdit' => $request->user()->can('edit', $household),
+            'budgets' => $budgets,
+            'defaults' => $defaults,
+            'today' => now()->toDateString(),
         ]);
-    }
-
-    public function create(Request $request, Household $household): Response
-    {
-        $this->authorize('edit', $household);
-
-        $preselected = $household->budgets()->active()->whereKey($request->integer('budget'))->value('id');
-
-        $defaults = [
-            'type' => 'expense',
-            'budget_id' => $preselected ? (string) $preselected : '',
-            'amount' => '',
-            'note' => '',
-            'occurred_at' => now()->toDateString(),
-            'user_id' => (string) $request->user()->id,
-            'corrects_transaction_id' => null,
-        ];
-
-        // "Add correction" from a locked transaction: prefill the opposite entry.
-        if ($original = $household->transactions()->with('budgetMonth')->find($request->integer('corrects'))) {
-            $budgetId = $original->budgetMonth->budget_id;
-            $defaults = [
-                ...$defaults,
-                'type' => $original->type === TransactionTypeEnum::EXPENSE ? 'income' : 'expense',
-                'budget_id' => $household->budgets()->active()->whereKey($budgetId)->exists()
-                    ? (string) $budgetId
-                    : '',
-                'amount' => (string) $original->amount,
-                'note' => 'Correction',
-                'corrects_transaction_id' => $original->id,
-            ];
-        }
-
-        return $this->form($household, 'create', $defaults);
     }
 
     public function store(TransactionRequest $request, Household $household, SaveTransaction $save): RedirectResponse
@@ -149,6 +138,26 @@ class TransactionController extends Controller
             ];
         }
 
+        $period = now()->startOfMonth()->toDateString();
+        $budgets = $household->budgets()->active()->orderBy('sort')
+            ->with(['months' => fn ($q) => $q->whereDate('period_start', $period)->with('transactions')])
+            ->get()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'name' => $b->name,
+                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? $b->default_amount : 0),
+            ])->values();
+
+        $defaults = [
+            'type' => $transaction->type->value,
+            'budget_id' => (string) $transaction->budgetMonth->budget_id,
+            'amount' => (string) $transaction->amount,
+            'note' => $transaction->note ?? '',
+            'occurred_at' => $transaction->occurred_at->toDateString(),
+            'user_id' => (string) $transaction->user_id,
+            'corrects_transaction_id' => $transaction->corrects_transaction_id,
+        ];
+
         return Inertia::render('transactions/show', [
             'household' => ['id' => $household->id],
             'transaction' => [
@@ -166,30 +175,14 @@ class TransactionController extends Controller
             'canEdit' => request()->user()->can('update', $transaction),
             'moved' => $moved,
             'transferId' => $transaction->transfer_id,
+            'budgets' => $budgets,
+            'members' => $household->members()
+                ->get(['users.id', 'users.name'])
+                ->map->only(['id', 'name'])
+                ->values(),
+            'defaults' => $defaults,
+            'today' => now()->toDateString(),
         ]);
-    }
-
-    public function edit(Household $household, Transaction $transaction): Response|RedirectResponse
-    {
-        $this->authorize('update', $transaction);
-
-        if (
-            $transaction->budgetMonth->isClosed() ||
-            $transaction->type === TransactionTypeEnum::TRANSFER_IN ||
-            $transaction->type === TransactionTypeEnum::TRANSFER_OUT
-        ) {
-            return redirect()->route('transactions.show', [$household, $transaction]);
-        }
-
-        return $this->form($household, 'edit', [
-            'type' => $transaction->type->value,
-            'budget_id' => (string) $transaction->budgetMonth->budget_id,
-            'amount' => (string) $transaction->amount,
-            'note' => $transaction->note ?? '',
-            'occurred_at' => $transaction->occurred_at->toDateString(),
-            'user_id' => (string) $transaction->user_id,
-            'corrects_transaction_id' => $transaction->corrects_transaction_id,
-        ], $transaction->id);
     }
 
     public function update(
@@ -213,30 +206,5 @@ class TransactionController extends Controller
 
         return redirect()->route('transactions.index', [$household, 'month' => $month])
             ->with('success', 'Transaction deleted.');
-    }
-
-    /** @param array<string, mixed> $defaults */
-    private function form(Household $household, string $mode, array $defaults, ?int $id = null): Response
-    {
-        $period = now()->startOfMonth()->toDateString();
-
-        $budgets = $household->budgets()->active()->orderBy('sort')
-            ->with(['months' => fn ($q) => $q->whereDate('period_start', $period)->with('transactions')])
-            ->get()
-            ->map(fn ($b) => [
-                'id' => $b->id,
-                'name' => $b->name,
-                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? $b->default_amount : 0),
-            ])->values();
-
-        return Inertia::render('transactions/form', [
-            'household' => ['id' => $household->id],
-            'mode' => $mode,
-            'transactionId' => $id,
-            'budgets' => $budgets,
-            'members' => $household->members()->get(['users.id', 'users.name'])->map->only(['id', 'name'])->values(),
-            'defaults' => $defaults,
-            'today' => now()->toDateString(),
-        ]);
     }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -27,6 +27,8 @@ type Props = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     householdId: number;
+    mode?: 'create' | 'edit';
+    transactionId?: number;
     defaults: Defaults;
     budgets: { id: number; name: string; left: number }[];
     members: { id: number; name: string }[];
@@ -37,6 +39,8 @@ export function TransactionDrawer({
     open,
     onOpenChange,
     householdId,
+    mode = 'create',
+    transactionId,
     defaults,
     budgets,
     members,
@@ -44,6 +48,13 @@ export function TransactionDrawer({
 }: Props) {
     const form = useForm<Defaults>(defaults);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+    // Sync defaults whenever the drawer opens or defaults prop changes
+    useEffect(() => {
+        if (open) {
+            form.setData(defaults);
+        }
+    }, [open, defaults]);
 
     const forceClose = () => {
         setIsAlertOpen(false);
@@ -73,10 +84,19 @@ export function TransactionDrawer({
                 : null,
         }));
 
-        form.post(`/h/${householdId}/transactions`, {
-            replace: true,
-            onSuccess: () => forceClose(),
-        });
+        const base = `/h/${householdId}/transactions`;
+
+        if (mode === 'edit' && transactionId) {
+            form.put(`${base}/${transactionId}`, {
+                replace: true,
+                onSuccess: () => forceClose(),
+            });
+        } else {
+            form.post(base, {
+                replace: true,
+                onSuccess: () => forceClose(),
+            });
+        }
     };
 
     const isIncome = form.data.type === 'income';
@@ -96,51 +116,63 @@ export function TransactionDrawer({
                 <DrawerContent>
                     <div className="mx-auto w-full max-w-sm">
                         <form onSubmit={submit}>
-                            <DrawerHeader>
-                                <DrawerTitle>New Transaction</DrawerTitle>
-                                <DrawerDescription>
-                                    Enter details to record a new transaction.
-                                </DrawerDescription>
-                            </DrawerHeader>
+                            <div>
+                                <DrawerHeader>
+                                    <DrawerTitle>
+                                        {mode === 'edit'
+                                            ? 'Edit Transaction'
+                                            : 'New Transaction'}
+                                    </DrawerTitle>
+                                    <DrawerDescription>
+                                        {mode === 'edit'
+                                            ? 'Update details of your transaction.'
+                                            : 'Enter details to record a new transaction.'}
+                                    </DrawerDescription>
+                                </DrawerHeader>
 
-                            <div className="px-4">
-                                <TransactionFormFields
-                                    form={form}
-                                    budgets={budgets}
-                                    members={members}
-                                    today={today}
-                                />
+                                <div className="px-4">
+                                    <TransactionFormFields
+                                        form={form}
+                                        budgets={budgets}
+                                        members={members}
+                                        today={today}
+                                        showAfterBalance={mode === 'create'}
+                                    />
+                                </div>
                             </div>
 
-                            <DrawerFooter className="mt-4">
-                                <Button
-                                    type="submit"
-                                    disabled={form.processing}
-                                >
-                                    {form.processing ? (
-                                        <div className="flex items-center gap-2">
-                                            <Spinner /> Saving
-                                        </div>
-                                    ) : isIncome ? (
-                                        'Save income'
-                                    ) : (
-                                        'Save expense'
-                                    )}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleAttemptClose}
-                                >
-                                    Cancel
-                                </Button>
+                            <DrawerFooter className="mt-4 pb-6">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button
+                                        type="submit"
+                                        disabled={form.processing}
+                                    >
+                                        {form.processing ? (
+                                            <div className="">
+                                                <Spinner /> Saving
+                                            </div>
+                                        ) : mode === 'edit' ? (
+                                            'Save changes'
+                                        ) : isIncome ? (
+                                            'Save income'
+                                        ) : (
+                                            'Save expense'
+                                        )}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleAttemptClose}
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
                             </DrawerFooter>
                         </form>
                     </div>
                 </DrawerContent>
             </Drawer>
 
-            {/* Dirty Form Confirmation Dialog */}
             <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
