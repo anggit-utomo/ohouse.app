@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowRightLeftIcon, PlusIcon } from 'lucide-react';
 import { BottomNav } from '@/components/bottom-nav';
@@ -6,8 +7,9 @@ import HeadTitle from '@/components/head-title';
 import BalanceComponent from '@/components/organisms/home/balance';
 import AlertBanner from '@/components/organisms/home/alert-banner';
 import BudgetEmpty from '@/components/organisms/home/budget-empty';
-import { Budget } from '@/types';
 import BudgetList from '@/components/organisms/home/budget-list';
+import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
+import { Budget, Defaults } from '@/types';
 
 type Props = {
     household: { id: number };
@@ -18,6 +20,8 @@ type Props = {
     budgets: Budget[];
     members: { id: number; name: string }[];
     canEdit: boolean;
+    defaults: Defaults;
+    today: string;
 };
 
 export default function Home({
@@ -29,8 +33,11 @@ export default function Home({
     budgets,
     members,
     canEdit,
+    defaults,
+    today,
 }: Props) {
     const base = `/h/${household.id}`;
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     return (
         <>
@@ -58,9 +65,8 @@ export default function Home({
 
             <BalanceComponent base={base} summary={summary} />
 
-            {/* TODO: add drawer for creating new transaction */}
-            <Button type="button">
-                <PlusIcon /> Transaction
+            <Button type="button" onClick={() => setIsDrawerOpen(true)}>
+                <PlusIcon className="mr-1 size-4" /> Transaction
             </Button>
 
             {banner && <AlertBanner base={base} banner={banner} />}
@@ -103,6 +109,16 @@ export default function Home({
                 householdId={household.id}
                 active="home"
                 canAdd={canEdit}
+            />
+
+            <TransactionDrawer
+                open={isDrawerOpen}
+                onOpenChange={setIsDrawerOpen}
+                householdId={household.id}
+                defaults={defaults}
+                budgets={budgets}
+                members={members}
+                today={today}
             />
         </>
     );

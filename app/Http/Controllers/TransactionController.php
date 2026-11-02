@@ -101,7 +101,9 @@ class TransactionController extends Controller
             $defaults = [
                 ...$defaults,
                 'type' => $original->type === TransactionTypeEnum::EXPENSE ? 'income' : 'expense',
-                'budget_id' => $household->budgets()->active()->whereKey($budgetId)->exists() ? (string) $budgetId : '',
+                'budget_id' => $household->budgets()->active()->whereKey($budgetId)->exists()
+                    ? (string) $budgetId
+                    : '',
                 'amount' => (string) $original->amount,
                 'note' => 'Correction',
                 'corrects_transaction_id' => $original->id,
