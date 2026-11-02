@@ -56,6 +56,7 @@ Route::middleware(['auth', 'verified'])
             });
 
         Route::controller(PushSubscriptionController::class)
+            ->prefix('push')
             ->group(function () {
                 Route::post('subscribe', 'store');
                 Route::delete('subscribe', 'destroy');

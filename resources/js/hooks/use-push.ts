@@ -37,26 +37,31 @@ export function usePush(publicKey: string | null) {
     const [busy, setBusy] = useState(false);
 
     const refresh = useCallback(async () => {
-        if (isIos() && !isStandalone()) return setState('needs-install');
-        if (
-            !publicKey ||
-            !('serviceWorker' in navigator) ||
-            !('PushManager' in window) ||
-            !('Notification' in window)
-        )
-            return setState('unsupported');
-        if (Notification.permission === 'denied') return setState('denied');
+        try {
+            if (isIos() && !isStandalone()) return setState('needs-install');
+            if (
+                !publicKey ||
+                !('serviceWorker' in navigator) ||
+                !('PushManager' in window) ||
+                !('Notification' in window)
+            )
+                return setState('unsupported');
+            if (Notification.permission === 'denied') return setState('denied');
 
-        const registration = await worker();
-        if (!registration) return setState('unsupported');
+            const registration = await worker();
+            if (!registration) return setState('unsupported');
 
-        const subscription = await registration.pushManager.getSubscription();
-        setEndpoint(subscription?.endpoint ?? null);
-        setState(
-            subscription && Notification.permission === 'granted'
-                ? 'on'
-                : 'off',
-        );
+            const subscription =
+                await registration.pushManager.getSubscription();
+            setEndpoint(subscription?.endpoint ?? null);
+            setState(
+                subscription && Notification.permission === 'granted'
+                    ? 'on'
+                    : 'off',
+            );
+        } catch {
+            setState('unsupported');
+        }
     }, [publicKey]);
 
     useEffect(() => {
@@ -133,4 +138,30 @@ export function usePush(publicKey: string | null) {
     };
 
     return { state, endpoint, busy, enable, disable };
+}
+
+export async function diagnose(publicKey: string | null) {
+    const registrations =
+        'serviceWorker' in navigator
+            ? await navigator.serviceWorker.getRegistrations()
+            : [];
+
+    return {
+        publicKeySet: Boolean(publicKey),
+        secureContext: window.isSecureContext,
+        standalone: isStandalone(),
+        ios: isIos(),
+        serviceWorkerApi: 'serviceWorker' in navigator,
+        pushManagerApi: 'PushManager' in window,
+        notificationApi: 'Notification' in window,
+        permission: 'Notification' in window ? Notification.permission : 'n/a',
+        workerController: Boolean(navigator.serviceWorker?.controller),
+        registrations:
+            registrations
+                .map(
+                    (r) =>
+                        `${r.active ? 'active' : r.installing ? 'installing' : r.waiting ? 'waiting' : 'none'} ${r.scope}`,
+                )
+                .join(', ') || 'none',
+    };
 }

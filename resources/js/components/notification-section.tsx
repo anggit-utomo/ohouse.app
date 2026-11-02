@@ -3,7 +3,8 @@ import { Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { usePush } from '@/hooks/use-push';
+import { diagnose, usePush } from '@/hooks/use-push';
+import { useState } from 'react';
 
 type Device = { id: number; device: string; endpoint: string; added: string };
 
@@ -20,6 +21,30 @@ const blocked = {
     unsupported: "This browser can't receive notifications.",
     denied: 'Notifications are blocked. Allow them in your phone settings: Settings, then Notifications on iPhone, or the site settings in Chrome on Android.',
 } as const;
+
+function Diagnostics({
+    publicKey,
+    state,
+}: {
+    publicKey: string | null;
+    state: string;
+}) {
+    const [info, setInfo] = useState<Record<string, unknown> | null>(null);
+
+    return (
+        <details
+            className="text-xs text-muted-foreground"
+            onToggle={(e) =>
+                e.currentTarget.open && diagnose(publicKey).then(setInfo)
+            }
+        >
+            <summary>Having trouble? Show details</summary>
+            <pre className="mt-2 whitespace-pre-wrap">
+                {JSON.stringify({ state, ...info }, null, 2)}
+            </pre>
+        </details>
+    );
+}
 
 export function NotificationsSection({
     base,
@@ -55,6 +80,12 @@ export function NotificationsSection({
             {state in blocked && (
                 <p className="rounded-lg bg-muted p-3 text-sm">
                     {blocked[state as keyof typeof blocked]}
+                </p>
+            )}
+
+            {state === 'loading' && (
+                <p className="text-sm text-muted-foreground">
+                    Checking this device…
                 </p>
             )}
 
@@ -142,6 +173,8 @@ export function NotificationsSection({
                     ))}
                 </div>
             )}
+
+            <Diagnostics publicKey={publicKey} state={state} />
         </section>
     );
 }
