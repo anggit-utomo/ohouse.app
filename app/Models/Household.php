@@ -30,7 +30,7 @@ class Household extends Model
     /** @return BelongsToMany<User, $this, Pivot, 'pivot'> */
     public function members(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)->withPivot('role', 'joined_at');
+        return $this->belongsToMany(User::class)->withPivot('role', 'joined_at', 'notify', 'notify_amounts');
     }
 
     /** @return HasMany<Budget, $this> */

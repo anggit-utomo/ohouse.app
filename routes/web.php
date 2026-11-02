@@ -6,6 +6,8 @@ use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HouseholdSettingsController;
 use App\Http\Controllers\JoinController;
+use App\Http\Controllers\NotificationSettingsController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\TransactionController;
@@ -51,6 +53,14 @@ Route::middleware(['auth', 'verified'])
                         Route::get('/', 'create')->name('create');
                         Route::post('/', 'store')->name('store');
                     });
+            });
+
+        Route::controller(PushSubscriptionController::class)
+            ->group(function () {
+                Route::post('subscribe', 'store');
+                Route::delete('subscribe', 'destroy');
+                Route::delete('devices/{id}', 'remove')->whereNumber('id');
+                Route::post('test', 'test')->middleware('throttle:6,1');
             });
     });
 // join end
@@ -119,6 +129,7 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
                 Route::get('/', 'show')->name('household.settings');
                 Route::put('/', 'update');
                 Route::delete('/', 'destroy');
+                Route::patch('/notifications', [NotificationSettingsController::class, 'update']);
             });
         // household settings end
 

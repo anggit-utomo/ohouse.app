@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useAppearance } from '@/hooks/use-appearance';
+import { NotificationsSection } from '@/components/notification-section';
 
 type Props = {
     household: { id: number; name: string; currency: string };
@@ -20,6 +21,16 @@ type Props = {
     user: { name: string; email: string; verified: boolean };
     isOwner: boolean;
     ownsHousehold: boolean;
+    push: {
+        publicKey: string | null;
+        devices: {
+            id: number;
+            device: string;
+            endpoint: string;
+            added: string;
+        }[];
+    };
+    notify: { entries: boolean; amounts: boolean };
 };
 
 function Section({
@@ -71,6 +82,8 @@ export default function Settings({
     user,
     isOwner,
     ownsHousehold,
+    push,
+    notify,
 }: Props) {
     const base = `/h/${household.id}`;
     const { appearance, updateAppearance } = useAppearance();
@@ -216,6 +229,13 @@ export default function Settings({
                     ))}
                 </div>
             </Section>
+
+            <NotificationsSection
+                base={base}
+                publicKey={push.publicKey}
+                devices={push.devices}
+                notify={notify}
+            />
 
             <Section
                 title="Security"

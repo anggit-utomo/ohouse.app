@@ -12,7 +12,7 @@ $COMPOSE up -d db
 until podman exec budget-db pg_isready -q; do sleep 1; done
 
 # podman-compose does not recreate containers when the image changes, so force it
-$COMPOSE up -d --force-recreate app scheduler
+$COMPOSE up -d --force-recreate app worker
 until podman exec budget-app php -v >/dev/null 2>&1; do sleep 1; done
 
 podman exec budget-app php artisan migrate --force

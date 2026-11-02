@@ -3,10 +3,12 @@
 namespace App\Actions;
 
 use App\Enums\TransactionTypeEnum;
+use App\Events\EntryRecorded;
 use App\Models\Budget;
 use App\Models\BudgetMonth;
 use App\Models\Household;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Support\Periods;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -15,12 +17,12 @@ use Illuminate\Validation\ValidationException;
 class SaveTransaction
 {
     /** @param array<string, mixed> $d */
-    public function create(Household $household, array $d): Transaction
+    public function create(Household $household, array $d, User $actor): Transaction
     {
         $budget = $household->budgets()->active()->findOrFail($d['budget_id']);
         $when = $this->when($d['occurred_at']);
 
-        return $this->openMonth($budget, $when)->transactions()->create([
+        $transaction = $this->openMonth($budget, $when)->transactions()->create([
             'household_id' => $household->id,
             'user_id' => $d['user_id'],
             'type' => $d['type'],
@@ -29,6 +31,10 @@ class SaveTransaction
             'occurred_at' => $when,
             'corrects_transaction_id' => $d['corrects_transaction_id'] ?? null,
         ]);
+
+        EntryRecorded::dispatch($household->id, $actor->id, $d['type'], $transaction->id, (int) $d['amount']);
+
+        return $transaction;
     }
 
     /** @param array<string, mixed> $d */

@@ -104,7 +104,7 @@ class TransactionController extends Controller
 
     public function store(TransactionRequest $request, Household $household, SaveTransaction $save): RedirectResponse
     {
-        $transaction = $save->create($household, $request->validated());
+        $transaction = $save->create($household, $request->validated(), $request->user());
 
         return back()->with(
             'success',

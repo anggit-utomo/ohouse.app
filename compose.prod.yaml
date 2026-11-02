@@ -17,12 +17,12 @@ services:
         depends_on:
             - db
 
-    scheduler:
+    worker:
         image: localhost/budget-app:latest
-        container_name: budget-scheduler
+        container_name: budget-worker
         restart: unless-stopped
         env_file: .env
-        command: php artisan schedule:work
+        command: php artisan queue:work --sleep=3 --tries=3 --backoff=10 --max-time=3600
         depends_on:
             - db
 

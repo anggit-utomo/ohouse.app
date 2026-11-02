@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Events\EntryRecorded;
 use App\Models\BudgetMonth;
 use App\Models\Household;
 use App\Models\Transaction;
@@ -61,8 +62,10 @@ class MoveMoney
                 'transfer_id' => $id = (string) Str::uuid(),
             ];
 
-            $fromMonth->transactions()->create([...$shared, 'type' => 'transfer_out']);
+            $out = $fromMonth->transactions()->create([...$shared, 'type' => 'transfer_out']);
             $toMonth->transactions()->create([...$shared, 'type' => 'transfer_in']);
+
+            EntryRecorded::dispatch($household->id, $by->id, 'move', $out->id, $amount);
 
             return $id;
         });

@@ -18,6 +18,8 @@ class HouseholdSettingsController extends Controller
     {
         $user = $request->user();
 
+        $membership = $household->members()->whereKey($user->id)->first()->pivot;
+
         return Inertia::render('settings/household', [
             'household' => ['id' => $household->id, 'name' => $household->name, 'currency' => $household->currency],
             'currencies' => Currencies::all(),
@@ -25,6 +27,16 @@ class HouseholdSettingsController extends Controller
             'user' => ['name' => $user->name, 'email' => $user->email, 'verified' => $user->hasVerifiedEmail()],
             'isOwner' => $user->can('manage', $household),
             'ownsHousehold' => Household::where('owner_id', $user->id)->exists(),
+            'push' => [
+                'publicKey' => config('webpush.vapid.public_key'),
+                'devices' => $user->pushSubscriptions()->latest('id')->get()->map(fn ($s) => [
+                    'id' => $s->id,
+                    'device' => $s->device ?? 'Unknown device',
+                    'endpoint' => $s->endpoint,
+                    'added' => $s->created_at->toIso8601String(),
+                ])->values(),
+            ],
+            'notify' => ['entries' => (bool) $membership->notify, 'amounts' => (bool) $membership->notify_amounts],
         ]);
     }
 
