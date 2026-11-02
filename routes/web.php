@@ -129,6 +129,7 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
     });
 // main app route end
 
+// pwa
 Route::get('manifest.webmanifest', fn () => response()->json([
     'name' => config('app.name'),
     'short_name' => config('app.name'),
@@ -144,5 +145,6 @@ Route::get('manifest.webmanifest', fn () => response()->json([
         ['src' => '/icons/icon-512-maskable.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
     ],
 ], options: JSON_UNESCAPED_SLASHES)->header('Content-Type', 'application/manifest+json'));
+// pwa end
 
 require __DIR__.'/settings.php';

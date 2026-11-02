@@ -51,7 +51,7 @@ export default function MoveMoney({ household, budgets, defaults }: Props) {
                 value={form.data[key]}
                 onValueChange={(v) => form.setData(key, v)}
             >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                     <SelectValue placeholder="Choose a budget" />
                 </SelectTrigger>
                 <SelectContent>
@@ -121,8 +121,8 @@ export default function MoveMoney({ household, budgets, defaults }: Props) {
                             value={
                                 form.data.amount
                                     ? new Intl.NumberFormat('id-ID').format(
-                                          Number(form.data.amount),
-                                      )
+                                        Number(form.data.amount),
+                                    )
                                     : ''
                             }
                             onChange={(e) =>
