@@ -26,6 +26,15 @@ services:
         depends_on:
             - db
 
+    scheduler:
+        image: localhost/budget-app:latest
+        container_name: budget-scheduler
+        restart: unless-stopped
+        env_file: .env
+        command: php artisan schedule:work
+        depends_on:
+            - db
+
     db:
         image: docker.io/library/postgres:17-alpine
         container_name: budget-db
