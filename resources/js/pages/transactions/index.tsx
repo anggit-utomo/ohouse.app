@@ -95,116 +95,113 @@ export default function History({
         <>
             <Head title="History" />
 
-            <div className="mx-auto flex w-full max-w-md flex-col gap-3 p-4 pb-24">
-                <div className="flex items-center justify-between gap-3">
-                    <h1 className="text-xl font-semibold">History</h1>
-                    <Button size="sm" asChild>
-                        <Link href={`${url}/create`}>+ Add</Link>
-                    </Button>
-                </div>
+            <div className="flex items-center justify-between gap-3">
+                <h1 className="text-xl font-semibold">History</h1>
+                <Button size="sm" asChild>
+                    <Link href={`${url}/create`}>+ Add</Link>
+                </Button>
+            </div>
 
-                <Select value={month} onValueChange={(m) => go({ month: m })}>
-                    <SelectTrigger>
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {months.map((m) => (
-                            <SelectItem key={m.value} value={m.value}>
-                                {m.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            <Select value={month} onValueChange={(m) => go({ month: m })}>
+                <SelectTrigger>
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {months.map((m) => (
+                        <SelectItem key={m.value} value={m.value}>
+                            {m.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
 
-                <form
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        go({ q });
-                    }}
-                >
-                    <Input
-                        placeholder="Search transactions"
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
-                    />
-                </form>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    go({ q });
+                }}
+            >
+                <Input
+                    placeholder="Search transactions"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                />
+            </form>
 
-                <div className="flex flex-wrap gap-2">
-                    {chip('All', !filters.type && !filters.person, () =>
-                        go({ type: null, person: null }),
-                    )}
-                    {chip('Expense', filters.type === 'expense', () =>
-                        go({
-                            type: filters.type === 'expense' ? null : 'expense',
-                        }),
-                    )}
-                    {chip('Income', filters.type === 'income', () =>
-                        go({
-                            type: filters.type === 'income' ? null : 'income',
-                        }),
-                    )}
-                    {members.map((m) =>
-                        chip(m.name, filters.person === m.id, () =>
-                            go({
-                                person: filters.person === m.id ? null : m.id,
-                            }),
-                        ),
-                    )}
-                </div>
-
-                <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Spent {rupiah(totals.expense)}</span>
-                    <span>Income {rupiah(totals.income)}</span>
-                </div>
-
-                {transactions.length === 0 && (
-                    <p className="py-10 text-center text-muted-foreground">
-                        No transactions found.
-                    </p>
+            <div className="flex flex-wrap gap-2">
+                {chip('All', !filters.type && !filters.person, () =>
+                    go({ type: null, person: null }),
                 )}
+                {chip('Expense', filters.type === 'expense', () =>
+                    go({
+                        type: filters.type === 'expense' ? null : 'expense',
+                    }),
+                )}
+                {chip('Income', filters.type === 'income', () =>
+                    go({
+                        type: filters.type === 'income' ? null : 'income',
+                    }),
+                )}
+                {members.map((m) =>
+                    chip(m.name, filters.person === m.id, () =>
+                        go({
+                            person: filters.person === m.id ? null : m.id,
+                        }),
+                    ),
+                )}
+            </div>
 
-                {Object.entries(groups).map(([day, rows]) => (
-                    <div key={day}>
-                        <p className="mt-2 mb-1 text-sm font-medium text-muted-foreground">
-                            {day}
-                        </p>
-                        {rows.map((t) => (
-                            <Link
-                                key={t.id}
-                                href={`${url}/${t.id}`}
-                                className="flex items-center gap-3 py-2.5"
-                            >
-                                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                                    {t.user.charAt(0).toUpperCase()}
+            <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Spent {rupiah(totals.expense)}</span>
+                <span>Income {rupiah(totals.income)}</span>
+            </div>
+
+            {transactions.length === 0 && (
+                <p className="py-10 text-center text-muted-foreground">
+                    No transactions found.
+                </p>
+            )}
+
+            {Object.entries(groups).map(([day, rows]) => (
+                <div key={day}>
+                    <p className="mt-2 mb-1 text-sm font-medium text-muted-foreground">
+                        {day}
+                    </p>
+                    {rows.map((t) => (
+                        <Link
+                            key={t.id}
+                            href={`${url}/${t.id}`}
+                            className="flex items-center gap-3 py-2.5"
+                        >
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                                {t.user.charAt(0).toUpperCase()}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <span className="block truncate font-semibold">
+                                    {t.title}
                                 </span>
-                                <span className="min-w-0 flex-1">
-                                    <span className="block truncate font-semibold">
-                                        {t.title}
-                                    </span>
-                                    <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Badge variant="outline">
-                                            {t.budget}
-                                        </Badge>
-                                        {new Date(
-                                            t.occurred_at,
-                                        ).toLocaleTimeString('en-GB', {
+                                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Badge variant="outline">{t.budget}</Badge>
+                                    {new Date(t.occurred_at).toLocaleTimeString(
+                                        'en-GB',
+                                        {
                                             hour: '2-digit',
                                             minute: '2-digit',
-                                        })}
-                                    </span>
+                                        },
+                                    )}
                                 </span>
-                                <span
-                                    className={`font-semibold ${t.signed > 0 ? 'text-green-700' : ''}`}
-                                >
-                                    {t.kind === 'transfer'
-                                        ? rupiah(t.amount)
-                                        : `${t.signed > 0 ? '+' : '-'}${rupiah(Math.abs(t.signed))}`}
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
-                ))}
-            </div>
+                            </span>
+                            <span
+                                className={`font-semibold ${t.signed > 0 ? 'text-green-700' : ''}`}
+                            >
+                                {t.kind === 'transfer'
+                                    ? rupiah(t.amount)
+                                    : `${t.signed > 0 ? '+' : '-'}${rupiah(Math.abs(t.signed))}`}
+                            </span>
+                        </Link>
+                    ))}
+                </div>
+            ))}
 
             <BottomNav
                 householdId={household.id}

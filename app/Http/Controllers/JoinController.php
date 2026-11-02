@@ -38,6 +38,7 @@ class JoinController extends Controller
                 'members' => $invite->household->members()->count(),
             ] : null,
             'invalid' => $code !== '' && ! $invite,
+            'household' => ['id' => $request->query('householdId') ?? null],
         ]);
     }
 

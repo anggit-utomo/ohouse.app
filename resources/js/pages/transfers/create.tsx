@@ -71,111 +71,107 @@ export default function MoveMoney({ household, budgets, defaults }: Props) {
         <>
             <Head title="Move money" />
 
-            <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-28">
-                <Link
-                    href={base}
-                    className="flex items-center gap-1 text-lg font-semibold"
+            <Link
+                href={base}
+                className="flex items-center gap-1 text-lg font-semibold"
+            >
+                <ChevronLeft className="size-5" />
+                Move money
+            </Link>
+            <p className="text-muted-foreground">
+                Cover one budget with what is left in another.
+            </p>
+
+            {picker('From', 'from_budget_id', form.data.to_budget_id)}
+
+            <div className="flex justify-center">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Swap budgets"
+                    onClick={() =>
+                        form.setData((d) => ({
+                            ...d,
+                            from_budget_id: d.to_budget_id,
+                            to_budget_id: d.from_budget_id,
+                        }))
+                    }
                 >
-                    <ChevronLeft className="size-5" />
-                    Move money
-                </Link>
-                <p className="text-muted-foreground">
-                    Cover one budget with what is left in another.
-                </p>
+                    <ArrowUpDown className="size-5" />
+                </Button>
+            </div>
 
-                {picker('From', 'from_budget_id', form.data.to_budget_id)}
+            {picker('To', 'to_budget_id', form.data.from_budget_id)}
 
-                <div className="flex justify-center">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Swap budgets"
-                        onClick={() =>
-                            form.setData((d) => ({
-                                ...d,
-                                from_budget_id: d.to_budget_id,
-                                to_budget_id: d.from_budget_id,
-                            }))
+            <div className="py-4 text-center">
+                <Label htmlFor="amount" className="text-muted-foreground">
+                    Amount
+                </Label>
+                <div className="flex items-baseline justify-center gap-2">
+                    <span className="text-xl text-muted-foreground">
+                        {currency().symbol}
+                    </span>
+                    <input
+                        id="amount"
+                        inputMode="numeric"
+                        placeholder="0"
+                        className="w-48 bg-transparent text-center text-4xl font-bold outline-none"
+                        value={
+                            form.data.amount
+                                ? plain(Number(form.data.amount))
+                                : ''
                         }
-                    >
-                        <ArrowUpDown className="size-5" />
-                    </Button>
-                </div>
-
-                {picker('To', 'to_budget_id', form.data.from_budget_id)}
-
-                <div className="py-4 text-center">
-                    <Label htmlFor="amount" className="text-muted-foreground">
-                        Amount
-                    </Label>
-                    <div className="flex items-baseline justify-center gap-2">
-                        <span className="text-xl text-muted-foreground">
-                            {currency().symbol}
-                        </span>
-                        <input
-                            id="amount"
-                            inputMode="numeric"
-                            placeholder="0"
-                            className="w-48 bg-transparent text-center text-4xl font-bold outline-none"
-                            value={
-                                form.data.amount
-                                    ? plain(Number(form.data.amount))
-                                    : ''
-                            }
-                            onChange={(e) =>
-                                form.setData(
-                                    'amount',
-                                    e.target.value.replace(/\D/g, ''),
-                                )
-                            }
-                        />
-                    </div>
-                </div>
-
-                {from && to && amount > 0 && (
-                    <div className="grid gap-2 rounded-xl border p-3 text-sm">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">
-                                {from.name} after
-                            </span>
-                            <b className={tooMuch ? 'text-destructive' : ''}>
-                                {leftText(from.left - amount)}
-                            </b>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">
-                                {to.name} after
-                            </span>
-                            <b
-                                className={
-                                    to.left + amount < 0
-                                        ? 'text-destructive'
-                                        : ''
-                                }
-                            >
-                                {leftText(to.left + amount)}
-                            </b>
-                        </div>
-                    </div>
-                )}
-
-                {(tooMuch || error) && (
-                    <p className="text-sm text-destructive">
-                        {error ??
-                            `${from?.name} only has ${rupiah(Math.max(from?.left ?? 0, 0))} left.`}
-                    </p>
-                )}
-
-                <div className="grid gap-2">
-                    <Label htmlFor="note">Note</Label>
-                    <Input
-                        id="note"
-                        placeholder="Optional"
-                        value={form.data.note}
-                        onChange={(e) => form.setData('note', e.target.value)}
+                        onChange={(e) =>
+                            form.setData(
+                                'amount',
+                                e.target.value.replace(/\D/g, ''),
+                            )
+                        }
                     />
                 </div>
+            </div>
+
+            {from && to && amount > 0 && (
+                <div className="grid gap-2 rounded-xl border p-3 text-sm">
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                            {from.name} after
+                        </span>
+                        <b className={tooMuch ? 'text-destructive' : ''}>
+                            {leftText(from.left - amount)}
+                        </b>
+                    </div>
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                            {to.name} after
+                        </span>
+                        <b
+                            className={
+                                to.left + amount < 0 ? 'text-destructive' : ''
+                            }
+                        >
+                            {leftText(to.left + amount)}
+                        </b>
+                    </div>
+                </div>
+            )}
+
+            {(tooMuch || error) && (
+                <p className="text-sm text-destructive">
+                    {error ??
+                        `${from?.name} only has ${rupiah(Math.max(from?.left ?? 0, 0))} left.`}
+                </p>
+            )}
+
+            <div className="grid gap-2">
+                <Label htmlFor="note">Note</Label>
+                <Input
+                    id="note"
+                    placeholder="Optional"
+                    value={form.data.note}
+                    onChange={(e) => form.setData('note', e.target.value)}
+                />
             </div>
 
             <div className="fixed inset-x-0 bottom-0 border-t bg-background p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">

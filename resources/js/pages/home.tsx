@@ -45,138 +45,130 @@ export default function Home({
         <>
             <Head title="Home" />
 
-            <div className="mx-auto flex w-full max-w-md flex-col gap-3 p-4 pb-28">
-                <div className="flex items-center justify-between">
-                    <div className="flex flex-col gap-0.5">
-                        <h1 className="text-xl font-semibold">{monthLabel}</h1>
+            <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-0.5">
+                    <h1 className="text-xl font-semibold">{monthLabel}</h1>
+                    <p className="text-xs text-muted-foreground">
+                        {periodRange}
+                    </p>
+                </div>
+                <div className="flex -space-x-2">
+                    {members.slice(0, 3).map((m) => (
+                        <span
+                            key={m.id}
+                            title={m.name}
+                            className="flex size-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-semibold"
+                        >
+                            {m.name.charAt(0).toUpperCase()}
+                        </span>
+                    ))}
+                </div>
+            </div>
+
+            <div className="rounded-xl border p-4">
+                <div className="flex items-center justify-between text-muted-foreground">
+                    <span>Remaining this month</span>
+                    <Link
+                        href={`${base}/report`}
+                        className="text-sm font-semibold text-foreground"
+                    >
+                        View report
+                    </Link>
+                </div>
+                <p
+                    className={`my-1 mb-3 text-3xl font-bold ${summary.left < 0 ? 'text-destructive' : ''}`}
+                >
+                    {summary.left < 0 ? '-' : ''}
+                    {rupiah(Math.abs(summary.left))}
+                </p>
+                <BudgetBar pct={summary.pct} over={summary.left < 0} />
+                <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                    <span>Spent {rupiah(summary.spent)}</span>
+                    <span>of {rupiah(summary.available)}</span>
+                </div>
+            </div>
+
+            {banner && (
+                <div className="flex items-center justify-between gap-3 rounded-xl border p-3">
+                    <div>
+                        <p className="font-semibold">
+                            This period has run {banner.days} days
+                        </p>
                         <p className="text-xs text-muted-foreground">
-                            {periodRange}
+                            Got paid? Start the new period.
                         </p>
                     </div>
-                    <div className="flex -space-x-2">
-                        {members.slice(0, 3).map((m) => (
-                            <span
-                                key={m.id}
-                                title={m.name}
-                                className="flex size-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-semibold"
-                            >
-                                {m.name.charAt(0).toUpperCase()}
-                            </span>
-                        ))}
-                    </div>
+                    <Button size="sm" variant="outline" asChild>
+                        <Link href={`${base}/close`}>Start new</Link>
+                    </Button>
                 </div>
+            )}
 
-                <div className="rounded-xl border p-4">
-                    <div className="flex items-center justify-between text-muted-foreground">
-                        <span>Remaining this month</span>
+            <div className="mt-2 flex items-center justify-between">
+                <h2 className="text-base font-semibold">Budgets</h2>
+                {canEdit && (
+                    <div className="flex items-center gap-3">
+                        <Button size="sm" variant="outline" asChild>
+                            <Link href={`${base}/transfers/create`}>
+                                <ArrowUpDown className="size-4" /> Move money
+                            </Link>
+                        </Button>
                         <Link
-                            href={`${base}/report`}
-                            className="text-sm font-semibold text-foreground"
+                            href={`${base}/budgets`}
+                            className="text-sm font-medium"
                         >
-                            View report
+                            Edit
                         </Link>
                     </div>
-                    <p
-                        className={`my-1 mb-3 text-3xl font-bold ${summary.left < 0 ? 'text-destructive' : ''}`}
-                    >
-                        {summary.left < 0 ? '-' : ''}
-                        {rupiah(Math.abs(summary.left))}
-                    </p>
-                    <BudgetBar pct={summary.pct} over={summary.left < 0} />
-                    <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                        <span>Spent {rupiah(summary.spent)}</span>
-                        <span>of {rupiah(summary.available)}</span>
-                    </div>
-                </div>
-
-                {banner && (
-                    <div className="flex items-center justify-between gap-3 rounded-xl border p-3">
-                        <div>
-                            <p className="font-semibold">
-                                This period has run {banner.days} days
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                Got paid? Start the new period.
-                            </p>
-                        </div>
-                        <Button size="sm" variant="outline" asChild>
-                            <Link href={`${base}/close`}>Start new</Link>
-                        </Button>
-                    </div>
                 )}
+            </div>
 
-                <div className="mt-2 flex items-center justify-between">
-                    <h2 className="text-base font-semibold">Budgets</h2>
+            {budgets.length === 0 && (
+                <div className="rounded-xl border p-6 text-center">
+                    <p className="font-semibold">No budgets yet</p>
+                    <p className="mb-4 text-sm text-muted-foreground">
+                        Set an amount for food, fuel and the rest to start
+                        tracking.
+                    </p>
                     {canEdit && (
-                        <div className="flex items-center gap-3">
-                            <Button size="sm" variant="outline" asChild>
-                                <Link href={`${base}/transfers/create`}>
-                                    <ArrowUpDown className="size-4" /> Move
-                                    money
-                                </Link>
-                            </Button>
-                            <Link
-                                href={`${base}/budgets`}
-                                className="text-sm font-medium"
+                        <Button asChild>
+                            <Link href={`${base}/budgets`}>Set budgets</Link>
+                        </Button>
+                    )}
+                </div>
+            )}
+
+            {budgets.map((b) => (
+                <div key={b.id} className="py-1">
+                    <Link href={`${base}/budgets/${b.id}`} className="block">
+                        <div className="mb-2 flex items-center justify-between">
+                            <span className="flex items-center gap-0.5 font-semibold">
+                                {b.name}
+                                <ChevronRight className="size-4 text-muted-foreground" />
+                            </span>
+                            <span
+                                className={`text-sm ${b.over ? 'text-destructive' : 'text-muted-foreground'}`}
                             >
-                                Edit
+                                {leftText(b.left)}
+                            </span>
+                        </div>
+                        <BudgetBar pct={b.pct} over={b.over} />
+                    </Link>
+                    {b.over && canEdit && (
+                        <div className="mt-2 flex justify-between text-xs">
+                            <span className="text-muted-foreground">
+                                Cover it from another budget
+                            </span>
+                            <Link
+                                href={`${base}/transfers/create?to=${b.id}`}
+                                className="font-semibold"
+                            >
+                                Move money
                             </Link>
                         </div>
                     )}
                 </div>
-
-                {budgets.length === 0 && (
-                    <div className="rounded-xl border p-6 text-center">
-                        <p className="font-semibold">No budgets yet</p>
-                        <p className="mb-4 text-sm text-muted-foreground">
-                            Set an amount for food, fuel and the rest to start
-                            tracking.
-                        </p>
-                        {canEdit && (
-                            <Button asChild>
-                                <Link href={`${base}/budgets`}>
-                                    Set budgets
-                                </Link>
-                            </Button>
-                        )}
-                    </div>
-                )}
-
-                {budgets.map((b) => (
-                    <div key={b.id} className="py-1">
-                        <Link
-                            href={`${base}/budgets/${b.id}`}
-                            className="block"
-                        >
-                            <div className="mb-2 flex items-center justify-between">
-                                <span className="flex items-center gap-0.5 font-semibold">
-                                    {b.name}
-                                    <ChevronRight className="size-4 text-muted-foreground" />
-                                </span>
-                                <span
-                                    className={`text-sm ${b.over ? 'text-destructive' : 'text-muted-foreground'}`}
-                                >
-                                    {leftText(b.left)}
-                                </span>
-                            </div>
-                            <BudgetBar pct={b.pct} over={b.over} />
-                        </Link>
-                        {b.over && canEdit && (
-                            <div className="mt-2 flex justify-between text-xs">
-                                <span className="text-muted-foreground">
-                                    Cover it from another budget
-                                </span>
-                                <Link
-                                    href={`${base}/transfers/create?to=${b.id}`}
-                                    className="font-semibold"
-                                >
-                                    Move money
-                                </Link>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
+            ))}
 
             <BottomNav
                 householdId={household.id}

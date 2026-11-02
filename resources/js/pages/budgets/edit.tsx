@@ -62,132 +62,128 @@ export default function EditBudgets({
         <>
             <Head title="Set budgets" />
 
-            <div className="mx-auto flex w-full max-w-md flex-col gap-4 p-4 pb-28">
-                <PageHeader title="Set budgets" href={`/h/${household.id}`} />
-                <p className="-mt-2 text-sm text-muted-foreground">
-                    {periodLabel}
+            <PageHeader title="Set budgets" href={`/h/${household.id}`} />
+            <p className="-mt-2 text-sm text-muted-foreground">{periodLabel}</p>
+
+            {form.errors.period && (
+                <p className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive">
+                    {form.errors.period}
                 </p>
+            )}
 
-                {form.errors.period && (
-                    <p className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive">
-                        {form.errors.period}
-                    </p>
-                )}
+            {justStarted && (
+                <p className="rounded-lg border p-3 text-sm">
+                    New period started. Budgets that repeat are filled in. Add
+                    the ones that don't repeat below.
+                </p>
+            )}
 
-                {justStarted && (
-                    <p className="rounded-lg border p-3 text-sm">
-                        New period started. Budgets that repeat are filled in.
-                        Add the ones that don't repeat below.
-                    </p>
-                )}
+            <div className="flex items-center justify-between rounded-xl border p-4">
+                <span className="text-muted-foreground">Total budget</span>
+                <span className="text-xl font-bold">{rupiah(total)}</span>
+            </div>
 
-                <div className="flex items-center justify-between rounded-xl border p-4">
-                    <span className="text-muted-foreground">Total budget</span>
-                    <span className="text-xl font-bold">{rupiah(total)}</span>
-                </div>
-
-                <div className="grid gap-4">
-                    {form.data.budgets.map((row, i) => (
-                        <div
-                            key={row.id ?? `new-${i}`}
-                            className="grid gap-2 rounded-xl border p-3"
-                        >
-                            <div className="flex items-center gap-2">
+            <div className="grid gap-4">
+                {form.data.budgets.map((row, i) => (
+                    <div
+                        key={row.id ?? `new-${i}`}
+                        className="grid gap-2 rounded-xl border p-3"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Input
+                                aria-label="Category name"
+                                className="w-32 shrink-0"
+                                value={row.name}
+                                placeholder="Name"
+                                disabled={!canEdit}
+                                onChange={(e) =>
+                                    setRow(i, { name: e.target.value })
+                                }
+                            />
+                            <div className="relative flex-1">
+                                <span className="absolute top-2 left-3 text-sm text-muted-foreground">
+                                    {currency().symbol}
+                                </span>
                                 <Input
-                                    aria-label="Category name"
-                                    className="w-32 shrink-0"
-                                    value={row.name}
-                                    placeholder="Name"
+                                    aria-label="Amount"
+                                    inputMode="numeric"
+                                    className="pl-10 text-right font-semibold"
+                                    value={
+                                        row.amount
+                                            ? plain(Number(row.amount))
+                                            : ''
+                                    }
                                     disabled={!canEdit}
                                     onChange={(e) =>
-                                        setRow(i, { name: e.target.value })
+                                        setRow(i, {
+                                            amount: e.target.value.replace(
+                                                /\D/g,
+                                                '',
+                                            ),
+                                        })
                                     }
                                 />
-                                <div className="relative flex-1">
-                                    <span className="absolute top-2 left-3 text-sm text-muted-foreground">
-                                        {currency().symbol}
-                                    </span>
-                                    <Input
-                                        aria-label="Amount"
-                                        inputMode="numeric"
-                                        className="pl-10 text-right font-semibold"
-                                        value={
-                                            row.amount
-                                                ? plain(Number(row.amount))
-                                                : ''
-                                        }
-                                        disabled={!canEdit}
-                                        onChange={(e) =>
-                                            setRow(i, {
-                                                amount: e.target.value.replace(
-                                                    /\D/g,
-                                                    '',
-                                                ),
-                                            })
-                                        }
-                                    />
-                                </div>
-                                {canEdit && (
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        aria-label={`Remove ${row.name || 'category'}`}
-                                        onClick={() =>
-                                            form.setData(
-                                                'budgets',
-                                                form.data.budgets.filter(
-                                                    (_, n) => n !== i,
-                                                ),
-                                            )
-                                        }
-                                    >
-                                        <Trash2 className="size-4" />
-                                    </Button>
-                                )}
                             </div>
-
-                            <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Switch
-                                    checked={row.repeat}
-                                    disabled={!canEdit}
-                                    onCheckedChange={(v) =>
-                                        setRow(i, { repeat: v })
+                            {canEdit && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={`Remove ${row.name || 'category'}`}
+                                    onClick={() =>
+                                        form.setData(
+                                            'budgets',
+                                            form.data.budgets.filter(
+                                                (_, n) => n !== i,
+                                            ),
+                                        )
                                     }
-                                />
-                                {row.repeat
-                                    ? 'Repeats every period'
-                                    : 'One-off: ends with this period'}
-                            </label>
-
-                            {(error(i, 'name') || error(i, 'amount')) && (
-                                <p className="text-sm text-destructive">
-                                    {error(i, 'name') ?? error(i, 'amount')}
-                                </p>
+                                >
+                                    <Trash2 className="size-4" />
+                                </Button>
                             )}
                         </div>
-                    ))}
 
-                    {canEdit && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() =>
-                                form.setData('budgets', [
-                                    ...form.data.budgets,
-                                    {
-                                        id: null,
-                                        name: '',
-                                        amount: '',
-                                        repeat: true,
-                                    },
-                                ])
-                            }
-                        >
-                            <Plus className="size-4" /> Add category
-                        </Button>
-                    )}
-                </div>
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Switch
+                                checked={row.repeat}
+                                disabled={!canEdit}
+                                onCheckedChange={(v) =>
+                                    setRow(i, { repeat: v })
+                                }
+                            />
+                            {row.repeat
+                                ? 'Repeats every period'
+                                : 'One-off: ends with this period'}
+                        </label>
+
+                        {(error(i, 'name') || error(i, 'amount')) && (
+                            <p className="text-sm text-destructive">
+                                {error(i, 'name') ?? error(i, 'amount')}
+                            </p>
+                        )}
+                    </div>
+                ))}
+
+                {canEdit && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                            form.setData('budgets', [
+                                ...form.data.budgets,
+                                {
+                                    id: null,
+                                    name: '',
+                                    amount: '',
+                                    repeat: true,
+                                },
+                            ])
+                        }
+                    >
+                        <Plus className="size-4" /> Add category
+                    </Button>
+                )}
             </div>
 
             {canEdit && (
