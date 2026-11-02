@@ -1,7 +1,17 @@
 import { useState } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { rupiah } from '@/lib/money';
 import { PageHeader } from '@/components/page-header';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
@@ -30,6 +40,23 @@ type Props = {
     today: string;
 };
 
+function Row({
+    label,
+    value,
+    first,
+}: {
+    label: string;
+    value: string;
+    first?: boolean;
+}) {
+    return (
+        <div className={`flex justify-between py-3 ${first ? '' : 'border-t'}`}>
+            <span className="text-muted-foreground">{label}</span>
+            <span className="font-semibold">{value}</span>
+        </div>
+    );
+}
+
 export default function ShowTransaction({
     household,
     transaction: t,
@@ -45,39 +72,28 @@ export default function ShowTransaction({
 }: Props) {
     const base = `/h/${household.id}/transactions`;
     const plus = t.type === 'income';
-    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
 
-    const removeMove = () => {
-        if (confirm('Undo this move? Both budgets go back to how they were.'))
-            router.delete(`/h/${household.id}/transfers/${transferId}`);
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+    const [isUndoMoveAlertOpen, setIsUndoMoveAlertOpen] = useState(false);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+
+    const handleConfirmUndoMove = () => {
+        router.delete(`/h/${household.id}/transfers/${transferId}`, {
+            onFinish: () => setIsUndoMoveAlertOpen(false),
+        });
+    };
+
+    const handleConfirmDelete = () => {
+        router.delete(`${base}/${t.id}`, {
+            preserveScroll: true,
+            replace: true,
+            preserveState: true,
+            onFinish: () => setIsDeleteAlertOpen(false),
+        });
     };
 
     const { errors } = usePage().props as { errors: Record<string, string> };
     const problem = errors.transfer ?? errors.occurred_at ?? errors.type;
-
-    const remove = () => {
-        if (confirm('Delete this transaction? The budget balance will update.'))
-            router.delete(`${base}/${t.id}`, {
-                preserveScroll: true,
-                replace: true,
-                preserveState: true,
-            });
-    };
-
-    const Row = ({
-        label,
-        value,
-        first,
-    }: {
-        label: string;
-        value: string;
-        first?: boolean;
-    }) => (
-        <div className={`flex justify-between py-3 ${first ? '' : 'border-t'}`}>
-            <span className="text-muted-foreground">{label}</span>
-            <span className="font-semibold">{value}</span>
-        </div>
-    );
 
     return (
         <>
@@ -91,9 +107,7 @@ export default function ShowTransaction({
             <div className="py-4 text-center">
                 <Badge variant="outline">{t.budget}</Badge>
                 <p
-                    className={`mt-2 text-4xl font-bold ${
-                        plus ? 'text-green-700' : ''
-                    }`}
+                    className={`mt-2 text-4xl font-bold ${plus ? 'text-green-700' : ''}`}
                 >
                     {moved ? '' : plus ? '+' : '-'}
                     {rupiah(t.amount)}
@@ -151,15 +165,9 @@ export default function ShowTransaction({
                             <Button
                                 variant="outline"
                                 className="h-11 flex-1 text-destructive"
-                                onClick={removeMove}
+                                onClick={() => setIsUndoMoveAlertOpen(true)}
                             >
                                 Undo move
-                            </Button>
-                        ) : locked ? (
-                            <Button className="h-11 flex-1" asChild>
-                                <Link href={`${base}/create?corrects=${t.id}`}>
-                                    Add correction
-                                </Link>
                             </Button>
                         ) : (
                             <>
@@ -173,7 +181,7 @@ export default function ShowTransaction({
                                 <Button
                                     variant="outline"
                                     className="h-11 flex-1 text-destructive"
-                                    onClick={remove}
+                                    onClick={() => setIsDeleteAlertOpen(true)}
                                 >
                                     Delete
                                 </Button>
@@ -195,6 +203,56 @@ export default function ShowTransaction({
                 members={members}
                 today={today}
             />
+
+            {/* Undo Move Confirmation Dialog */}
+            <AlertDialog
+                open={isUndoMoveAlertOpen}
+                onOpenChange={setIsUndoMoveAlertOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Undo this move?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Both budget balances will go back to how they were
+                            before the transfer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmUndoMove}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Undo Move
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Delete Transaction Confirmation Dialog */}
+            <AlertDialog
+                open={isDeleteAlertOpen}
+                onOpenChange={setIsDeleteAlertOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete transaction?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently remove the record and update
+                            your budget balance.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

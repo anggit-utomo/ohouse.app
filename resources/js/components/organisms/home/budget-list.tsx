@@ -5,12 +5,14 @@ interface BudgetListProps {
     base: string;
     budgets: Budget[];
     canEdit: boolean;
+    onMoveMoney?: (budgetId: number) => void;
 }
 
 export default function BudgetList({
     base,
     budgets,
     canEdit,
+    onMoveMoney,
 }: BudgetListProps) {
     return budgets.map((b, idx) => (
         <BudgetItem
@@ -18,6 +20,7 @@ export default function BudgetList({
             base={base}
             canEdit={canEdit}
             b={b}
+            onMoveMoney={onMoveMoney}
         />
     ));
 }

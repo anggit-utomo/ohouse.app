@@ -8,9 +8,15 @@ interface BudgetItemProps {
     b: Budget;
     base: string;
     canEdit: boolean;
+    onMoveMoney?: (budgetId: number) => void;
 }
 
-export default function BudgetItem({ b, base, canEdit }: BudgetItemProps) {
+export default function BudgetItem({
+    b,
+    base,
+    canEdit,
+    onMoveMoney,
+}: BudgetItemProps) {
     const leftText = (left: number) =>
         left < 0 ? `Over by ${rupiah(-left)}` : `${rupiah(left)} left`;
 
@@ -35,12 +41,13 @@ export default function BudgetItem({ b, base, canEdit }: BudgetItemProps) {
                     <span className="text-muted-foreground">
                         Cover it from another budget
                     </span>
-                    <Link
-                        href={`${base}/transfers/create?to=${b.id}`}
-                        className="font-semibold"
+                    <button
+                        type="button"
+                        onClick={() => onMoveMoney?.(b.id)}
+                        className="font-semibold text-foreground hover:underline"
                     >
                         Move money
-                    </Link>
+                    </button>
                 </div>
             )}
         </div>

@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { ChevronLeft } from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
 import HeadTitle from '@/components/head-title';
+import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
+import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
+import { Defaults } from '@/types';
 
 type Props = {
     household: { id: number };
@@ -25,6 +29,10 @@ type Props = {
         occurred_at: string;
     }[];
     canEdit: boolean;
+    budgets: { id: number; name: string; left: number }[];
+    members: { id: number; name: string }[];
+    defaults: Defaults;
+    today: string;
 };
 
 export default function ShowBudget({
@@ -35,8 +43,16 @@ export default function ShowBudget({
     summary,
     transactions,
     canEdit,
+    budgets,
+    members,
+    defaults,
+    today,
 }: Props) {
     const base = `/h/${household.id}`;
+
+    const [isTransactionDrawerOpen, setIsTransactionDrawerOpen] =
+        useState(false);
+    const [isMoveDrawerOpen, setIsMoveDrawerOpen] = useState(false);
 
     return (
         <>
@@ -84,19 +100,19 @@ export default function ShowBudget({
 
             {canEdit && !closed && (
                 <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" asChild>
-                        <Link
-                            href={`${base}/transactions/create?budget=${budget.id}`}
-                        >
-                            Add expense
-                        </Link>
+                    <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => setIsTransactionDrawerOpen(true)}
+                    >
+                        Add expense
                     </Button>
-                    <Button variant="outline" asChild>
-                        <Link
-                            href={`${base}/transfers/create?from=${budget.id}`}
-                        >
-                            Move money
-                        </Link>
+                    <Button
+                        variant="outline"
+                        type="button"
+                        onClick={() => setIsMoveDrawerOpen(true)}
+                    >
+                        Move money
                     </Button>
                 </div>
             )}
@@ -136,6 +152,34 @@ export default function ShowBudget({
                     </span>
                 </Link>
             ))}
+
+            {/* Drawers */}
+            <TransactionDrawer
+                open={isTransactionDrawerOpen}
+                onOpenChange={setIsTransactionDrawerOpen}
+                householdId={household.id}
+                mode="create"
+                defaults={{
+                    ...defaults,
+                    budget_id: String(budget.id),
+                }}
+                budgets={budgets}
+                members={members}
+                today={today}
+            />
+
+            <MoveMoneyDrawer
+                open={isMoveDrawerOpen}
+                onOpenChange={setIsMoveDrawerOpen}
+                householdId={household.id}
+                budgets={budgets}
+                defaults={{
+                    from_budget_id: String(budget.id),
+                    to_budget_id: '',
+                    amount: '',
+                    note: '',
+                }}
+            />
         </>
     );
 }

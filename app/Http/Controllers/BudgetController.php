@@ -58,6 +58,27 @@ class BudgetController extends Controller
 
         abort_if($month === null, 404);
 
+        $periodKey = $period->key();
+
+        $budgets = $household->budgets()->active()->orderBy('sort')
+            ->with(['months' => fn ($q) => $q->whereDate('period_start', $periodKey)->with('transactions')])
+            ->get()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'name' => $b->name,
+                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? $b->default_amount : 0),
+            ])->values();
+
+        $defaults = [
+            'type' => 'expense',
+            'budget_id' => (string) $budget->id,
+            'amount' => '',
+            'note' => '',
+            'occurred_at' => now()->toDateString(),
+            'user_id' => (string) $request->user()->id,
+            'corrects_transaction_id' => null,
+        ];
+
         return Inertia::render('budgets/show', [
             'household' => ['id' => $household->id],
             'budget' => ['id' => $budget->id, 'name' => $budget->name],
@@ -73,6 +94,10 @@ class BudgetController extends Controller
                     'occurred_at' => $t->occurred_at->toIso8601String(),
                 ]),
             'canEdit' => $request->user()->can('edit', $household),
+            'budgets' => $budgets,
+            'members' => $household->members()->get(['users.id', 'users.name'])->map->only(['id', 'name'])->values(),
+            'defaults' => $defaults,
+            'today' => now()->toDateString(),
         ]);
     }
 }

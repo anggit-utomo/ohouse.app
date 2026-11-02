@@ -9,7 +9,10 @@ import AlertBanner from '@/components/organisms/home/alert-banner';
 import BudgetEmpty from '@/components/organisms/home/budget-empty';
 import BudgetList from '@/components/organisms/home/budget-list';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
-import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
+import {
+    MoveMoneyDrawer,
+    TransferFormDefaults,
+} from '@/components/organisms/transfers/move-money-drawer';
 import { Budget, Defaults } from '@/types';
 
 type Props = {
@@ -41,6 +44,22 @@ export default function Home({
     const [isTransactionDrawerOpen, setIsTransactionDrawerOpen] =
         useState(false);
     const [isMoveDrawerOpen, setIsMoveDrawerOpen] = useState(false);
+    const [moveDefaults, setMoveDefaults] = useState<TransferFormDefaults>({
+        from_budget_id: '',
+        to_budget_id: '',
+        amount: '',
+        note: '',
+    });
+
+    const openMoveDrawer = (toBudgetId?: number) => {
+        setMoveDefaults({
+            from_budget_id: '',
+            to_budget_id: toBudgetId ? String(toBudgetId) : '',
+            amount: '',
+            note: '',
+        });
+        setIsMoveDrawerOpen(true);
+    };
 
     return (
         <>
@@ -88,7 +107,7 @@ export default function Home({
                                 variant="outline"
                                 type="button"
                                 className="text-xs"
-                                onClick={() => setIsMoveDrawerOpen(true)}
+                                onClick={() => openMoveDrawer()}
                             >
                                 <ArrowRightLeftIcon className="size-4" /> Move
                                 money
@@ -109,7 +128,12 @@ export default function Home({
             {budgets.length === 0 ? (
                 <BudgetEmpty base={base} canEdit={canEdit} />
             ) : (
-                <BudgetList budgets={budgets} base={base} canEdit={canEdit} />
+                <BudgetList
+                    budgets={budgets}
+                    base={base}
+                    canEdit={canEdit}
+                    onMoveMoney={(budgetId) => openMoveDrawer(budgetId)}
+                />
             )}
 
             <BottomNav householdId={household.id} active="home" />
@@ -125,10 +149,12 @@ export default function Home({
             />
 
             <MoveMoneyDrawer
+                key={moveDefaults.to_budget_id}
                 open={isMoveDrawerOpen}
                 onOpenChange={setIsMoveDrawerOpen}
                 householdId={household.id}
                 budgets={budgets}
+                defaults={moveDefaults}
             />
         </>
     );
