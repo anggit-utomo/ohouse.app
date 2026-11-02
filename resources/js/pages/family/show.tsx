@@ -12,6 +12,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import HeadTitle from '@/components/head-title';
 
 type Member = {
@@ -27,7 +37,6 @@ type Props = {
     canManage: boolean;
     invite: { code: string; url: string; expires_at: string } | null;
     members: Member[];
-    canEdit: boolean;
 };
 
 const secondsLeft = (iso?: string) =>
@@ -55,13 +64,15 @@ export default function Family({
     canManage,
     invite,
     members,
-    canEdit,
 }: Props) {
     const { user } = usePage().props.auth;
     const base = `/h/${household.id}`;
     const seconds = useSeconds(invite?.expires_at);
     const live = !!invite && seconds > 0;
     const [copied, setCopied] = useState(false);
+
+    // State for deletion alert dialog
+    const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
     const newCode = () =>
         router.post(`${base}/family/invite`, {}, { preserveScroll: true });
@@ -90,14 +101,13 @@ export default function Family({
         }
     };
 
-    const remove = (m: Member) => {
-        const message = m.you
-            ? 'Leave this household?'
-            : `Remove ${m.name} from the household?`;
-        if (confirm(message))
-            router.delete(`${base}/family/members/${m.id}`, {
-                preserveScroll: true,
-            });
+    const confirmRemove = () => {
+        if (!selectedMember) return;
+
+        router.delete(`${base}/family/members/${selectedMember.id}`, {
+            preserveScroll: true,
+            onFinish: () => setSelectedMember(null),
+        });
     };
 
     return (
@@ -214,7 +224,7 @@ export default function Family({
                             aria-label={
                                 m.you ? 'Leave household' : `Remove ${m.name}`
                             }
-                            onClick={() => remove(m)}
+                            onClick={() => setSelectedMember(m)}
                         >
                             <X className="size-4" />
                         </Button>
@@ -234,11 +244,39 @@ export default function Family({
                 </Link>
             </Button>
 
-            <BottomNav
-                householdId={household.id}
-                active="family"
-                canAdd={canEdit}
-            />
+            <BottomNav householdId={household.id} active="family" />
+
+            {/* Member Deletion / Leave Alert Dialog */}
+            <AlertDialog
+                open={!!selectedMember}
+                onOpenChange={(open) => {
+                    if (!open) setSelectedMember(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {selectedMember?.you
+                                ? 'Leave household?'
+                                : 'Remove member?'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {selectedMember?.you
+                                ? 'Are you sure you want to leave this household? You will lose access to its budget records.'
+                                : `Are you sure you want to remove ${selectedMember?.name} from this household?`}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmRemove}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            {selectedMember?.you ? 'Leave' : 'Remove'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

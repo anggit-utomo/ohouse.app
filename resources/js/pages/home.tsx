@@ -105,11 +105,7 @@ export default function Home({
                 <BudgetList budgets={budgets} base={base} canEdit={canEdit} />
             )}
 
-            <BottomNav
-                householdId={household.id}
-                active="home"
-                canAdd={canEdit}
-            />
+            <BottomNav householdId={household.id} active="home" />
 
             <TransactionDrawer
                 open={isDrawerOpen}

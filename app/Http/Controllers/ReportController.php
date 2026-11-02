@@ -22,7 +22,7 @@ class ReportController extends Controller
         $previous = $before ? $report->handle($household, $before) : null;
         $hasPrevious = $previous && $previous['has_data'];
 
-        return Inertia::render('report/show', [
+        return Inertia::render('report/index', [
             'household' => ['id' => $household->id],
             'month' => $period->key(),
             'months' => $periods->take(12)

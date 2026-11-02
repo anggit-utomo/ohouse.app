@@ -221,11 +221,7 @@ export default function History({
                 </div>
             ))}
 
-            <BottomNav
-                householdId={household.id}
-                active="history"
-                canAdd={canEdit}
-            />
+            <BottomNav householdId={household.id} active="history" />
 
             {/* Reusable Create Transaction Drawer */}
             <TransactionDrawer

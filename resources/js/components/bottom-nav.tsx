@@ -1,13 +1,12 @@
 import { Link } from '@inertiajs/react';
-import { History, Home, Plus, Users } from 'lucide-react';
+import { ChartBarIcon, History, Home, Users } from 'lucide-react';
 
 type Props = {
     householdId: number;
-    active: 'home' | 'history' | 'family';
-    canAdd?: boolean;
+    active: 'home' | 'history' | 'family' | 'report';
 };
 
-export function BottomNav({ householdId, active, canAdd = true }: Props) {
+export function BottomNav({ householdId, active }: Props) {
     const base = `/h/${householdId}`;
 
     const item = (
@@ -30,18 +29,8 @@ export function BottomNav({ householdId, active, canAdd = true }: Props) {
         <nav className="fixed inset-x-0 bottom-0 z-10 border-t bg-background pb-[env(safe-area-inset-bottom)]">
             <div className="mx-auto flex max-w-md items-center">
                 {item('home', base, Home, 'Home')}
-                {canAdd ? (
-                    <Link
-                        href={`${base}/transactions/create`}
-                        aria-label="Add transaction"
-                        className="mx-2 flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
-                    >
-                        <Plus className="size-6" />
-                    </Link>
-                ) : (
-                    <span className="mx-2 size-12 shrink-0" />
-                )}
                 {item('history', `${base}/transactions`, History, 'History')}
+                {item('report', `${base}/report`, ChartBarIcon, 'Report')}
                 {item('family', `${base}/family`, Users, 'Family')}
             </div>
         </nav>

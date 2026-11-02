@@ -8,7 +8,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { rupiah } from '@/lib/money';
-import { PageHeader } from '@/components/page-header';
+import { BottomNav } from '@/components/bottom-nav';
+import HeadTitle from '@/components/head-title';
 
 type Item = { id: number; name: string; spent: number; pct: number };
 
@@ -57,7 +58,11 @@ export default function Report({
         <>
             <Head title="Report" />
 
-            <PageHeader title="Report" href={base} />
+            <HeadTitle
+                left={
+                    <h2 className="text-xl font-semibold">Spending Insights</h2>
+                }
+            />
 
             <Select
                 value={month}
@@ -153,6 +158,8 @@ export default function Report({
                     ))}
                 </>
             )}
+
+            <BottomNav householdId={household.id} active="report" />
         </>
     );
 }
