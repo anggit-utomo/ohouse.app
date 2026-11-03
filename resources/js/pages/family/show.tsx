@@ -1,10 +1,11 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Settings, X } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useState } from 'react';
 import { BottomNav } from '@/components/bottom-nav';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { JoinDrawer } from '@/components/organisms/join/join-drawer';
 import {
     Select,
     SelectContent,
@@ -65,13 +66,13 @@ export default function Family({
     invite,
     members,
 }: Props) {
-    const { user } = usePage().props.auth;
     const base = `/h/${household.id}`;
     const seconds = useSeconds(invite?.expires_at);
     const live = !!invite && seconds > 0;
     const [copied, setCopied] = useState(false);
 
-    // State for deletion alert dialog
+    // State for join drawer & deletion alert dialog
+    const [isJoinOpen, setIsJoinOpen] = useState(false);
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
     const newCode = () =>
@@ -116,11 +117,6 @@ export default function Family({
 
             <HeadTitle
                 left={<h1 className="text-xl font-semibold">Family</h1>}
-                right={
-                    <Link href={`${base}/settings`} aria-label="Settings">
-                        <Settings className="size-5" />
-                    </Link>
-                }
             />
 
             {canManage && (
@@ -232,19 +228,14 @@ export default function Family({
                 </div>
             ))}
 
-            <Button variant="outline" asChild>
-                <Link
-                    href={
-                        user && user !== null
-                            ? `/join?householdId=${household.id}`
-                            : '/join'
-                    }
-                >
-                    Join with a code instead
-                </Link>
+            <Button variant="outline" onClick={() => setIsJoinOpen(true)}>
+                Join with a code instead
             </Button>
 
             <BottomNav householdId={household.id} active="family" />
+
+            {/* Join Drawer */}
+            <JoinDrawer open={isJoinOpen} onOpenChange={setIsJoinOpen} />
 
             {/* Member Deletion / Leave Alert Dialog */}
             <AlertDialog

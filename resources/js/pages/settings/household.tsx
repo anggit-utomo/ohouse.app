@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +23,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useAppearance } from '@/hooks/use-appearance';
 import { NotificationsSection } from '@/components/notification-section';
+import HeadTitle from '@/components/head-title';
+import { BottomNav } from '@/components/bottom-nav';
+import { LogOutIcon } from 'lucide-react';
 
 type Props = {
     household: { id: number; name: string; currency: string };
@@ -130,7 +132,11 @@ export default function Settings({
         <>
             <Head title="Settings" />
 
-            <PageHeader title="Family" href={`${householdBase}/family`} />
+            <HeadTitle
+                left={
+                    <h2 className="text-xl font-semibold">Profile Settings</h2>
+                }
+            />
 
             <Section title="Your profile">
                 <div className="flex items-center gap-3">
@@ -268,10 +274,6 @@ export default function Settings({
                 </Button>
             </Section>
 
-            <Button variant="outline" onClick={() => router.post('/logout')}>
-                Sign out
-            </Button>
-
             <Section title="Danger zone">
                 {isOwner && (
                     <div className="grid gap-2">
@@ -355,6 +357,17 @@ export default function Settings({
                     )}
                 </div>
             </Section>
+
+            <Button
+                variant="outline"
+                onClick={() => router.post('/logout')}
+                className="mt-4"
+            >
+                Sign out
+                <LogOutIcon />
+            </Button>
+
+            <BottomNav householdId={household.id} active="settings" />
 
             <AlertDialog
                 open={isConfirmingDeleteHousehold}

@@ -1,9 +1,9 @@
 import { Link } from '@inertiajs/react';
-import { ChartBarIcon, History, Home, Users } from 'lucide-react';
+import { ChartBarIcon, CogIcon, History, Home, Users } from 'lucide-react';
 
 type Props = {
     householdId: number;
-    active: 'home' | 'history' | 'family' | 'report';
+    active: 'home' | 'history' | 'family' | 'report' | 'settings';
 };
 
 export function BottomNav({ householdId, active }: Props) {
@@ -32,6 +32,7 @@ export function BottomNav({ householdId, active }: Props) {
                 {item('history', `${base}/transactions`, History, 'History')}
                 {item('report', `${base}/report`, ChartBarIcon, 'Report')}
                 {item('family', `${base}/family`, Users, 'Family')}
+                {item('settings', `${base}/settings`, CogIcon, 'Profile')}
             </div>
         </nav>
     );
