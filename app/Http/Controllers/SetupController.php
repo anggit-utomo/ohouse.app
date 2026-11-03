@@ -23,7 +23,9 @@ class SetupController extends Controller
 
     public function store(Request $request, CreateHousehold $create): RedirectResponse
     {
-        if ($request->user()->households()->exists()) {
+        $user = $request->user();
+
+        if ($user->households()->exists()) {
             return redirect()->route('dashboard');
         }
 
@@ -33,10 +35,13 @@ class SetupController extends Controller
             'budgets.*' => ['string', 'max:50', 'distinct'],
         ]);
 
-        $household = $create->handle($request->user(), $data['name'], 'IDR', 1, $data['budgets'] ?? []);
+        $household = $create->handle($user, $data['name'], 'IDR', 1, $data['budgets'] ?? []);
 
-        // amounts are still 0, so go straight to Set budgets
-        return redirect()->route('budgets.edit', $household)
-            ->with('success', 'Household created. Set your budget amounts.');
+        $user->forceFill([
+            'current_household_id' => $household->id,
+        ])->save();
+
+        return redirect()->route('households.home', $household)
+            ->with('success', 'Household created successfully.');
     }
 }

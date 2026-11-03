@@ -1,9 +1,10 @@
+import { useState, type ReactNode } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import type { ReactNode } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import {
     Select,
     SelectContent,
@@ -11,6 +12,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAppearance } from '@/hooks/use-appearance';
 import { NotificationsSection } from '@/components/notification-section';
 
@@ -85,8 +96,12 @@ export default function Settings({
     push,
     notify,
 }: Props) {
-    const base = `/h/${household.id}`;
+    const householdBase = `/h/${household.id}`;
+    const settingsBase = `/h/${household.id}/settings`;
+
     const { appearance, updateAppearance } = useAppearance();
+    const [isConfirmingDeleteHousehold, setIsConfirmingDeleteHousehold] =
+        useState(false);
 
     const profile = useForm({ name: user.name, email: user.email });
     const home = useForm({
@@ -99,10 +114,15 @@ export default function Settings({
     const saveHousehold = () => {
         const currencyChanged = home.data.currency !== household.currency;
 
-        home.put(`${base}/settings`, {
+        home.put(settingsBase, {
             preserveScroll: true,
-            // so every amount is formatted in the new currency
             onSuccess: () => currencyChanged && window.location.reload(),
+        });
+    };
+
+    const handleDeleteHousehold = () => {
+        del.delete(settingsBase, {
+            onFinish: () => setIsConfirmingDeleteHousehold(false),
         });
     };
 
@@ -110,7 +130,7 @@ export default function Settings({
         <>
             <Head title="Settings" />
 
-            <PageHeader title="Family" href={`${base}/family`} />
+            <PageHeader title="Family" href={`${householdBase}/family`} />
 
             <Section title="Your profile">
                 <div className="flex items-center gap-3">
@@ -145,7 +165,7 @@ export default function Settings({
                 <Button
                     disabled={profile.processing || !profile.isDirty}
                     onClick={() =>
-                        profile.patch('/settings/profile', {
+                        profile.patch(`${settingsBase}/profile`, {
                             preserveScroll: true,
                         })
                     }
@@ -207,7 +227,7 @@ export default function Settings({
                     </Button>
                 )}
                 <Link
-                    href={`${base}/family`}
+                    href={`${householdBase}/family`}
                     className="text-sm font-medium underline"
                 >
                     Members and pair code
@@ -231,7 +251,7 @@ export default function Settings({
             </Section>
 
             <NotificationsSection
-                base={base}
+                base={settingsBase}
                 publicKey={push.publicKey}
                 devices={push.devices}
                 notify={notify}
@@ -242,7 +262,7 @@ export default function Settings({
                 hint="Password, two-factor authentication and passkeys."
             >
                 <Button variant="outline" asChild>
-                    <Link href={`${base}/settings/security`}>
+                    <Link href={`${settingsBase}/security`}>
                         Open security settings
                     </Link>
                 </Button>
@@ -282,7 +302,7 @@ export default function Settings({
                                 del.data.confirm !== household.name ||
                                 del.processing
                             }
-                            onClick={() => del.delete(`${base}/settings`)}
+                            onClick={() => setIsConfirmingDeleteHousehold(true)}
                         >
                             Delete household
                         </Button>
@@ -326,7 +346,7 @@ export default function Settings({
                                     !account.data.password || account.processing
                                 }
                                 onClick={() =>
-                                    account.delete('/settings/profile')
+                                    account.delete(`${settingsBase}/profile`)
                                 }
                             >
                                 Delete my account
@@ -335,6 +355,46 @@ export default function Settings({
                     )}
                 </div>
             </Section>
+
+            <AlertDialog
+                open={isConfirmingDeleteHousehold}
+                onOpenChange={setIsConfirmingDeleteHousehold}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Are you absolutely sure?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently
+                            delete the{' '}
+                            <strong className="font-semibold text-foreground">
+                                {household.name}
+                            </strong>{' '}
+                            household along with all associated budgets,
+                            transactions, and member data.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={del.processing}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={del.processing}
+                            onClick={handleDeleteHousehold}
+                        >
+                            {del.processing ? (
+                                <div className="flex items-center gap-2">
+                                    <Spinner /> Deleting...
+                                </div>
+                            ) : (
+                                'Permanently Delete Household'
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
