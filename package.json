@@ -58,6 +58,7 @@
         "@types/node": "^22.20.5",
         "babel-plugin-react-compiler": "^1.0.0",
         "sharp": "^0.35.5",
+        "svg-to-ico": "^2.0.0",
         "vite-plus": "1.4.0"
     },
     "optionalDependencies": {
