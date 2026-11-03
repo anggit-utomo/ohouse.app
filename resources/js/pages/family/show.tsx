@@ -1,18 +1,10 @@
 import { Head, router } from '@inertiajs/react';
-import { X } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useState } from 'react';
 import { BottomNav } from '@/components/bottom-nav';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import HeadTitle from '@/components/head-title';
 import { JoinDrawer } from '@/components/organisms/join/join-drawer';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -23,7 +15,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import HeadTitle from '@/components/head-title';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type Member = {
     id: number;
@@ -69,14 +69,36 @@ export default function Family({
     const base = `/h/${household.id}`;
     const seconds = useSeconds(invite?.expires_at);
     const live = !!invite && seconds > 0;
+
+    // Copy & Share action states
     const [copied, setCopied] = useState(false);
+    const [shared, setShared] = useState(false);
+    const [shareText, setShareText] = useState('Share link');
+
+    const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
     // State for join drawer & deletion alert dialog
     const [isJoinOpen, setIsJoinOpen] = useState(false);
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
 
-    const newCode = () =>
-        router.post(`${base}/family/invite`, {}, { preserveScroll: true });
+    const newCode = () => {
+        setIsGeneratingCode(true);
+        router.post(
+            `${base}/family/invite`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setTimeout(() => {
+                        setIsGeneratingCode(false);
+                    }, 1000);
+                },
+                onError: () => {
+                    setIsGeneratingCode(false);
+                },
+            },
+        );
+    };
 
     const copy = async () => {
         if (!invite) return;
@@ -90,15 +112,29 @@ export default function Family({
         if (!invite) return;
 
         if (navigator.share) {
-            await navigator
-                .share({
+            try {
+                await navigator.share({
                     title: 'Join our budget',
                     text: `Pair code ${invite.code}`,
                     url: invite.url,
-                })
-                .catch(() => undefined);
+                });
+                setShareText('Shared');
+                setShared(true);
+                setTimeout(() => {
+                    setShared(false);
+                    setShareText('Share link');
+                }, 1500);
+            } catch {
+                // User canceled or share failed
+            }
         } else {
             await navigator.clipboard.writeText(invite.url);
+            setShareText('Copied link');
+            setShared(true);
+            setTimeout(() => {
+                setShared(false);
+                setShareText('Share link');
+            }, 1500);
         }
     };
 
@@ -126,8 +162,21 @@ export default function Family({
                             <p className="text-sm text-muted-foreground">
                                 Scan to join this budget
                             </p>
-                            <div className="my-3 flex justify-center">
-                                <QRCodeSVG value={invite!.url} size={156} />
+                            <div className="relative my-3 flex items-center justify-center">
+                                <QRCodeSVG
+                                    value={invite!.url}
+                                    size={156}
+                                    className={
+                                        isGeneratingCode
+                                            ? 'opacity-40 transition-opacity duration-200'
+                                            : ''
+                                    }
+                                />
+                                {isGeneratingCode && (
+                                    <div className="absolute flex items-center justify-center">
+                                        <Loader2 className="size-8 animate-spin text-primary" />
+                                    </div>
+                                )}
                             </div>
                             <p className="text-sm text-muted-foreground">
                                 or enter pair code
@@ -142,12 +191,21 @@ export default function Family({
                                 <Button variant="outline" onClick={copy}>
                                     {copied ? 'Copied' : 'Copy code'}
                                 </Button>
-                                <Button onClick={share}>Share link</Button>
+                                <Button
+                                    variant={shared ? 'outline' : 'default'}
+                                    onClick={share}
+                                >
+                                    {shareText}
+                                </Button>
                             </div>
                             <button
-                                className="mt-3 text-sm text-muted-foreground underline"
+                                className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground underline disabled:opacity-50"
                                 onClick={newCode}
+                                disabled={isGeneratingCode}
                             >
+                                {isGeneratingCode && (
+                                    <Loader2 className="size-3.5 animate-spin" />
+                                )}
                                 Make a new code
                             </button>
                         </>
@@ -161,7 +219,15 @@ export default function Family({
                             <p className="mb-4 text-sm text-muted-foreground">
                                 A code works once and lasts 10 minutes.
                             </p>
-                            <Button onClick={newCode}>Create pair code</Button>
+                            <Button
+                                onClick={newCode}
+                                disabled={isGeneratingCode}
+                            >
+                                {isGeneratingCode && (
+                                    <Loader2 className="mr-2 size-4 animate-spin" />
+                                )}
+                                Create pair code
+                            </Button>
                         </>
                     )}
                 </div>

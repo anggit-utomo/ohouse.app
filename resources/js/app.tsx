@@ -62,7 +62,7 @@ void createInertiaApp({
         createRoot(el).render(
             <TooltipProvider delayDuration={0}>
                 <App {...props} />
-                <Toaster position="top-center" />
+                <Toaster position="top-right" richColors />
             </TooltipProvider>,
         );
     },

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { currency, plain, rupiah } from '@/lib/money';
+import { Spinner } from '@/components/ui/spinner';
 
 type Row = { id: number | null; name: string; amount: string; repeat: boolean };
 
@@ -195,7 +196,13 @@ export default function EditBudgets({
                             disabled={form.processing}
                             onClick={save}
                         >
-                            {form.processing ? 'Saving…' : 'Save budgets'}
+                            {form.processing ? (
+                                <>
+                                    <Spinner /> Saving
+                                </>
+                            ) : (
+                                'Save budgets'
+                            )}
                         </Button>
                     </div>
                 </div>

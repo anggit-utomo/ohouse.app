@@ -176,7 +176,13 @@ export default function Settings({
                         })
                     }
                 >
-                    Save profile
+                    {profile.processing ? (
+                        <>
+                            <Spinner /> Saving
+                        </>
+                    ) : (
+                        'Save profile'
+                    )}
                 </Button>
             </Section>
 
@@ -229,7 +235,13 @@ export default function Settings({
                         disabled={home.processing || !home.isDirty}
                         onClick={saveHousehold}
                     >
-                        Save household
+                        {home.processing ? (
+                            <>
+                                <Spinner /> Saving
+                            </>
+                        ) : (
+                            'Save household'
+                        )}
                     </Button>
                 )}
                 <Link

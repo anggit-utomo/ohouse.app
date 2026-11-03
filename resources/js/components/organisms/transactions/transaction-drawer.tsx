@@ -148,9 +148,9 @@ export function TransactionDrawer({
                                         disabled={form.processing}
                                     >
                                         {form.processing ? (
-                                            <div className="">
+                                            <>
                                                 <Spinner /> Saving
-                                            </div>
+                                            </>
                                         ) : mode === 'edit' ? (
                                             'Save changes'
                                         ) : isIncome ? (
