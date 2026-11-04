@@ -32,6 +32,8 @@ type Tx = {
     occurred_at: string;
     note?: string | null;
     left?: number;
+    budget_id?: number;
+    user_id?: number;
 };
 
 type Props = {
@@ -77,16 +79,35 @@ export default function History({
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] =
         useState<TransactionDetail | null>(null);
+    const [selectedTxMeta, setSelectedTxMeta] = useState<{
+        isTransfer: boolean;
+        moved: { from: string; to: string } | null;
+    }>({ isTransfer: false, moved: null });
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
     const handleOpenDetail = (t: Tx) => {
+        const isTransfer = t.kind === 'transfer';
+        let moved: { from: string; to: string } | null = null;
+
+        if (isTransfer && t.title.startsWith('Moved ')) {
+            const parts = t.title.replace('Moved ', '').split(' → ');
+            if (parts.length === 2) {
+                moved = { from: parts[0], to: parts[1] };
+            }
+        }
+
+        setSelectedTxMeta({ isTransfer, moved });
         setSelectedTransaction({
             id: t.id,
             type: t.type,
             amount: t.amount,
-            note: t.note ?? (t.title !== t.budget ? t.title : null),
+            note: isTransfer
+                ? null
+                : (t.note ?? (t.title !== t.budget ? t.title : null)),
             budget: t.budget,
+            budget_id: t.budget_id,
             user: t.user,
+            user_id: t.user_id,
             occurred_at: t.occurred_at,
             left: t.left ?? 0,
         });
@@ -259,12 +280,19 @@ export default function History({
                 today={today}
             />
 
+            {/* Transaction Detail & Nested Edit Drawer */}
             <TransactionDetailDrawer
                 open={isDetailDrawerOpen}
                 onOpenChange={setIsDetailDrawerOpen}
                 householdId={household.id}
                 transaction={selectedTransaction}
                 canEdit={canEdit}
+                isTransfer={selectedTxMeta.isTransfer}
+                moved={selectedTxMeta.moved}
+                budgets={budgets}
+                members={members}
+                defaults={defaults}
+                today={today}
             />
         </>
     );

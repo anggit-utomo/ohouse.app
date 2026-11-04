@@ -20,6 +20,7 @@ type Tx = {
     signed: number;
     occurred_at: string;
     type?: string;
+    kind?: string;
     amount?: number;
     budget?: string;
     note?: string | null;
@@ -66,15 +67,30 @@ export default function ShowBudget({
     const [isMoveDrawerOpen, setIsMoveDrawerOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] =
         useState<TransactionDetail | null>(null);
+    const [selectedTxMeta, setSelectedTxMeta] = useState<{
+        isTransfer: boolean;
+        moved: { from: string; to: string } | null;
+    }>({ isTransfer: false, moved: null });
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
-    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
 
     const handleOpenDetail = (t: Tx) => {
+        const isTransfer =
+            t.kind === 'transfer' || t.title.startsWith('Moved ');
+        let moved: { from: string; to: string } | null = null;
+
+        if (isTransfer && t.title.startsWith('Moved ')) {
+            const parts = t.title.replace('Moved ', '').split(' → ');
+            if (parts.length === 2) {
+                moved = { from: parts[0], to: parts[1] };
+            }
+        }
+
+        setSelectedTxMeta({ isTransfer, moved });
         setSelectedTransaction({
             id: t.id,
             type: t.type ?? (t.signed > 0 ? 'income' : 'expense'),
             amount: t.amount ?? Math.abs(t.signed),
-            note: t.note ?? (t.title !== budget.name ? t.title : null),
+            note: isTransfer ? null : (t.note ?? null),
             budget: t.budget ?? budget.name,
             user: t.user,
             occurred_at: t.occurred_at,
@@ -212,7 +228,7 @@ export default function ShowBudget({
                 }}
             />
 
-            {/* Transaction Detail Drawer */}
+            {/* Transaction Detail & Nested Edit Drawer */}
             <TransactionDetailDrawer
                 open={isDetailDrawerOpen}
                 onOpenChange={setIsDetailDrawerOpen}
@@ -220,23 +236,13 @@ export default function ShowBudget({
                 transaction={selectedTransaction}
                 locked={closed}
                 canEdit={canEdit}
-                onEdit={() => setIsEditDrawerOpen(true)}
+                isTransfer={selectedTxMeta.isTransfer}
+                moved={selectedTxMeta.moved}
+                budgets={budgets}
+                members={members}
+                defaults={defaults}
+                today={today}
             />
-
-            {/* Transaction Edit Form Drawer */}
-            {selectedTransaction && (
-                <TransactionDrawer
-                    open={isEditDrawerOpen}
-                    onOpenChange={setIsEditDrawerOpen}
-                    householdId={household.id}
-                    mode="edit"
-                    transactionId={selectedTransaction.id}
-                    defaults={defaults}
-                    budgets={budgets}
-                    members={members}
-                    today={today}
-                />
-            )}
         </>
     );
 }

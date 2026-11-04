@@ -33,6 +33,7 @@ type Props = {
     budgets: { id: number; name: string; left: number }[];
     members: { id: number; name: string }[];
     today: string;
+    onSuccess?: () => void;
 };
 
 export function TransactionDrawer({
@@ -45,14 +46,20 @@ export function TransactionDrawer({
     budgets,
     members,
     today,
+    onSuccess,
 }: Props) {
     const form = useForm<Defaults>(defaults);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
 
-    // Sync defaults whenever the drawer opens or defaults prop changes
     useEffect(() => {
         if (open) {
-            form.setData(defaults);
+            form.setData({
+                ...defaults,
+                budget_id: defaults.budget_id ? String(defaults.budget_id) : '',
+                user_id: defaults.user_id ? String(defaults.user_id) : '',
+                amount: String(defaults.amount ?? ''),
+            });
+            form.clearErrors();
         }
     }, [open, defaults]);
 
@@ -61,6 +68,7 @@ export function TransactionDrawer({
         onOpenChange(false);
         form.reset();
         form.clearErrors();
+        onSuccess?.();
     };
 
     const handleAttemptClose = () => {

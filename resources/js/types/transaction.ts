@@ -5,5 +5,5 @@ export type Defaults = {
     note: string;
     occurred_at: string;
     user_id: string;
-    corrects_transaction_id: number | null;
+    corrects_transaction_id?: number | null;
 };

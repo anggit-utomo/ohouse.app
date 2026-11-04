@@ -21,6 +21,8 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { rupiah } from '@/lib/money';
+import { TransactionDrawer } from './transaction-drawer';
+import { Defaults } from '@/types';
 
 export type TransactionDetail = {
     id: number;
@@ -28,7 +30,9 @@ export type TransactionDetail = {
     amount: number;
     note: string | null;
     budget: string;
+    budget_id?: number;
     user: string;
+    user_id?: number;
     occurred_at: string;
     left: number;
 };
@@ -43,7 +47,10 @@ type Props = {
     canEdit?: boolean;
     moved?: { from: string; to: string } | null;
     transferId?: string | null;
-    onEdit?: () => void;
+    budgets?: { id: number; name: string; left: number }[];
+    members?: { id: number; name: string }[];
+    defaults?: Defaults;
+    today?: string;
 };
 
 function Row({
@@ -73,20 +80,53 @@ export function TransactionDetailDrawer({
     canEdit = true,
     moved = null,
     transferId = null,
-    onEdit,
+    budgets = [],
+    members = [],
+    defaults,
+    today = new Date().toISOString().split('T')[0],
 }: Props) {
     const [isUndoMoveAlertOpen, setIsUndoMoveAlertOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
 
     if (!t) return null;
 
     const base = `/h/${householdId}/transactions`;
     const plus = t.type === 'income';
 
-    const { errors } = usePage().props as { errors: Record<string, string> };
+    const { errors } = usePage().props as { errors?: Record<string, string> };
     const problem = errors?.transfer ?? errors?.occurred_at ?? errors?.type;
 
+    // Prefill edit form defaults from current transaction data
+    const currentBudget = t.budget_id
+        ? budgets.find((b) => b.id === Number(t.budget_id))
+        : budgets.find((b) => b.name === t.budget);
+
+    const currentMember = t.user_id
+        ? members.find((m) => m.id === Number(t.user_id))
+        : members.find((m) => m.name === t.user);
+
+    // Build editDefaults cleanly as string values
+    const editDefaults: Defaults = {
+        type: (t.type as 'expense' | 'income') ?? 'expense',
+        amount: String(t.amount),
+        budget_id: currentBudget
+            ? String(currentBudget.id)
+            : defaults?.budget_id
+              ? String(defaults.budget_id)
+              : '',
+        note: t.note ?? '',
+        occurred_at: t.occurred_at ? t.occurred_at.slice(0, 10) : today,
+        user_id: currentMember
+            ? String(currentMember.id)
+            : defaults?.user_id
+              ? String(defaults.user_id)
+              : '',
+        corrects_transaction_id: null,
+    };
+
     const handleConfirmUndoMove = () => {
+        if (!transferId) return;
         router.delete(`/h/${householdId}/transfers/${transferId}`, {
             onSuccess: () => {
                 setIsUndoMoveAlertOpen(false);
@@ -209,18 +249,15 @@ export function TransactionDetailDrawer({
                                         </Button>
                                     ) : (
                                         <>
-                                            {onEdit && (
-                                                <Button
-                                                    variant="outline"
-                                                    className="h-11 flex-1"
-                                                    onClick={() => {
-                                                        onOpenChange(false);
-                                                        onEdit();
-                                                    }}
-                                                >
-                                                    Edit
-                                                </Button>
-                                            )}
+                                            <Button
+                                                variant="outline"
+                                                className="h-11 flex-1"
+                                                onClick={() =>
+                                                    setIsEditDrawerOpen(true)
+                                                }
+                                            >
+                                                Edit
+                                            </Button>
                                             <Button
                                                 variant="outline"
                                                 className="h-11 flex-1 text-destructive"
@@ -243,10 +280,27 @@ export function TransactionDetailDrawer({
                             )}
                         </DrawerFooter>
                     </div>
+
+                    {/* NESTED DRAWER: Edit Transaction Form */}
+                    <TransactionDrawer
+                        open={isEditDrawerOpen}
+                        onOpenChange={setIsEditDrawerOpen}
+                        householdId={householdId}
+                        mode="edit"
+                        transactionId={t.id}
+                        defaults={editDefaults}
+                        budgets={budgets}
+                        members={members}
+                        today={today}
+                        onSuccess={() => {
+                            setIsEditDrawerOpen(false);
+                            onOpenChange(false);
+                        }}
+                    />
                 </DrawerContent>
             </Drawer>
 
-            {/* Undo Move Confirmation Alert Dialog */}
+            {/* Undo Move Alert Dialog */}
             <AlertDialog
                 open={isUndoMoveAlertOpen}
                 onOpenChange={setIsUndoMoveAlertOpen}
@@ -271,7 +325,7 @@ export function TransactionDetailDrawer({
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Delete Transaction Confirmation Alert Dialog */}
+            {/* Delete Transaction Alert Dialog */}
             <AlertDialog
                 open={isDeleteAlertOpen}
                 onOpenChange={setIsDeleteAlertOpen}

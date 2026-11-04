@@ -31,6 +31,12 @@ export function TransactionFormFields({
     const budget = budgets.find((b) => String(b.id) === form.data.budget_id);
     const amount = Number(form.data.amount || 0);
     const after = budget ? budget.left + (isIncome ? amount : -amount) : null;
+    const selectedBudget = budgets.find(
+        (b) => String(b.id) === String(form.data.budget_id),
+    );
+    const selectedMember = members.find(
+        (m) => String(m.id) === String(form.data.user_id),
+    );
 
     return (
         <div className="space-y-4">
@@ -95,11 +101,22 @@ export function TransactionFormFields({
             <div className="grid gap-2">
                 <Label>{isIncome ? 'Add to budget' : 'Budget source'}</Label>
                 <Select
-                    value={form.data.budget_id}
+                    value={
+                        form.data.budget_id ? String(form.data.budget_id) : ''
+                    }
                     onValueChange={(v) => form.setData('budget_id', v)}
                 >
                     <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose a budget" />
+                        <SelectValue placeholder="Choose a budget">
+                            {selectedBudget ? (
+                                <span>
+                                    {selectedBudget.name} ·{' '}
+                                    {selectedBudget.left < 0
+                                        ? `over by ${rupiah(-selectedBudget.left)}`
+                                        : `${rupiah(selectedBudget.left)} left`}
+                                </span>
+                            ) : null}
+                        </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                         {budgets.map((b) => (
@@ -167,11 +184,15 @@ export function TransactionFormFields({
                 <div className="grid gap-2">
                     <Label>{isIncome ? 'Received by' : 'Paid by'}</Label>
                     <Select
-                        value={String(form.data.user_id)}
+                        value={
+                            form.data.user_id ? String(form.data.user_id) : ''
+                        }
                         onValueChange={(v) => form.setData('user_id', v)}
                     >
                         <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select member" />
+                            <SelectValue placeholder="Select member">
+                                {selectedMember ? selectedMember.name : null}
+                            </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                             {members.map((m) => (
