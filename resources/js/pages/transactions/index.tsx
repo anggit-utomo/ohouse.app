@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,10 @@ import { BottomNav } from '@/components/bottom-nav';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
 import { Defaults } from '@/types';
+import {
+    TransactionDetail,
+    TransactionDetailDrawer,
+} from '@/components/organisms/transactions/transaction-detail-drawer';
 
 type Tx = {
     id: number;
@@ -26,6 +30,8 @@ type Tx = {
     amount: number;
     signed: number;
     occurred_at: string;
+    note?: string | null;
+    left?: number;
 };
 
 type Props = {
@@ -69,6 +75,23 @@ export default function History({
     const url = `/h/${household.id}/transactions`;
     const [q, setQ] = useState(filters.q);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [selectedTransaction, setSelectedTransaction] =
+        useState<TransactionDetail | null>(null);
+    const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
+
+    const handleOpenDetail = (t: Tx) => {
+        setSelectedTransaction({
+            id: t.id,
+            type: t.type,
+            amount: t.amount,
+            note: t.note ?? (t.title !== t.budget ? t.title : null),
+            budget: t.budget,
+            user: t.user,
+            occurred_at: t.occurred_at,
+            left: t.left ?? 0,
+        });
+        setIsDetailDrawerOpen(true);
+    };
 
     const go = (patch: Record<string, string | number | null>) =>
         router.get(
@@ -186,10 +209,11 @@ export default function History({
                         {day}
                     </p>
                     {rows.map((t) => (
-                        <Link
+                        <button
                             key={t.id}
-                            href={`${url}/${t.id}`}
-                            className="flex items-center gap-3 py-2.5"
+                            type="button"
+                            className="flex w-full items-center gap-3 py-2.5 text-left"
+                            onClick={() => handleOpenDetail(t)}
                         >
                             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                                 {t.user.charAt(0).toUpperCase()}
@@ -216,7 +240,7 @@ export default function History({
                                     ? rupiah(t.amount)
                                     : `${t.signed > 0 ? '+' : '-'}${rupiah(Math.abs(t.signed))}`}
                             </span>
-                        </Link>
+                        </button>
                     ))}
                 </div>
             ))}
@@ -233,6 +257,14 @@ export default function History({
                 budgets={budgets}
                 members={members}
                 today={today}
+            />
+
+            <TransactionDetailDrawer
+                open={isDetailDrawerOpen}
+                onOpenChange={setIsDetailDrawerOpen}
+                householdId={household.id}
+                transaction={selectedTransaction}
+                canEdit={canEdit}
             />
         </>
     );
