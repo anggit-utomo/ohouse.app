@@ -7,7 +7,24 @@ import { rupiah } from '@/lib/money';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
 import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
+import {
+    TransactionDetail,
+    TransactionDetailDrawer,
+} from '@/components/organisms/transactions/transaction-detail-drawer';
 import { Defaults } from '@/types';
+
+type Tx = {
+    id: number;
+    title: string;
+    user: string;
+    signed: number;
+    occurred_at: string;
+    type?: string;
+    amount?: number;
+    budget?: string;
+    note?: string | null;
+    left?: number;
+};
 
 type Props = {
     household: { id: number };
@@ -21,13 +38,7 @@ type Props = {
         pct: number;
         over: boolean;
     };
-    transactions: {
-        id: number;
-        title: string;
-        user: string;
-        signed: number;
-        occurred_at: string;
-    }[];
+    transactions: Tx[];
     canEdit: boolean;
     budgets: { id: number; name: string; left: number }[];
     members: { id: number; name: string }[];
@@ -53,6 +64,24 @@ export default function ShowBudget({
     const [isTransactionDrawerOpen, setIsTransactionDrawerOpen] =
         useState(false);
     const [isMoveDrawerOpen, setIsMoveDrawerOpen] = useState(false);
+    const [selectedTransaction, setSelectedTransaction] =
+        useState<TransactionDetail | null>(null);
+    const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
+    const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+
+    const handleOpenDetail = (t: Tx) => {
+        setSelectedTransaction({
+            id: t.id,
+            type: t.type ?? (t.signed > 0 ? 'income' : 'expense'),
+            amount: t.amount ?? Math.abs(t.signed),
+            note: t.note ?? (t.title !== budget.name ? t.title : null),
+            budget: t.budget ?? budget.name,
+            user: t.user,
+            occurred_at: t.occurred_at,
+            left: t.left ?? summary.left,
+        });
+        setIsDetailDrawerOpen(true);
+    };
 
     return (
         <>
@@ -125,10 +154,11 @@ export default function ShowBudget({
             )}
 
             {transactions.map((t) => (
-                <Link
+                <button
                     key={t.id}
-                    href={`${base}/transactions/${t.id}`}
-                    className="flex items-center gap-3 py-2"
+                    type="button"
+                    className="flex w-full items-center gap-3 py-2 text-left"
+                    onClick={() => handleOpenDetail(t)}
                 >
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                         {t.user.charAt(0).toUpperCase()}
@@ -150,10 +180,10 @@ export default function ShowBudget({
                         {t.signed > 0 ? '+' : '-'}
                         {rupiah(Math.abs(t.signed))}
                     </span>
-                </Link>
+                </button>
             ))}
 
-            {/* Drawers */}
+            {/* Create Expense Drawer */}
             <TransactionDrawer
                 open={isTransactionDrawerOpen}
                 onOpenChange={setIsTransactionDrawerOpen}
@@ -168,6 +198,7 @@ export default function ShowBudget({
                 today={today}
             />
 
+            {/* Move Money Drawer */}
             <MoveMoneyDrawer
                 open={isMoveDrawerOpen}
                 onOpenChange={setIsMoveDrawerOpen}
@@ -180,6 +211,32 @@ export default function ShowBudget({
                     note: '',
                 }}
             />
+
+            {/* Transaction Detail Drawer */}
+            <TransactionDetailDrawer
+                open={isDetailDrawerOpen}
+                onOpenChange={setIsDetailDrawerOpen}
+                householdId={household.id}
+                transaction={selectedTransaction}
+                locked={closed}
+                canEdit={canEdit}
+                onEdit={() => setIsEditDrawerOpen(true)}
+            />
+
+            {/* Transaction Edit Form Drawer */}
+            {selectedTransaction && (
+                <TransactionDrawer
+                    open={isEditDrawerOpen}
+                    onOpenChange={setIsEditDrawerOpen}
+                    householdId={household.id}
+                    mode="edit"
+                    transactionId={selectedTransaction.id}
+                    defaults={defaults}
+                    budgets={budgets}
+                    members={members}
+                    today={today}
+                />
+            )}
         </>
     );
 }
