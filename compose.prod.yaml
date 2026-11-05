@@ -56,6 +56,8 @@ services:
             - default
 
 networks:
+    default:
+        driver: bridge
     shared-net:
         external: true
 
