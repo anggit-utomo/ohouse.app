@@ -1,0 +1,16 @@
+<?php
+
+namespace NotificationChannels\WebPush;
+
+/**
+ * @property int|string $subscribable_id
+ * @property class-string $subscribable_type
+ * @property string $endpoint
+ * @property string|null $public_key
+ * @property string|null $auth_token
+ * @property string|null $content_encoding
+ * @property string|null $device
+ * @property \DateTimeInterface $created_at
+ * @property \DateTimeInterface $updated_at
+ */
+class PushSubscription extends \Illuminate\Database\Eloquent\Model {}

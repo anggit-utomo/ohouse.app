@@ -11,12 +11,13 @@ class EntryAdded extends Notification
 {
     public function __construct(public readonly PushPayload $payload) {}
 
+    /** @return array<int, class-string> */
     public function via(object $notifiable): array
     {
         return [WebPushChannel::class]; // a future Firebase channel for the native apps is added here
     }
 
-    public function toWebPush(object $notifiable, $notification): WebPushMessage
+    public function toWebPush(object $notifiable, Notification $notification): WebPushMessage
     {
         return (new WebPushMessage)
             ->title($this->payload->title)

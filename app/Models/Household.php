@@ -10,9 +10,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
+/**
+ * @property Carbon|null $period_start
+ */
 #[Fillable(['name', 'currency', 'month_start_day', 'owner_id', 'period_start'])]
 class Household extends Model
 {
@@ -27,10 +30,12 @@ class Household extends Model
         return $this->belongsTo(User::class, 'owner_id');
     }
 
-    /** @return BelongsToMany<User, $this, Pivot, 'pivot'> */
+    /** @return BelongsToMany<User, $this, Membership, 'pivot'> */
     public function members(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)->withPivot('role', 'joined_at', 'notify', 'notify_amounts');
+        return $this->belongsToMany(User::class)
+            ->using(Membership::class)
+            ->withPivot('role', 'joined_at', 'notify', 'notify_amounts');
     }
 
     /** @return HasMany<Budget, $this> */
@@ -66,7 +71,7 @@ class Household extends Model
             ->map(fn ($b) => [
                 'id' => $b->id,
                 'name' => $b->name,
-                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? $b->default_amount : 0),
+                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? ($b->default_amount ?? 0) : 0),
             ])->values();
     }
 }

@@ -29,7 +29,7 @@ class BudgetController extends Controller
             'budgets' => $budgets->map(fn ($b) => [
                 'id' => $b->id,
                 'name' => $b->name,
-                'amount' => $b->months->first()?->allocated ?? $b->default_amount,
+                'amount' => $b->months->first()->allocated ?? $b->default_amount,
                 'repeat' => $b->repeat_monthly,
             ])->values(),
             'canEdit' => $request->user()->can('edit', $household),

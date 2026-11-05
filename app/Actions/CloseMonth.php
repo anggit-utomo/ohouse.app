@@ -13,7 +13,11 @@ use InvalidArgumentException;
 
 class CloseMonth
 {
-    /** Unclosed rows of the current period, in budget order. */
+    /**
+     * Unclosed rows of the current period, in budget order.
+     *
+     * @return Collection<int, BudgetMonth>
+     */
     public function open(
         Household $household,
         bool $lock = false,
@@ -46,6 +50,11 @@ class CloseMonth
     /**
      * For the screen: repeating budgets with their leftovers,
      * and the one-off budgets that end.
+     *
+     * @return array{
+     *     rows: list<array{budget_id: int, name: string, leftover: int, next_allocated: int|null}>,
+     *     ending: list<string>
+     * }
      */
     public function preview(Household $household, CarbonInterface $start): array
     {
@@ -54,18 +63,17 @@ class CloseMonth
         $hasLater = fn (BudgetMonth $m) => $m->transactions->contains(fn (Transaction $t) => $t->occurred_at >= $day);
 
         return [
-            'rows' => $open->filter(
+            'rows' => array_values($open->filter(
                 fn (BudgetMonth $m) => $m->budget->repeat_monthly
             )->map(fn (BudgetMonth $m) => [
                 'budget_id' => $m->budget_id,
                 'name' => $m->budget->name,
                 'leftover' => $this->leftoverBefore($m, $day),
                 'next_allocated' => $m->budget->default_amount,
-            ])->values()->all(),
-            'ending' => $open->reject(
+            ])->all()),
+            'ending' => array_values($open->reject(
                 fn (BudgetMonth $m) => $m->budget->repeat_monthly || $hasLater($m)
-            )
-                ->map(fn (BudgetMonth $m) => $m->budget->name)->values()->all(),
+            )->map(fn (BudgetMonth $m) => $m->budget->name)->all()),
         ];
     }
 

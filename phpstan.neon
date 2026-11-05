@@ -12,5 +12,5 @@ parameters:
 
     level: 7
     treatPhpDocTypesAsCertain: false   # silences the two "array_values has no effect" notes
-    ignoreErrors:
-        - '#Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot::\$(role|joined_at)#'
+    stubFiles:
+        - stubs/PushSubscription.stub

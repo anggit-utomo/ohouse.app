@@ -20,7 +20,14 @@ class ReportController extends Controller
 
         $current = $report->handle($household, $period);
         $previous = $before ? $report->handle($household, $before) : null;
-        $hasPrevious = $previous && $previous['has_data'];
+
+        $previousSummary = $before !== null && $previous !== null && $previous['has_data']
+            ? ['label' => $before->title(), 'spent' => $previous['spent']]
+            : null;
+
+        $previousBudgets = $previous !== null && $previous['has_data']
+            ? collect($previous['budgets'])->keyBy('id')
+            : collect();
 
         return Inertia::render('report/index', [
             'household' => ['id' => $household->id],
@@ -32,16 +39,17 @@ class ReportController extends Controller
             'hasData' => $current['has_data'],
             'spent' => $current['spent'],
             'income' => $current['income'],
-            'previous' => $hasPrevious ? ['label' => $before->title(), 'spent' => $previous['spent']] : null,
-            'change' => $hasPrevious ? $current['spent'] - $previous['spent'] : null,
-            'dailySpending' => $current['daily_spending'] ?? [],
-            'busiestDay' => $current['busiest_day'] ?? null,
-            'budgets' => collect($current['budgets'])->map(function (array $b) use ($hasPrevious, $previous) {
-                $before = $hasPrevious ? collect($previous['budgets'])->firstWhere('id', $b['id'])['spent'] ?? 0 : 0;
+            'previous' => $previousSummary,
+            'change' => $previousSummary !== null ? $current['spent'] - $previousSummary['spent'] : null,
+            'dailySpending' => $current['daily_spending'],
+            'busiestDay' => $current['busiest_day'],
+            'budgets' => collect($current['budgets'])->map(function (array $b) use ($previousBudgets) {
+                $match = $previousBudgets->get($b['id']);
+                $before = $match === null ? 0 : $match['spent'];
 
                 return [...$b, 'changePct' => $before > 0 ? (int) round(($b['spent'] - $before) / $before * 100) : null];
             })->all(),
-            'biggestExpenses' => $current['biggest_expenses'] ?? [],
+            'biggestExpenses' => $current['biggest_expenses'],
             'people' => $current['people'],
         ]);
     }

@@ -19,7 +19,7 @@ class SaveTransaction
     /** @param array<string, mixed> $d */
     public function create(Household $household, array $d, User $actor): Transaction
     {
-        $budget = $household->budgets()->active()->findOrFail($d['budget_id']);
+        $budget = $household->budgets()->active()->whereKey($d['budget_id'])->firstOrFail();
         $when = $this->when($d['occurred_at']);
 
         $transaction = $this->openMonth($budget, $when)->transactions()->create([
@@ -42,7 +42,7 @@ class SaveTransaction
     {
         $this->guardEditable($transaction);
 
-        $budget = $transaction->household->budgets()->active()->findOrFail($d['budget_id']);
+        $budget = $transaction->household->budgets()->active()->whereKey($d['budget_id'])->firstOrFail();
         $when = $this->when($d['occurred_at']);
         $month = $this->openMonth($budget, $when);
 

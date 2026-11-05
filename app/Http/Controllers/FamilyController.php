@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Household;
 use App\Models\HouseholdInvite;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -33,7 +32,7 @@ class FamilyController extends Controller
                 'name' => $m->name,
                 'role' => $m->pivot->role,
                 'you' => $m->id === $user->id,
-                'joined_at' => Carbon::parse($m->pivot->joined_at)->toIso8601String(),
+                'joined_at' => $m->pivot->joined_at->toIso8601String(),
             ])->values(),
             'canEdit' => $request->user()->can('edit', $household),
         ]);

@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -26,7 +25,8 @@ use NotificationChannels\WebPush\HasPushSubscriptions;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string $password
- * @property int $current_household_id
+ * @property int|null $current_household_id
+ * @property-read Membership $pivot
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -47,10 +47,12 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         'two_factor_confirmed_at' => 'datetime',
     ];
 
-    /** @return BelongsToMany<Household, $this, Pivot, 'pivot'> */
+    /** @return BelongsToMany<Household, $this, Membership, 'pivot'> */
     public function households(): BelongsToMany
     {
-        return $this->belongsToMany(Household::class)->withPivot('role', 'joined_at');
+        return $this->belongsToMany(Household::class)
+            ->using(Membership::class)
+            ->withPivot('role', 'joined_at');
     }
 
     /** @return BelongsTo<Household, $this> */
@@ -66,6 +68,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $role ? HouseholdRoleEnum::from($role) : null;
     }
 
+    /** @return HasMany<Transaction, $this> */
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);

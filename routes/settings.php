@@ -10,7 +10,7 @@ Route::middleware('auth')->get('.well-known/passkey-endpoints', function () {
         ->whereKey($user->current_household_id)
         ->first() ?? $user->households()->first();
 
-    abort_unless($household, 404);
+    abort_if($household === null, 404);
 
     return response()->json([
         'enroll' => route('security.edit', $household),

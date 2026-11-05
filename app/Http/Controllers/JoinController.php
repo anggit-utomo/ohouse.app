@@ -31,7 +31,7 @@ class JoinController extends Controller
         $invite = $code !== '' ? HouseholdInvite::findActive($code) : null;
 
         return Inertia::render('join/create', [
-            'code' => $invite?->code ?? $code,
+            'code' => $invite->code ?? $code,
             'preview' => $invite ? [
                 'name' => $invite->household->name,
                 'budgets' => $invite->household->budgets()->active()->count(),

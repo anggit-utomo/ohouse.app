@@ -33,10 +33,10 @@ class HouseholdSettingsController extends Controller
                     'id' => $s->id,
                     'device' => $s->device ?? 'Unknown device',
                     'endpoint' => $s->endpoint,
-                    'added' => $s->created_at->toIso8601String(),
+                    'added' => $s->created_at->format(DATE_ATOM),
                 ])->values(),
             ],
-            'notify' => ['entries' => (bool) $membership->notify, 'amounts' => (bool) $membership->notify_amounts],
+            'notify' => ['entries' => $membership->notify, 'amounts' => $membership->notify_amounts],
         ]);
     }
 

@@ -29,9 +29,9 @@ final class Currencies
     /** @return list<array{code: string, name: string, symbol: string}> */
     public static function all(): array
     {
-        return collect(self::LIST)->map(
+        return array_values(collect(self::LIST)->map(
             fn ($c, $code) => ['code' => $code, 'name' => $c[0], 'symbol' => $c[1]]
-        )->values()->all();
+        )->all());
     }
 
     /** @return array{code: string, symbol: string, exponent: int, locale: string} */

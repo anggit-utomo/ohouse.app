@@ -36,7 +36,7 @@ class CloseMonthRequest extends FormRequest
                 return;
             }
 
-            $household = $this->route('household');
+            $household = $this->household();
             $current = Periods::current($household);
 
             if (Carbon::parse($this->input('start'))->lte($current->start)) {

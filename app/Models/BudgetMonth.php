@@ -86,7 +86,10 @@ class BudgetMonth extends Model
         ];
     }
 
-    /** @return Builder<BudgetMonth> for the given household, via the budget relation. */
+    /**
+     * @param  Builder<BudgetMonth>  $q
+     * @return Builder<BudgetMonth> for the given household, via the budget relation.
+     */
     public function scopeForHousehold(Builder $q, Household $household): Builder
     {
         return $q->whereHas('budget', fn ($b) => $b->where('household_id', $household->id));

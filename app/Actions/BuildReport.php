@@ -14,7 +14,16 @@ class BuildReport
     /**
      * Spending of one period, grouped by budget, person and day. Amounts are encrypted, so this sums in PHP.
      *
-     * @return array<string, mixed>
+     * @return array{
+     *     has_data: bool,
+     *     spent: int,
+     *     income: int,
+     *     daily_spending: list<array{date: string, label: string, amount: int}>,
+     *     busiest_day: string|null,
+     *     budgets: list<array{id: int, name: string, spent: int, pct: int, initial?: string}>,
+     *     biggest_expenses: list<array{id: int, name: string, category: string, date: string, amount: int|null, initial: string}>,
+     *     people: list<array{id: int, name: string, spent: int, pct: int, initial?: string}>
+     * }
      */
     public function handle(Household $household, Period $period): array
     {
@@ -59,14 +68,14 @@ class BuildReport
             'daily_spending' => $daily,
             'busiest_day' => $busiest && $busiest['amount'] > 0 ? $busiest['label'] : null,
             'budgets' => $this->share($byBudget),
-            'biggest_expenses' => $expenses->sortByDesc('amount')->take(3)->map(fn (Transaction $t) => [
+            'biggest_expenses' => array_values($expenses->sortByDesc('amount')->take(3)->map(fn (Transaction $t) => [
                 'id' => $t->id,
                 'name' => $t->note ?: $t->budgetMonth->budget->name,
                 'category' => $t->budgetMonth->budget->name,
                 'date' => $t->occurred_at->format('j M'),
                 'amount' => $t->amount,
                 'initial' => $this->initial($t->user->name),
-            ])->values()->all(),
+            ])->all()),
             'people' => $this->share($byPerson),
         ];
     }
@@ -84,7 +93,12 @@ class BuildReport
         };
     }
 
-    /** One entry per day of the period (up to today for the open one), at most the last 62 days. */
+    /**
+     * One entry per day of the period (up to today for the open one), at most the last 62 days.
+     *
+     * @param  array<string, int>  $byDay
+     * @return list<array{date: string, label: string, amount: int}>
+     */
     private function daily(Period $period, array $byDay): array
     {
         $days = [];
@@ -103,12 +117,17 @@ class BuildReport
         return Str::upper(Str::substr($name, 0, 1));
     }
 
-    /** Biggest first, with each one's share of what was spent. Refunds that net below zero are left out of the lists. */
+    /**
+     * Biggest first, with each one's share of what was spent. Refunds that net below zero are left out of the lists.
+     *
+     * @param  array<int, array{id: int, name: string, spent: int, initial?: string}>  $items
+     * @return list<array{id: int, name: string, spent: int, pct: int, initial?: string}>
+     */
     private function share(array $items): array
     {
         $items = collect($items)->filter(fn ($i) => $i['spent'] > 0)->sortByDesc('spent')->values();
         $total = $items->sum('spent');
 
-        return $items->map(fn ($i) => [...$i, 'pct' => $total > 0 ? (int) round($i['spent'] / $total * 100) : 0])->all();
+        return array_values($items->map(fn ($i) => [...$i, 'pct' => $total > 0 ? (int) round($i['spent'] / $total * 100) : 0])->all());
     }
 }
