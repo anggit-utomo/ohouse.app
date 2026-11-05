@@ -110,6 +110,23 @@ it('shows one budget with only its own transactions', function () {
         ->has('transactions', 1)->where('transactions.0.signed', -85_000)->where('closed', false));
 });
 
+it('includes the note and payer when opening a budget transaction', function () {
+    $food = homeBudget($this->household, 'Food', 2_000_000);
+    $transaction = Transaction::factory()->create([
+        'household_id' => $this->household->id,
+        'budget_month_id' => $food->id,
+        'amount' => 85_000,
+        'note' => 'Groceries',
+        'occurred_at' => '2026-10-10 12:00:00',
+    ]);
+
+    $this->actingAs($this->owner)->get("{$this->url}/budgets/{$food->budget_id}")
+        ->assertInertia(fn (Assert $p) => $p
+            ->where('transactions.0.note', 'Groceries')
+            ->where('transactions.0.user_id', $transaction->user_id)
+            ->where('transactions.0.budget_id', $food->budget_id));
+});
+
 it('opens a past period of a budget and falls back to the open one', function () {
     $food = homeBudget($this->household, 'Food', 2_000_000); // the open period, from 1 Oct
     BudgetMonth::factory()->for($food->budget)->create([

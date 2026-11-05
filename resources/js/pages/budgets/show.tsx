@@ -23,6 +23,8 @@ type Tx = {
     kind?: string;
     amount?: number;
     budget?: string;
+    budget_id?: number;
+    user_id?: number;
     note?: string | null;
     left?: number;
 };
@@ -92,7 +94,9 @@ export default function ShowBudget({
             amount: t.amount ?? Math.abs(t.signed),
             note: isTransfer ? null : (t.note ?? null),
             budget: t.budget ?? budget.name,
+            budget_id: t.budget_id,
             user: t.user,
+            user_id: t.user_id,
             occurred_at: t.occurred_at,
             left: t.left ?? summary.left,
         });

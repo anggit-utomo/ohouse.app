@@ -235,7 +235,7 @@ export function TransactionDetailDrawer({
                         </div>
 
                         <DrawerFooter className="mt-4 pb-6">
-                            {canEdit && (!isTransfer || !locked) ? (
+                            {canEdit && !locked ? (
                                 <div className="flex gap-2">
                                     {isTransfer ? (
                                         <Button
