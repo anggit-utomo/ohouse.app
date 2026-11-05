@@ -9,7 +9,7 @@ import {
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { logout } from '@/routes';
-import { edit } from '@/routes/profile';
+import { settings as householdSettings } from '@/routes/household';
 import type { User } from '@/types';
 
 type Props = {
@@ -18,6 +18,10 @@ type Props = {
 
 export function UserMenuContent({ user }: Props) {
     const cleanup = useMobileNavigation();
+    const settingsUrl =
+        user.current_household_id !== null
+            ? householdSettings({ household: user.current_household_id })
+            : null;
 
     const handleLogout = () => {
         cleanup();
@@ -33,30 +37,36 @@ export function UserMenuContent({ user }: Props) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                    <Link
-                        className="block w-full cursor-pointer"
-                        href={edit()}
-                        prefetch
-                        onClick={cleanup}
+                {settingsUrl && (
+                    <DropdownMenuItem
+                        render={
+                            <Link
+                                className="block w-full cursor-pointer"
+                                href={settingsUrl}
+                                prefetch
+                                onClick={cleanup}
+                            />
+                        }
                     >
                         <Settings className="mr-2" />
                         Settings
-                    </Link>
-                </DropdownMenuItem>
+                    </DropdownMenuItem>
+                )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <Link
-                    className="block w-full cursor-pointer"
-                    href={logout()}
-                    as="button"
-                    onClick={handleLogout}
-                    data-test="logout-button"
-                >
-                    <LogOut className="mr-2" />
-                    Log out
-                </Link>
+            <DropdownMenuItem
+                render={
+                    <Link
+                        className="block w-full cursor-pointer"
+                        href={logout()}
+                        as="button"
+                        onClick={handleLogout}
+                        data-test="logout-button"
+                    />
+                }
+            >
+                <LogOut className="mr-2" />
+                Log out
             </DropdownMenuItem>
         </>
     );

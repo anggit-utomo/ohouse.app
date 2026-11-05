@@ -210,7 +210,9 @@ export default function Settings({
                     <Select
                         value={home.data.currency}
                         disabled={!isOwner || currencyLocked}
-                        onValueChange={(v) => home.setData('currency', v)}
+                        onValueChange={(v) => {
+                            if (v !== null) home.setData('currency', v);
+                        }}
                     >
                         <SelectTrigger id="currency" className="w-full">
                             <SelectValue />
@@ -279,10 +281,11 @@ export default function Settings({
                 title="Security"
                 hint="Password, two-factor authentication and passkeys."
             >
-                <Button variant="outline" asChild>
-                    <Link href={`${settingsBase}/security`}>
-                        Open security settings
-                    </Link>
+                <Button
+                    variant="outline"
+                    render={<Link href={`${settingsBase}/security`} />}
+                >
+                    Open security settings
                 </Button>
             </Section>
 

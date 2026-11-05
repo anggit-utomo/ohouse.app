@@ -107,8 +107,12 @@ export default function Setup({ suggestions }: Props) {
                     </div>
                 </div>
 
-                <Button variant="outline" asChild className="w-fit">
-                    <Link href="/join">I have a pair code instead</Link>
+                <Button
+                    variant="outline"
+                    className="w-fit"
+                    render={<Link href="/join" />}
+                >
+                    I have a pair code instead
                 </Button>
 
                 <div className="fixed inset-x-0 bottom-0 border-t bg-background p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">

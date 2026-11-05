@@ -112,13 +112,17 @@ export default function Home({
                                 <ArrowRightLeftIcon className="size-4" /> Move
                                 money
                             </Button>
-                            <Button size="sm" variant="outline" asChild>
-                                <Link
-                                    href={`${base}/budgets`}
-                                    className="text-xs font-medium"
-                                >
-                                    Edit
-                                </Link>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                render={
+                                    <Link
+                                        href={`${base}/budgets`}
+                                        className="text-xs font-medium"
+                                    />
+                                }
+                            >
+                                Edit
                             </Button>
                         </div>
                     )

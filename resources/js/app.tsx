@@ -30,7 +30,7 @@ router.on('error', (event) => {
 });
 
 // server errors, expired sessions, rate limits
-router.on('invalid', (event) => {
+router.on('httpException', (event) => {
     event.preventDefault(); // no raw error page in a pop-up
 
     const messages: Record<number, string> = {
@@ -47,9 +47,9 @@ router.on('invalid', (event) => {
 });
 
 // no connection
-router.on('exception', () =>
-    toast.error('Could not reach the server. Check your connection.'),
-);
+router.on('networkError', () => {
+    toast.error('Could not reach the server. Check your connection.');
+});
 
 router.on('navigate', (event) =>
     setCurrency((event.detail.page.props as WithCurrency).currency),
@@ -59,8 +59,12 @@ void createInertiaApp({
     setup({ el, App, props }) {
         setCurrency((props.initialPage.props as WithCurrency).currency);
 
+        if (!el) {
+            throw new Error('Inertia root element not found.');
+        }
+
         createRoot(el).render(
-            <TooltipProvider delayDuration={0}>
+            <TooltipProvider delay={0}>
                 <App {...props} />
                 <Toaster position="top-right" richColors />
             </TooltipProvider>,

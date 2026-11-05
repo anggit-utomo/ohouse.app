@@ -14,8 +14,8 @@ export default function BudgetEmpty({ base, canEdit }: BudgetEmptyProps) {
                 Set an amount for food, fuel and the rest to start tracking.
             </p>
             {canEdit && (
-                <Button asChild>
-                    <Link href={`${base}/budgets`}>Set budgets</Link>
+                <Button render={<Link href={`${base}/budgets`} />}>
+                    Set budgets
                 </Button>
             )}
         </div>

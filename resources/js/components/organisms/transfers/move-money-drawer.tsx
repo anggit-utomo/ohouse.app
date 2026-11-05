@@ -125,7 +125,9 @@ export function MoveMoneyDrawer({
                 <Label>{label}</Label>
                 <Select
                     value={form.data[key]}
-                    onValueChange={(v) => form.setData(key, v)}
+                    onValueChange={(v) => {
+                        if (v !== null) form.setData(key, v);
+                    }}
                 >
                     <SelectTrigger className="w-full">
                         <SelectValue placeholder="Choose a budget" />

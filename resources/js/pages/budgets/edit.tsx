@@ -40,6 +40,8 @@ export default function EditBudgets({
     );
     const error = (i: number, field: string) =>
         (form.errors as Record<string, string>)[`budgets.${i}.${field}`];
+    const periodError = (form.errors as Record<string, string | undefined>)
+        .period;
     const setRow = (i: number, patch: Partial<Row>) =>
         form.setData(
             'budgets',
@@ -67,9 +69,9 @@ export default function EditBudgets({
 
             <p className="-mt-2 text-sm text-muted-foreground">{periodLabel}</p>
 
-            {form.errors.period && (
+            {periodError && (
                 <p className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive">
-                    {form.errors.period}
+                    {periodError}
                 </p>
             )}
 

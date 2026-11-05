@@ -20,8 +20,12 @@ export default function AlertBanner({ base, banner }: AlertBannerProps) {
                             Got paid? Start the new period.
                         </p>
                     </div>
-                    <Button size="sm" variant="default" asChild>
-                        <Link href={`${base}/close`}>Start new</Link>
+                    <Button
+                        size="sm"
+                        variant="default"
+                        render={<Link href={`${base}/close`} />}
+                    >
+                        Start new
                     </Button>
                 </div>
             </CardContent>
