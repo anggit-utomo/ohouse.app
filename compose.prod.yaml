@@ -16,6 +16,9 @@ services:
             - caddy_config:/config
         depends_on:
             - db
+        networks:
+            - default
+            - shared-net
 
     worker:
         image: localhost/budget-app:latest
@@ -25,6 +28,8 @@ services:
         command: php artisan queue:work --sleep=3 --tries=3 --backoff=10 --max-time=3600
         depends_on:
             - db
+        networks:
+            - default
 
     scheduler:
         image: localhost/budget-app:latest
@@ -34,6 +39,8 @@ services:
         command: php artisan schedule:work
         depends_on:
             - db
+        networks:
+            - default
 
     db:
         image: docker.io/library/postgres:17-alpine
@@ -45,6 +52,12 @@ services:
             POSTGRES_PASSWORD: ${DB_PASSWORD}
         volumes:
             - pgdata:/var/lib/postgresql/data
+        networks:
+            - default
+
+networks:
+    shared-net:
+        external: true
 
 volumes:
     pgdata:

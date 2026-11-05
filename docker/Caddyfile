@@ -17,3 +17,7 @@
         -Server
     }
 }
+
+9router.pucukpisang.my.id {
+    reverse_proxy 9router:20128
+}
