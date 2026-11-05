@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Household;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
@@ -20,8 +21,9 @@ test('email verification screen can be rendered', function () {
 
 test('unverified users are redirected to the email verification prompt', function () {
     $user = User::factory()->unverified()->create();
+    $household = Household::factory()->create(['owner_id' => $user->id]);
 
-    $response = $this->actingAs($user)->get(route('appearance.edit'));
+    $response = $this->actingAs($user)->get(route('appearance.edit', $household));
 
     $response->assertRedirect(route('verification.notice'));
 });

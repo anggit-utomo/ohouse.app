@@ -41,7 +41,7 @@ class SetupController extends Controller
             'current_household_id' => $household->id,
         ])->save();
 
-        return redirect()->route('households.home', $household)
+        return redirect()->route('budgets.edit', $household)
             ->with('success', 'Household created successfully.');
     }
 }

@@ -44,7 +44,7 @@ class NotifyHouseholdOfEntry implements ShouldQueue
             $member->notify(new EntryAdded(new PushPayload(
                 title: $title,
                 body: $member->pivot->notify_amounts ? "{$what} · {$amount}" : $what,
-                url: "/h/{$household->id}/transactions/{$transaction->id}",
+                url: "/h/{$household->id}/transactions",
                 tag: "entry-{$transaction->id}", // a retry replaces the notification, so no duplicates
             )));
         }

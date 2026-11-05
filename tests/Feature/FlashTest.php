@@ -38,9 +38,10 @@ it('flashes a message after each action', function () {
 });
 
 it('hands the message to the page after the redirect', function () {
-    $this->actingAs($this->owner)->followingRedirects()
+    $this->actingAs($this->owner)->from("{$this->base}/budgets")
+        ->followingRedirects()
         ->put("{$this->base}/budgets", ['budgets' => [['id' => $this->month->budget_id, 'name' => 'Food', 'amount' => 900_000, 'repeat' => true]]])
-        ->assertInertia(fn (Assert $p) => $p->component('budgets/edit')->where('flash.success', 'Budgets saved.'));
+        ->assertInertia(fn (Assert $p) => $p->component('home')->where('flash.success', 'Budgets saved.'));
 });
 
 it('does not flash anything when an action is refused', function () {

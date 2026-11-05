@@ -53,7 +53,7 @@ it('totals the period by budget and by person, biggest first', function () {
     repScenario($this->household, $this->owner, $this->wife);
 
     $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
-        ->component('report/show')->where('month', '2026-10-01')->where('hasData', true)->where('spent', 3_870_000)->where('income', 0)
+        ->component('report/index')->where('month', '2026-10-01')->where('hasData', true)->where('spent', 3_870_000)->where('income', 0)
         ->where('budgets.0.name', 'Food')->where('budgets.0.spent', 1_640_000)->where('budgets.0.pct', 42)
         ->where('budgets.1.name', 'Transport')->where('budgets.1.pct', 18)
         ->where('budgets.2.name', 'Gasoline')->where('budgets.2.spent', 590_000)->where('budgets.2.pct', 15)

@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use App\Models\Household;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
@@ -16,11 +16,12 @@ test('security page is displayed', function () {
         'confirmPassword' => true,
     ]);
 
-    $user = User::factory()->create();
+    $household = Household::factory()->create();
+    $user = $household->owner;
 
     $this->actingAs($user)
         ->withSession(['auth.password_confirmed_at' => time()])
-        ->get(route('security.edit'))
+        ->get(route('security.edit', $household))
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/security')
             ->where('canManagePasskeys', true)
@@ -33,7 +34,8 @@ test('security page is displayed', function () {
 test('security page requires password confirmation when enabled', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
-    $user = User::factory()->create();
+    $household = Household::factory()->create();
+    $user = $household->owner;
 
     Features::twoFactorAuthentication([
         'confirm' => true,
@@ -41,7 +43,7 @@ test('security page requires password confirmation when enabled', function () {
     ]);
 
     $response = $this->actingAs($user)
-        ->get(route('security.edit'));
+        ->get(route('security.edit', $household));
 
     $response->assertRedirect(route('password.confirm'));
 });
@@ -51,11 +53,12 @@ test('security page renders without two factor when feature is disabled', functi
 
     config(['fortify.features' => []]);
 
-    $user = User::factory()->create();
+    $household = Household::factory()->create();
+    $user = $household->owner;
 
     $this->actingAs($user)
         ->withSession(['auth.password_confirmed_at' => time()])
-        ->get(route('security.edit'))
+        ->get(route('security.edit', $household))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/security')
@@ -68,12 +71,13 @@ test('security page renders without two factor when feature is disabled', functi
 });
 
 test('password can be updated', function () {
-    $user = User::factory()->create();
+    $household = Household::factory()->create();
+    $user = $household->owner;
 
     $response = $this
         ->actingAs($user)
-        ->from(route('security.edit'))
-        ->put(route('user-password.update'), [
+        ->from(route('security.edit', $household))
+        ->put(route('user-password.update', $household), [
             'current_password' => 'password',
             'password' => 'new-password',
             'password_confirmation' => 'new-password',
@@ -81,18 +85,19 @@ test('password can be updated', function () {
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('security.edit'));
+        ->assertRedirect(route('security.edit', $household));
 
     expect(Hash::check('new-password', $user->refresh()->password))->toBeTrue();
 });
 
 test('correct password must be provided to update password', function () {
-    $user = User::factory()->create();
+    $household = Household::factory()->create();
+    $user = $household->owner;
 
     $response = $this
         ->actingAs($user)
-        ->from(route('security.edit'))
-        ->put(route('user-password.update'), [
+        ->from(route('security.edit', $household))
+        ->put(route('user-password.update', $household), [
             'current_password' => 'wrong-password',
             'password' => 'new-password',
             'password_confirmation' => 'new-password',
@@ -100,5 +105,5 @@ test('correct password must be provided to update password', function () {
 
     $response
         ->assertSessionHasErrors('current_password')
-        ->assertRedirect(route('security.edit'));
+        ->assertRedirect(route('security.edit', $household));
 });

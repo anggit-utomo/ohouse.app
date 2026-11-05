@@ -110,10 +110,6 @@ it('adds a correction in the open period for a locked entry', function () {
     $september->update(['closed_at' => now()]);
     $gasOctober = BudgetMonth::factory()->for($september->budget)->create(['period_start' => '2026-10-01', 'allocated' => 700_000]);
 
-    $this->actingAs($this->owner)->get("{$this->base}/create?corrects={$old->id}")
-        ->assertInertia(fn (Assert $p) => $p->component('transactions/form')
-            ->where('defaults.type', 'income')->where('defaults.amount', '100000')->where('defaults.corrects_transaction_id', $old->id));
-
     $this->actingAs($this->owner)->post($this->base, payload($gasOctober, ['type' => 'income', 'amount' => 100_000, 'corrects_transaction_id' => $old->id]))->assertRedirect();
 
     expect(Transaction::latest('id')->first())->corrects_transaction_id->toBe($old->id)
@@ -124,7 +120,8 @@ it('edits an open entry, including moving it to another budget', function () {
     $gas = octoberBudget($this->household, 'Gasoline', 700_000);
     $t = entry($this->food, ['amount' => 50_000]);
 
-    $this->actingAs($this->owner)->put("{$this->base}/{$t->id}", payload($gas, ['amount' => 70_000]))
+    $this->actingAs($this->owner)->from("{$this->base}/{$t->id}")
+        ->put("{$this->base}/{$t->id}", payload($gas, ['amount' => 70_000]))
         ->assertRedirect("{$this->base}/{$t->id}");
 
     expect($t->fresh())->amount->toBe(70_000)->budget_month_id->toBe($gas->id)
@@ -138,8 +135,6 @@ it('refuses to edit or delete entries of a closed period', function () {
 
     $this->actingAs($this->owner)->put("{$this->base}/{$t->id}", payload($this->food))->assertSessionHasErrors('occurred_at');
     $this->actingAs($this->owner)->delete("{$this->base}/{$t->id}")->assertSessionHasErrors('occurred_at');
-    $this->actingAs($this->owner)->get("{$this->base}/{$t->id}/edit")->assertRedirect("{$this->base}/{$t->id}");
-
     expect($t->fresh()->amount)->toBe(50_000)->and($t->fresh()->trashed())->toBeFalse();
 });
 
@@ -163,9 +158,7 @@ it('lets viewers read but not change anything', function () {
     $this->household->members()->attach($viewer->id, ['role' => 'viewer']);
     $t = entry($this->food);
 
-    $this->actingAs($viewer)->get($this->base)->assertOk();
-    $this->actingAs($viewer)->get("{$this->base}/{$t->id}")->assertInertia(fn (Assert $p) => $p->where('canEdit', false));
-    $this->actingAs($viewer)->get("{$this->base}/create")->assertForbidden();
+    $this->actingAs($viewer)->get($this->base)->assertInertia(fn (Assert $p) => $p->where('canEdit', false));
     $this->actingAs($viewer)->post($this->base, payload($this->food))->assertForbidden();
     $this->actingAs($viewer)->put("{$this->base}/{$t->id}", payload($this->food))->assertForbidden();
     $this->actingAs($viewer)->delete("{$this->base}/{$t->id}")->assertForbidden();
@@ -173,17 +166,14 @@ it('lets viewers read but not change anything', function () {
 
 it('hides the household from outsiders', function () {
     $outsider = User::factory()->create();
-    $t = entry($this->food);
 
     $this->actingAs($outsider)->get($this->base)->assertNotFound();
     $this->actingAs($outsider)->post($this->base, payload($this->food))->assertNotFound();
-    $this->actingAs($outsider)->get("{$this->base}/{$t->id}")->assertNotFound();
 });
 
 it('does not open another household\'s transaction through your own url', function () {
     $foreign = entry(octoberBudget(Household::factory()->create(), 'Food', 1_000_000));
 
-    $this->actingAs($this->owner)->get("{$this->base}/{$foreign->id}")->assertNotFound();
     $this->actingAs($this->owner)->delete("{$this->base}/{$foreign->id}")->assertNotFound();
 });
 
@@ -210,16 +200,4 @@ it('filters history by period, type, person and search text', function () {
         ->and($get('?q=groc'))->toBe(['Groceries'])
         ->and($get('?q=gasoline'))->toBe(['Petrol'])
         ->and($get('?month=2026-09'))->toBe(['Last month']);
-});
-
-it('shows the entry, what is left and whether it is locked', function () {
-    $t = entry($this->food, ['amount' => 85_000]);
-
-    $this->actingAs($this->owner)->get("{$this->base}/{$t->id}")
-        ->assertInertia(fn (Assert $p) => $p->component('transactions/show')
-            ->where('transaction.left', 1_915_000)->where('locked', false)->where('canEdit', true));
-
-    $this->food->update(['closed_at' => now()]);
-
-    $this->actingAs($this->owner)->get("{$this->base}/{$t->id}")->assertInertia(fn (Assert $p) => $p->where('locked', true));
 });

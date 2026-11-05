@@ -1,30 +1,32 @@
 <?php
 
+use App\Models\Household;
 use App\Models\User;
 
 test('profile page is displayed', function () {
-    $user = User::factory()->create();
-
+    $household = Household::factory()->create();
     $response = $this
-        ->actingAs($user)
-        ->get(route('profile.edit'));
+        ->actingAs($household->owner)
+        ->get(route('profile.edit', $household));
 
-    $response->assertOk();
+    $response->assertRedirect(route('household.settings', $household));
 });
 
 test('profile information can be updated', function () {
-    $user = User::factory()->create();
+    $household = Household::factory()->create();
+    $user = $household->owner;
 
     $response = $this
         ->actingAs($user)
-        ->patch(route('profile.update'), [
+        ->from(route('household.settings', $household))
+        ->patch(route('profile.update', $household), [
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('profile.edit'));
+        ->assertRedirect(route('household.settings', $household));
 
     $user->refresh();
 
@@ -34,28 +36,32 @@ test('profile information can be updated', function () {
 });
 
 test('email verification status is unchanged when the email address is unchanged', function () {
-    $user = User::factory()->create();
+    $household = Household::factory()->create();
+    $user = $household->owner;
 
     $response = $this
         ->actingAs($user)
-        ->patch(route('profile.update'), [
+        ->from(route('household.settings', $household))
+        ->patch(route('profile.update', $household), [
             'name' => 'Test User',
             'email' => $user->email,
         ]);
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('profile.edit'));
+        ->assertRedirect(route('household.settings', $household));
 
     expect($user->refresh()->email_verified_at)->not->toBeNull();
 });
 
 test('user can delete their account', function () {
     $user = User::factory()->create();
+    $household = Household::factory()->create();
+    $household->members()->attach($user->id, ['role' => 'editor']);
 
     $response = $this
         ->actingAs($user)
-        ->delete(route('profile.destroy'), [
+        ->delete(route('profile.destroy', $household), [
             'password' => 'password',
         ]);
 
@@ -69,17 +75,19 @@ test('user can delete their account', function () {
 
 test('correct password must be provided to delete account', function () {
     $user = User::factory()->create();
+    $household = Household::factory()->create();
+    $household->members()->attach($user->id, ['role' => 'editor']);
 
     $response = $this
         ->actingAs($user)
-        ->from(route('profile.edit'))
-        ->delete(route('profile.destroy'), [
+        ->from(route('household.settings', $household))
+        ->delete(route('profile.destroy', $household), [
             'password' => 'wrong-password',
         ]);
 
     $response
         ->assertSessionHasErrors('password')
-        ->assertRedirect(route('profile.edit'));
+        ->assertRedirect(route('household.settings', $household));
 
     expect($user->fresh())->not->toBeNull();
 });

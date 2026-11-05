@@ -82,7 +82,7 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
                 Route::get('/{budget}', 'show')->name('show');
             });
 
-        Route::resource('transactions', TransactionController::class)->except(['create', 'edit']);
+        Route::resource('transactions', TransactionController::class)->except(['create', 'edit', 'show']);
 
         Route::controller(TransferController::class)
             ->prefix('transfers')

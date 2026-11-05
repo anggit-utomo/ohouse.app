@@ -40,7 +40,8 @@ function movePayload(BudgetMonth $from, BudgetMonth $to, array $over = []): arra
 }
 
 it('moves money and creates two linked entries', function () {
-    $this->actingAs($this->owner)->post($this->base, movePayload($this->gas, $this->transport))
+    $this->actingAs($this->owner)->from("/h/{$this->household->id}")
+        ->post($this->base, movePayload($this->gas, $this->transport))
         ->assertRedirect("/h/{$this->household->id}");
 
     $out = Transaction::where('type', TransactionTypeEnum::TRANSFER_OUT)->first();
@@ -134,18 +135,13 @@ it('does not undo another household\'s move', function () {
     expect(Transaction::whereNotNull('transfer_id')->count())->toBe(2);
 });
 
-it('shows a move as one row in history and on its detail page', function () {
+it('shows a move as one row in history', function () {
     $this->actingAs($this->owner)->post($this->base, movePayload($this->gas, $this->transport));
 
     $this->actingAs($this->owner)->get("/h/{$this->household->id}/transactions")->assertInertia(fn (Assert $p) => $p
         ->has('transactions', 3) // the two earlier expenses and one move
         ->where('transactions.0.title', 'Moved Gasoline → Transport')
         ->where('transactions.0.kind', 'transfer')->where('transactions.0.signed', 0)->where('transactions.0.amount', 100_000));
-
-    $out = Transaction::where('type', TransactionTypeEnum::TRANSFER_OUT)->first();
-
-    $this->actingAs($this->owner)->get("/h/{$this->household->id}/transactions/{$out->id}")->assertInertia(fn (Assert $p) => $p
-        ->where('isTransfer', true)->where('moved.from', 'Gasoline')->where('moved.to', 'Transport')->where('transferId', $out->transfer_id));
 });
 
 it('keeps moves out of the expense and income filters', function () {
@@ -154,19 +150,11 @@ it('keeps moves out of the expense and income filters', function () {
     $this->actingAs($this->owner)->get("/h/{$this->household->id}/transactions?type=expense")->assertInertia(fn (Assert $p) => $p->has('transactions', 2));
 });
 
-it('opens the page with budgets and preselected ones', function () {
-    $this->actingAs($this->owner)->get("{$this->base}/create?from={$this->gas->budget_id}&to={$this->transport->budget_id}")
-        ->assertInertia(fn (Assert $p) => $p->component('transfers/create')
-            ->where('budgets.0.name', 'Gasoline')->where('budgets.0.left', 110_000)->where('budgets.1.left', -110_000)
-            ->where('defaults.from_budget_id', (string) $this->gas->budget_id)->where('defaults.to_budget_id', (string) $this->transport->budget_id));
-});
-
 it('lets viewers see nothing here and hides the household from outsiders', function () {
     $viewer = User::factory()->create();
     $this->household->members()->attach($viewer->id, ['role' => 'viewer']);
 
-    $this->actingAs($viewer)->get("{$this->base}/create")->assertForbidden();
     $this->actingAs($viewer)->post($this->base, movePayload($this->gas, $this->transport))->assertForbidden();
 
-    $this->actingAs(User::factory()->create())->get("{$this->base}/create")->assertNotFound();
+    $this->actingAs(User::factory()->create())->get("/h/{$this->household->id}/transactions")->assertNotFound();
 });

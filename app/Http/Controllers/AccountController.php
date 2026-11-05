@@ -62,6 +62,8 @@ class AccountController extends Controller
             ]);
         }
 
+        Auth::logout();
+
         DB::transaction(function () use ($user) {
             $user->households()->detach();
 
@@ -82,7 +84,6 @@ class AccountController extends Controller
             }
         });
 
-        Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

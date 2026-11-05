@@ -52,8 +52,6 @@ it('runs the same number of queries for 3 budgets and 12 budgets', function (str
 })->with([
     '',
     '/transactions',
-    '/transactions/create',
-    '/transfers/create',
     '/report',
     '/budgets',
     '/budgets/{budget}',

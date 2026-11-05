@@ -135,7 +135,8 @@ it('only the owner makes codes and changes roles', function () {
 it('lets the owner change a role but not the owner\'s', function () {
     $editor = famMember($this->household);
 
-    $this->actingAs($this->owner)->patch("{$this->base}/family/members/{$editor->id}", ['role' => 'viewer'])->assertRedirect();
+    $this->actingAs($this->owner)->patch("{$this->base}/family/members/{$editor->id}", ['role' => 'viewer'])
+        ->assertRedirect()->assertSessionHas('success', 'Member role updated.');
     expect($editor->roleIn($this->household)->value)->toBe('viewer');
 
     $this->actingAs($this->owner)->patch("{$this->base}/family/members/{$this->owner->id}", ['role' => 'viewer'])->assertSessionHasErrors('role');
@@ -178,7 +179,7 @@ it('shows settings to members and renames only for the owner', function () {
     $this->actingAs($editor)->get("{$this->base}/settings")->assertInertia(fn (Assert $p) => $p->component('settings/household')->where('isOwner', false));
     $this->actingAs($editor)->put("{$this->base}/settings", ['name' => 'Hacked'])->assertForbidden();
 
-    $this->actingAs($this->owner)->put("{$this->base}/settings", ['name' => 'Our home'])->assertRedirect();
+    $this->actingAs($this->owner)->put("{$this->base}/settings", ['name' => 'Our home', 'currency' => 'IDR'])->assertRedirect();
     expect($this->household->fresh()->name)->toBe('Our home');
 
     $this->actingAs($this->owner)->put("{$this->base}/settings", ['name' => ''])->assertSessionHasErrors('name');

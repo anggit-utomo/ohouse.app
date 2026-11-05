@@ -24,7 +24,7 @@ class TransactionController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $rows = $household->transactions()
-            ->with(['budgetMonth.budget', 'user'])
+            ->with(['budgetMonth.budget', 'budgetMonth.transactions', 'user'])
             ->whereBetween('occurred_at', [$period->start->startOfDay(), $period->endOrNow()])
             ->when($type, fn ($x) => $x->where('type', $type))
             ->when($person, fn ($x) => $x->where('user_id', $person))
@@ -114,76 +114,6 @@ class TransactionController extends Controller
             'success',
             $transaction->type === TransactionTypeEnum::INCOME ? 'Income saved.' : 'Expense saved.'
         );
-    }
-
-    public function show(Household $household, Transaction $transaction): Response
-    {
-        $this->authorize('view', $transaction);
-
-        $transaction->load(['budgetMonth.transactions', 'budgetMonth.budget', 'user']);
-        $month = $transaction->budgetMonth;
-        $isTransfer = in_array(
-            $transaction->type,
-            [TransactionTypeEnum::TRANSFER_IN, TransactionTypeEnum::TRANSFER_OUT],
-            true
-        );
-
-        $moved = null;
-
-        if ($isTransfer && $transaction->transfer_id) {
-            $pair = Transaction::where('transfer_id', $transaction->transfer_id)->with('budgetMonth.budget')->get();
-            $moved = [
-                'from' => $pair->firstWhere('type', TransactionTypeEnum::TRANSFER_OUT)?->budgetMonth->budget->name,
-                'to' => $pair->firstWhere('type', TransactionTypeEnum::TRANSFER_IN)?->budgetMonth->budget->name,
-            ];
-        }
-
-        // FIX: Match period start with the transaction's budget month start date
-        $periodKey = $month->period_start->toDateString();
-        $budgets = $household->budgets()->active()->orderBy('sort')
-            ->with(['months' => fn ($q) => $q->whereDate('period_start', $periodKey)->with('transactions')])
-            ->get()
-            ->map(fn ($b) => [
-                'id' => $b->id,
-                'name' => $b->name,
-                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? $b->default_amount : 0),
-            ])->values();
-
-        $defaults = [
-            'type' => $transaction->type->value,
-            'budget_id' => (string) $transaction->budgetMonth->budget_id,
-            'amount' => (string) $transaction->amount,
-            'note' => $transaction->note ?? '',
-            'occurred_at' => $transaction->occurred_at->toDateString(),
-            'user_id' => (string) $transaction->user_id,
-            'corrects_transaction_id' => $transaction->corrects_transaction_id,
-        ];
-
-        return Inertia::render('transactions/show', [
-            'household' => ['id' => $household->id],
-            'transaction' => [
-                'id' => $transaction->id,
-                'type' => $transaction->type->value,
-                'amount' => $transaction->amount,
-                'note' => $transaction->note,
-                'budget' => $month->budget->name,
-                'user' => $transaction->user->name,
-                'occurred_at' => $transaction->occurred_at->toIso8601String(),
-                'left' => $month->balance(),
-            ],
-            'locked' => $month->isClosed(),
-            'isTransfer' => $isTransfer,
-            'canEdit' => request()->user()->can('update', $transaction),
-            'moved' => $moved,
-            'transferId' => $transaction->transfer_id,
-            'budgets' => $budgets,
-            'members' => $household->members()
-                ->get(['users.id', 'users.name'])
-                ->map->only(['id', 'name'])
-                ->values(),
-            'defaults' => $defaults,
-            'today' => now()->toDateString(),
-        ]);
     }
 
     public function update(

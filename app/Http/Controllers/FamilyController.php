@@ -62,7 +62,7 @@ class FamilyController extends Controller
 
         $household->members()->updateExistingPivot($target->id, ['role' => $data['role']]);
 
-        return back()->with('success', 'New pair code created.');
+        return back()->with('success', 'Member role updated.');
     }
 
     /** The owner removes someone, or anyone but the owner leaves on their own. */
