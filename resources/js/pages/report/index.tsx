@@ -1,5 +1,5 @@
+import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
-import { BudgetBar } from '@/components/budget-bar';
 import {
     Select,
     SelectContent,
@@ -7,11 +7,43 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { rupiah } from '@/lib/money';
 import { BottomNav } from '@/components/bottom-nav';
+import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import HeadTitle from '@/components/head-title';
 
-type Item = { id: number; name: string; spent: number; pct: number };
+type BudgetItem = {
+    id: number;
+    name: string;
+    spent: number;
+    pct: number;
+    changePct?: number | null;
+};
+
+type PersonItem = {
+    id: number;
+    name: string;
+    spent: number;
+    pct: number;
+    initial?: string;
+};
+
+type ExpenseItem = {
+    id: number;
+    name: string;
+    category: string;
+    date: string;
+    amount: number;
+    initial?: string;
+};
+
+type DailyItem = {
+    date: string;
+    amount: number;
+    label?: string;
+};
 
 type Props = {
     household: { id: number };
@@ -22,23 +54,21 @@ type Props = {
     income: number;
     previous: { label: string; spent: number } | null;
     change: number | null;
-    budgets: Item[];
-    people: Item[];
+    dailySpending?: DailyItem[];
+    busiestDay?: string | null;
+    budgets?: BudgetItem[];
+    biggestExpenses?: ExpenseItem[];
+    people?: PersonItem[];
 };
 
-const shades = [
-    'bg-primary',
-    'bg-muted-foreground',
-    'bg-border',
-    'bg-secondary',
+// Color mapping derived from your theme chart variables & primary teal shades
+const chartColors = [
+    'var(--primary)',
+    'var(--chart-2)',
+    'var(--chart-3)',
+    'var(--chart-4)',
+    'var(--chart-5)',
 ];
-
-const compare = (change: number | null, previous: Props['previous']) => {
-    if (change === null || !previous) return 'No numbers for the month before';
-    if (change === 0) return `Same as ${previous.label}`;
-
-    return `${rupiah(Math.abs(change))} ${change < 0 ? 'less' : 'more'} than ${previous.label}`;
-};
 
 export default function Report({
     household,
@@ -46,24 +76,58 @@ export default function Report({
     months,
     hasData,
     spent,
-    income,
     previous,
     change,
-    budgets,
-    people,
+    dailySpending = [],
+    busiestDay,
+    budgets = [],
+    biggestExpenses = [],
+    people = [],
 }: Props) {
     const base = `/h/${household.id}`;
+    const [hoveredBudget, setHoveredBudget] = useState<BudgetItem | null>(null);
+
+    const maxDailySpent = Math.max(...dailySpending.map((d) => d.amount), 1);
+
+    // Dynamic Donut SVG rendering using theme OKLCH chart tokens
+    const renderDonutSlices = () => {
+        let accumulatedPct = 0;
+        return budgets.map((b, i) => {
+            const startPct = accumulatedPct;
+            accumulatedPct += b.pct;
+            const strokeDasharray = `${b.pct} ${100 - b.pct}`;
+            const strokeDashoffset = 100 - startPct + 25;
+
+            return (
+                <circle
+                    key={b.id}
+                    cx="18"
+                    cy="18"
+                    r="15.91549430918954"
+                    fill="transparent"
+                    stroke={chartColors[i % chartColors.length]}
+                    strokeWidth="4.5"
+                    strokeDasharray={strokeDasharray}
+                    strokeDashoffset={strokeDashoffset}
+                    className="cursor-pointer transition-all duration-300 hover:opacity-80"
+                    onMouseEnter={() => setHoveredBudget(b)}
+                    onMouseLeave={() => setHoveredBudget(null)}
+                />
+            );
+        });
+    };
+
+    const activeBudget = hoveredBudget || budgets[0];
 
     return (
         <>
             <Head title="Report" />
 
             <HeadTitle
-                left={
-                    <h2 className="text-xl font-semibold">Spending Insights</h2>
-                }
+                left={<h1 className="text-xl font-semibold">Report</h1>}
             />
 
+            {/* Period Selector */}
             <Select
                 value={month}
                 onValueChange={(m) =>
@@ -74,7 +138,7 @@ export default function Report({
                     )
                 }
             >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -86,76 +150,282 @@ export default function Report({
                 </SelectContent>
             </Select>
 
-            <div className="rounded-xl border p-4">
-                <p className="text-muted-foreground">Total spent</p>
-                <p className="my-1 text-3xl font-bold">{rupiah(spent)}</p>
-                <p className="text-sm text-muted-foreground">
-                    {compare(change, previous)}
-                </p>
-                {income > 0 && (
-                    <p className="mt-1 text-sm text-green-700">
-                        Income {rupiah(income)}
-                    </p>
-                )}
-            </div>
-
-            {!hasData && (
-                <p className="py-10 text-center text-muted-foreground">
-                    Nothing recorded in this month yet.
-                </p>
-            )}
-
-            {budgets.length > 0 && (
+            {!hasData ? (
+                <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                        Nothing recorded in this month yet.
+                    </CardContent>
+                </Card>
+            ) : (
                 <>
-                    <h2 className="mt-3 text-base font-semibold">By budget</h2>
-                    {budgets.map((b) => (
-                        <div key={b.id} className="py-1">
-                            <div className="mb-1.5 flex items-center justify-between">
-                                <span>{b.name}</span>
-                                <span className="text-sm">
-                                    <b>{rupiah(b.spent)}</b>{' '}
-                                    <span className="text-muted-foreground">
-                                        {b.pct}%
-                                    </span>
+                    {/* 1. Total Spent Summary & Mini Bar Chart */}
+                    <Card>
+                        <CardContent>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-muted-foreground">
+                                    Total spent
                                 </span>
+                                {change !== null && previous && (
+                                    <div
+                                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                            change <= 0
+                                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                                : 'bg-destructive/10 text-destructive'
+                                        }`}
+                                    >
+                                        <span>
+                                            {change <= 0 ? '↓' : '↑'}{' '}
+                                            {rupiah(Math.abs(change))} vs{' '}
+                                            {previous.label}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
-                            <BudgetBar pct={b.pct} />
-                        </div>
-                    ))}
-                </>
-            )}
 
-            {people.length > 0 && (
-                <>
-                    <h2 className="mt-3 text-base font-semibold">By person</h2>
-                    <div className="flex h-3 overflow-hidden rounded-full bg-muted">
-                        {people.map((p, i) => (
-                            <div
-                                key={p.id}
-                                className={shades[i % shades.length]}
-                                style={{ width: `${p.pct}%` }}
-                            />
-                        ))}
-                    </div>
-                    {people.map((p, i) => (
-                        <div
-                            key={p.id}
-                            className="flex items-center justify-between text-sm"
-                        >
-                            <span className="flex items-center gap-2">
-                                <span
-                                    className={`size-2.5 rounded-full ${shades[i % shades.length]}`}
-                                />
-                                {p.name}
-                            </span>
-                            <span>
-                                <b>{rupiah(p.spent)}</b>{' '}
-                                <span className="text-muted-foreground">
-                                    {p.pct}%
-                                </span>
-                            </span>
+                            <div className="text-2xl font-semibold">
+                                {rupiah(spent)}
+                            </div>
+
+                            {/* Daily Mini Bar Chart */}
+                            {dailySpending.length > 0 && (
+                                <div className="mt-4">
+                                    <div className="flex h-14 items-end justify-between gap-1 px-1">
+                                        {dailySpending.map((day, idx) => {
+                                            const heightPct = Math.max(
+                                                (day.amount / maxDailySpent) *
+                                                    100,
+                                                8,
+                                            );
+                                            const isHighest =
+                                                day.amount === maxDailySpent;
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className="group relative flex flex-1 flex-col items-center"
+                                                >
+                                                    <div
+                                                        className={`w-full rounded-sm transition-all ${
+                                                            isHighest
+                                                                ? 'bg-primary'
+                                                                : 'bg-muted group-hover:bg-primary/50'
+                                                        }`}
+                                                        style={{
+                                                            height: `${heightPct}%`,
+                                                        }}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="mt-2 flex items-center justify-between px-0.5 text-[11px] font-medium text-muted-foreground">
+                                        <span>
+                                            {dailySpending[0]?.label || 'Start'}
+                                        </span>
+                                        {busiestDay && (
+                                            <span>
+                                                Busiest day · {busiestDay}
+                                            </span>
+                                        )}
+                                        <span>Today</span>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* 2. Spending By Budget Card */}
+                    {budgets.length > 0 && (
+                        <Card>
+                            <CardContent>
+                                <h2 className="text-base font-semibold">
+                                    By budget
+                                </h2>
+
+                                {/* Donut Chart */}
+                                <div className="relative flex items-center justify-center p-4">
+                                    <svg
+                                        viewBox="0 0 36 36"
+                                        className="h-44 w-44 -rotate-90 transform p-2"
+                                    >
+                                        {renderDonutSlices()}
+                                    </svg>
+                                    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                                        <span className="text-base font-bold text-foreground">
+                                            {activeBudget?.name}
+                                        </span>
+                                        <span className="text-xs font-medium text-muted-foreground">
+                                            {activeBudget?.pct}% of spending
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Budget Items */}
+                                <div className="space-y-3.5 pt-1">
+                                    {budgets.map((b, i) => (
+                                        <div
+                                            key={b.id}
+                                            className="flex items-center justify-between text-sm"
+                                        >
+                                            <div className="flex items-center gap-2.5">
+                                                <span
+                                                    className="size-2.5 shrink-0 rounded-full"
+                                                    style={{
+                                                        backgroundColor:
+                                                            chartColors[
+                                                                i %
+                                                                    chartColors.length
+                                                            ],
+                                                    }}
+                                                />
+                                                <span className="font-medium text-foreground">
+                                                    {b.name}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-bold text-foreground">
+                                                    {rupiah(b.spent)}
+                                                </span>
+                                                <span className="w-8 text-right text-xs font-medium text-muted-foreground">
+                                                    {b.pct}%
+                                                </span>
+                                                {b.changePct !== undefined && (
+                                                    <div
+                                                        className={`flex w-12 items-center justify-end text-xs font-semibold ${
+                                                            (b.changePct ?? 0) >
+                                                            0
+                                                                ? 'text-destructive'
+                                                                : (b.changePct ??
+                                                                        0) < 0
+                                                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                                                  : 'text-muted-foreground'
+                                                        }`}
+                                                    >
+                                                        {(b.changePct ?? 0) >
+                                                            0 && (
+                                                            <ArrowUpRight className="mr-0.5 size-3.5" />
+                                                        )}
+                                                        {(b.changePct ?? 0) <
+                                                            0 && (
+                                                            <ArrowDownRight className="mr-0.5 size-3.5" />
+                                                        )}
+                                                        {(b.changePct ?? 0) ===
+                                                            0 && (
+                                                            <Minus className="mr-0.5 size-3" />
+                                                        )}
+                                                        {Math.abs(
+                                                            b.changePct ?? 0,
+                                                        )}
+                                                        %
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {previous && (
+                                    <p className="pt-1 text-[11px] text-muted-foreground">
+                                        Arrows compare with {previous.label}.
+                                    </p>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* 3. Biggest Expenses */}
+                    {biggestExpenses.length > 0 && (
+                        <Card>
+                            <CardContent>
+                                <h2 className="text-base font-semibold">
+                                    Biggest expenses
+                                </h2>
+                                <div className="space-y-4">
+                                    {biggestExpenses.map((exp) => (
+                                        <div
+                                            key={exp.id}
+                                            className="flex items-center justify-between"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="size-9 border border-border bg-muted text-xs font-medium text-foreground">
+                                                    <AvatarFallback>
+                                                        {exp.initial ||
+                                                            exp.name.charAt(0)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="text-sm leading-tight font-semibold text-foreground">
+                                                        {exp.name}
+                                                    </p>
+                                                    <p className="mt-0.5 text-xs text-muted-foreground">
+                                                        {exp.category} ·{' '}
+                                                        {exp.date}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="text-sm font-bold text-foreground">
+                                                -{rupiah(exp.amount)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* 4. You and your partner */}
+                    {people.length > 0 && (
+                        <div className="space-y-3">
+                            <h2 className="px-1 text-base font-bold text-foreground">
+                                You and your partner
+                            </h2>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                {people.map((p) => (
+                                    <Card key={p.id}>
+                                        <CardContent>
+                                            <div className="flex items-center gap-2.5">
+                                                <Avatar className="size-8 bg-primary text-xs font-medium text-primary-foreground">
+                                                    <AvatarFallback className="bg-primary text-primary-foreground">
+                                                        {p.initial ||
+                                                            p.name
+                                                                .charAt(0)
+                                                                .toUpperCase()}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <span className="text-sm font-semibold text-foreground">
+                                                    {p.name}
+                                                </span>
+                                            </div>
+
+                                            <div>
+                                                <div className="text-base font-extrabold text-foreground">
+                                                    {rupiah(p.spent)}
+                                                </div>
+                                                {/* Progress fill bar */}
+                                                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                                                    <div
+                                                        className="h-full rounded-full bg-primary transition-all duration-300"
+                                                        style={{
+                                                            width: `${Math.min(
+                                                                Math.max(
+                                                                    p.pct,
+                                                                    0,
+                                                                ),
+                                                                100,
+                                                            )}%`,
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span className="mt-1.5 block text-xs font-medium text-muted-foreground">
+                                                    {p.pct}% of spending
+                                                </span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
                         </div>
-                    ))}
+                    )}
                 </>
             )}
 

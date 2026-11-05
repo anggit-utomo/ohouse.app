@@ -34,7 +34,10 @@ class ReportController extends Controller
             'income' => $current['income'],
             'previous' => $hasPrevious ? ['label' => $before->title(), 'spent' => $previous['spent']] : null,
             'change' => $hasPrevious ? $current['spent'] - $previous['spent'] : null,
+            'dailySpending' => $current['daily_spending'] ?? [],
+            'busiestDay' => $current['busiest_day'] ?? null,
             'budgets' => $current['budgets'],
+            'biggestExpenses' => $current['biggest_expenses'] ?? [],
             'people' => $current['people'],
         ]);
     }
