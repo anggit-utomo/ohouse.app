@@ -76,6 +76,7 @@ export default function Report({
     months,
     hasData,
     spent,
+    income,
     previous,
     change,
     dailySpending = [],
@@ -88,15 +89,16 @@ export default function Report({
     const [hoveredBudget, setHoveredBudget] = useState<BudgetItem | null>(null);
 
     const maxDailySpent = Math.max(...dailySpending.map((d) => d.amount), 1);
+    const totalBudgetSpent = budgets.reduce((sum, b) => sum + b.spent, 0) || 1;
 
     // Dynamic Donut SVG rendering using theme OKLCH chart tokens
     const renderDonutSlices = () => {
-        let accumulatedPct = 0;
+        let accumulated = 0;
+
         return budgets.map((b, i) => {
-            const startPct = accumulatedPct;
-            accumulatedPct += b.pct;
-            const strokeDasharray = `${b.pct} ${100 - b.pct}`;
-            const strokeDashoffset = 100 - startPct + 25;
+            const share = (b.spent / totalBudgetSpent) * 100;
+            const start = accumulated;
+            accumulated += share;
 
             return (
                 <circle
@@ -107,11 +109,12 @@ export default function Report({
                     fill="transparent"
                     stroke={chartColors[i % chartColors.length]}
                     strokeWidth="4.5"
-                    strokeDasharray={strokeDasharray}
-                    strokeDashoffset={strokeDashoffset}
-                    className="cursor-pointer transition-all duration-300 hover:opacity-80"
+                    strokeDasharray={`${share} ${100 - share}`}
+                    strokeDashoffset={-start}
+                    className="cursor-pointer transition-opacity duration-300 hover:opacity-80"
                     onMouseEnter={() => setHoveredBudget(b)}
                     onMouseLeave={() => setHoveredBudget(null)}
+                    onClick={() => setHoveredBudget(b)}
                 />
             );
         });
@@ -186,6 +189,12 @@ export default function Report({
                                 {rupiah(spent)}
                             </div>
 
+                            {income > 0 && (
+                                <p className="mt-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                    Income {rupiah(income)}
+                                </p>
+                            )}
+
                             {/* Daily Mini Bar Chart */}
                             {dailySpending.length > 0 && (
                                 <div className="mt-4">
@@ -212,6 +221,7 @@ export default function Report({
                                                         style={{
                                                             height: `${heightPct}%`,
                                                         }}
+                                                        title={`${day.label}: ${rupiah(day.amount)}`}
                                                     />
                                                 </div>
                                             );
@@ -289,7 +299,7 @@ export default function Report({
                                                 <span className="w-8 text-right text-xs font-medium text-muted-foreground">
                                                     {b.pct}%
                                                 </span>
-                                                {b.changePct !== undefined && (
+                                                {b.changePct != null && (
                                                     <div
                                                         className={`flex w-12 items-center justify-end text-xs font-semibold ${
                                                             (b.changePct ?? 0) >

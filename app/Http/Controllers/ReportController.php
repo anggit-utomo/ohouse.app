@@ -36,7 +36,11 @@ class ReportController extends Controller
             'change' => $hasPrevious ? $current['spent'] - $previous['spent'] : null,
             'dailySpending' => $current['daily_spending'] ?? [],
             'busiestDay' => $current['busiest_day'] ?? null,
-            'budgets' => $current['budgets'],
+            'budgets' => collect($current['budgets'])->map(function (array $b) use ($hasPrevious, $previous) {
+                $before = $hasPrevious ? collect($previous['budgets'])->firstWhere('id', $b['id'])['spent'] ?? 0 : 0;
+
+                return [...$b, 'changePct' => $before > 0 ? (int) round(($b['spent'] - $before) / $before * 100) : null];
+            })->all(),
             'biggestExpenses' => $current['biggest_expenses'] ?? [],
             'people' => $current['people'],
         ]);
