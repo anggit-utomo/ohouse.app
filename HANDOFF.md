@@ -4,7 +4,7 @@
 
 - Repo: `ohouse`, branch `master`, remote `git@github.com:anggit-utomo/ohouse.app.git`.
 - Fixed point for this work: `b1f79a5`. Current `origin/master` is `a4cde7c`.
-- **The work spans these commits on top of the fixed point; HEAD is ahead of `origin/master` and not pushed:**
+- **Substantive commits on top of the fixed point; HEAD is ahead of `origin/master` and not pushed:**
     - `2bcd626` `test: decouple feature tests from the Vite manifest`
     - `82e4c67` `fix: clear PHPStan level 7 findings`
     - `3db71b1` `refactor: finish Base UI migration and drop dead settings code`
