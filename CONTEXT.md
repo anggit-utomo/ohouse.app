@@ -20,6 +20,10 @@ _Avoid_: Pivot, household-user
 A spending category within a household, with an amount allocated for each period.
 _Avoid_: Category, envelope
 
+**Budget Summary**:
+One Budget's numbers for one Period: what was allocated, what was spent, what is left, and the percentage used.
+_Avoid_: Budget (when the summary is meant), budget card
+
 **Period**:
 A budgeting window that starts on the household's payday and is named for the month it starts in.
 _Avoid_: Month, cycle
@@ -27,6 +31,10 @@ _Avoid_: Month, cycle
 **Transaction**:
 A single amount against a budget in a period, of type expense, income, transfer out, or transfer in.
 _Avoid_: Entry, record
+
+**Transaction Row**:
+The read projection of a Transaction shown in a list or detail view: the row, not the raw record.
+_Avoid_: Tx, entry, record
 
 **Transfer**:
 A pair of linked transactions — a transfer out and a transfer in — moving money between budgets without changing the household total.
