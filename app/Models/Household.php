@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Support\Period;
-use App\Support\Periods;
 use Database\Factories\HouseholdFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -62,10 +61,8 @@ class Household extends Model
      *
      * @return Collection<int, array{id: int, name: string, left: int}>
      */
-    public function budgetBalances(?Period $period = null): Collection
+    public function budgetBalances(Period $period): Collection
     {
-        $period ??= Periods::current($this);
-
         return $this->budgets()->active()->orderBy('sort')
             ->with(['months' => fn ($q) => $q->whereDate('period_start', $period->key())->with('transactions')])
             ->get()
