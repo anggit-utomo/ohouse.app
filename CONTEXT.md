@@ -15,3 +15,23 @@ _Avoid_: Participant, collaborator
 **Membership**:
 A user's participation in a household, carrying their role and notification preferences.
 _Avoid_: Pivot, household-user
+
+**Budget**:
+A spending category within a household, with an amount allocated for each period.
+_Avoid_: Category, envelope
+
+**Period**:
+A budgeting window that starts on the household's payday and is named for the month it starts in.
+_Avoid_: Month, cycle
+
+**Transaction**:
+A single expense or income entry recorded against a budget in a period.
+_Avoid_: Entry, record
+
+**Transfer**:
+Two linked transactions — `transfer_in` and `transfer_out` sharing a `transfer_id` — that move money between budgets without changing the household total.
+_Avoid_: Move (for the record)
+
+**Move**:
+The action of creating a transfer.
+_Avoid_: Transfer (for the action)

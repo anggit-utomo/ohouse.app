@@ -10,3 +10,14 @@ export function cn(...inputs: ClassValue[]) {
 export function toUrl(url: NonNullable<InertiaLinkProps['href']>): string {
     return typeof url === 'string' ? url : url.url;
 }
+
+/** Base UI selects emit null when cleared; ignore that instead of storing it. */
+export function setIfNotNull(
+    setter: (value: string) => void,
+): (value: string | null) => void {
+    return (value) => {
+        if (value !== null) {
+            setter(value);
+        }
+    };
+}

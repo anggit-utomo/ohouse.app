@@ -8,6 +8,7 @@ use App\Http\Requests\TransactionRequest;
 use App\Models\Household;
 use App\Models\Transaction;
 use App\Support\Periods;
+use App\Support\TransactionRow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -38,7 +39,7 @@ class TransactionController extends Controller
         $pairs = Transaction::whereIn('transfer_id', $rows->pluck('transfer_id')->filter()->unique())
             ->with('budgetMonth.budget')->get()->groupBy('transfer_id');
 
-        $moveTitle = function (Transaction $t) use ($pairs) {
+        $moveTitle = function (Transaction $t) use ($pairs): string {
             $pair = $pairs[$t->transfer_id] ?? collect();
             $from = $pair->firstWhere('type', TransactionTypeEnum::TRANSFER_OUT)?->budgetMonth->budget->name;
             $to = $pair->firstWhere('type', TransactionTypeEnum::TRANSFER_IN)?->budgetMonth->budget->name;
@@ -47,17 +48,6 @@ class TransactionController extends Controller
         };
 
         $rows = $rows->unique(fn (Transaction $t) => $t->transfer_id ?? "t{$t->id}")->values();
-
-        // FIX: Match BudgetController by querying months for $period->key() instead of hardcoded current month
-        $periodKey = $period->key();
-        $budgets = $household->budgets()->active()->orderBy('sort')
-            ->with(['months' => fn ($q) => $q->whereDate('period_start', $periodKey)->with('transactions')])
-            ->get()
-            ->map(fn ($b) => [
-                'id' => $b->id,
-                'name' => $b->name,
-                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? $b->default_amount : 0),
-            ])->values();
 
         $preselected = $household->budgets()->active()->whereKey($request->integer('budget'))->value('id');
         $defaults = [
@@ -85,23 +75,11 @@ class TransactionController extends Controller
                 'expense' => $rows->filter(fn ($t) => $t->type === TransactionTypeEnum::EXPENSE)->sum('amount'),
                 'income' => $rows->filter(fn ($t) => $t->type === TransactionTypeEnum::INCOME)->sum('amount'),
             ],
-            'transactions' => $rows->map(fn (Transaction $t) => [
-                'id' => $t->id,
-                'user' => $t->user->name,
-                'user_id' => $t->user_id,
-                'type' => $t->type->value,
-                'title' => $t->transfer_id ? $moveTitle($t) : ($t->note ?: $t->budgetMonth->budget->name),
-                'note' => $t->note,
-                'budget' => $t->transfer_id ? 'Move' : $t->budgetMonth->budget->name,
-                'budget_id' => $t->budgetMonth->budget_id,
-                'kind' => $t->transfer_id ? 'transfer' : $t->type->value,
-                'signed' => $t->transfer_id ? 0 : $t->signedAmount(),
-                'amount' => $t->amount,
-                'occurred_at' => $t->occurred_at->toIso8601String(),
-                'left' => $t->budgetMonth->balance(),
-            ]),
+            'transactions' => $rows->map(
+                fn (Transaction $t) => TransactionRow::forHistory($t, $moveTitle($t))
+            ),
             'canEdit' => $request->user()->can('edit', $household),
-            'budgets' => $budgets,
+            'budgets' => $household->budgetBalances($period),
             'defaults' => $defaults,
             'today' => now()->toDateString(),
         ]);

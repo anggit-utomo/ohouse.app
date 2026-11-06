@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\ChangeCurrency;
 use App\Models\Household;
 use App\Support\Currencies;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -33,7 +34,7 @@ class HouseholdSettingsController extends Controller
                     'id' => $s->id,
                     'device' => $s->device ?? 'Unknown device',
                     'endpoint' => $s->endpoint,
-                    'added' => $s->created_at->format(DATE_ATOM),
+                    'added' => CarbonImmutable::instance($s->created_at)->toIso8601String(),
                 ])->values(),
             ],
             'notify' => ['entries' => $membership->notify, 'amounts' => $membership->notify_amounts],

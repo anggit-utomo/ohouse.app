@@ -9,7 +9,7 @@ class EntryRecorded implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
 
-    /** @param 'expense'|'income'|'move' $kind */
+    /** @param 'expense'|'income'|'transfer' $kind */
     public function __construct(
         public int $householdId,
         public int $actorId,

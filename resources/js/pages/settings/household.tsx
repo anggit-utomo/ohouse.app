@@ -26,6 +26,7 @@ import { NotificationsSection } from '@/components/notification-section';
 import HeadTitle from '@/components/head-title';
 import { BottomNav } from '@/components/bottom-nav';
 import { LogOutIcon } from 'lucide-react';
+import { setIfNotNull } from '@/lib/utils';
 
 type Props = {
     household: { id: number; name: string; currency: string };
@@ -210,9 +211,9 @@ export default function Settings({
                     <Select
                         value={home.data.currency}
                         disabled={!isOwner || currencyLocked}
-                        onValueChange={(v) => {
-                            if (v !== null) home.setData('currency', v);
-                        }}
+                        onValueChange={setIfNotNull((v) =>
+                            home.setData('currency', v),
+                        )}
                     >
                         <SelectTrigger id="currency" className="w-full">
                             <SelectValue />

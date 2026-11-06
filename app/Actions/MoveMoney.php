@@ -65,7 +65,7 @@ class MoveMoney
             $out = $fromMonth->transactions()->create([...$shared, 'type' => 'transfer_out']);
             $toMonth->transactions()->create([...$shared, 'type' => 'transfer_in']);
 
-            EntryRecorded::dispatch($household->id, $by->id, 'move', $out->id, $amount);
+            EntryRecorded::dispatch($household->id, $by->id, 'transfer', $out->id, $amount);
 
             return $id;
         });

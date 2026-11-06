@@ -11,6 +11,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { rupiah } from '@/lib/money';
+import { isTransferType } from '@/lib/transactions';
 import { BottomNav } from '@/components/bottom-nav';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
@@ -26,7 +27,6 @@ type Tx = {
     budget: string;
     user: string;
     type: string;
-    kind: string;
     amount: number;
     signed: number;
     occurred_at: string;
@@ -88,7 +88,7 @@ export default function History({
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
     const handleOpenDetail = (t: Tx) => {
-        const isTransfer = t.kind === 'transfer';
+        const isTransfer = isTransferType(t.type);
         let moved: { from: string; to: string } | null = null;
 
         if (isTransfer && t.title.startsWith('Moved ')) {
@@ -260,7 +260,7 @@ export default function History({
                             <span
                                 className={`font-semibold ${t.signed > 0 ? 'text-green-700' : ''}`}
                             >
-                                {t.kind === 'transfer'
+                                {isTransferType(t.type)
                                     ? rupiah(t.amount)
                                     : `${t.signed > 0 ? '+' : '-'}${rupiah(Math.abs(t.signed))}`}
                             </span>

@@ -53,7 +53,7 @@ class NotifyHouseholdOfEntry implements ShouldQueue
     /** @return array{string, string} the title, and what it was about (a budget, or "From → To") */
     private function describe(EntryRecorded $event, Transaction $transaction, User $actor): array
     {
-        if ($event->kind === 'move') {
+        if ($event->kind === 'transfer') {
             $pair = Transaction::where('transfer_id', $transaction->transfer_id)->with('budgetMonth.budget')->get();
             $from = $pair->firstWhere('type', TransactionTypeEnum::TRANSFER_OUT)?->budgetMonth->budget->name;
             $to = $pair->firstWhere('type', TransactionTypeEnum::TRANSFER_IN)?->budgetMonth->budget->name;

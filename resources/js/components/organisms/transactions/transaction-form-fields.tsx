@@ -10,6 +10,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { currency, plain, rupiah } from '@/lib/money';
+import { setIfNotNull } from '@/lib/utils';
 import { Defaults } from '@/types';
 
 type Props = {
@@ -104,9 +105,9 @@ export function TransactionFormFields({
                     value={
                         form.data.budget_id ? String(form.data.budget_id) : ''
                     }
-                    onValueChange={(v) => {
-                        if (v !== null) form.setData('budget_id', v);
-                    }}
+                    onValueChange={setIfNotNull((v) =>
+                        form.setData('budget_id', v),
+                    )}
                 >
                     <SelectTrigger className="w-full">
                         <SelectValue placeholder="Choose a budget">
@@ -189,9 +190,9 @@ export function TransactionFormFields({
                         value={
                             form.data.user_id ? String(form.data.user_id) : ''
                         }
-                        onValueChange={(v) => {
-                            if (v !== null) form.setData('user_id', v);
-                        }}
+                        onValueChange={setIfNotNull((v) =>
+                            form.setData('user_id', v),
+                        )}
                     >
                         <SelectTrigger className="w-full">
                             <SelectValue placeholder="Select member">

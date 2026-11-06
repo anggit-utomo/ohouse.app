@@ -6,7 +6,9 @@ use App\Actions\SaveBudgets;
 use App\Http\Requests\SaveBudgetsRequest;
 use App\Models\Budget;
 use App\Models\Household;
+use App\Models\Transaction;
 use App\Support\Periods;
+use App\Support\TransactionRow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -58,17 +60,6 @@ class BudgetController extends Controller
 
         abort_if($month === null, 404);
 
-        $periodKey = $period->key();
-
-        $budgets = $household->budgets()->active()->orderBy('sort')
-            ->with(['months' => fn ($q) => $q->whereDate('period_start', $periodKey)->with('transactions')])
-            ->get()
-            ->map(fn ($b) => [
-                'id' => $b->id,
-                'name' => $b->name,
-                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? $b->default_amount : 0),
-            ])->values();
-
         $defaults = [
             'type' => 'expense',
             'budget_id' => (string) $budget->id,
@@ -86,23 +77,9 @@ class BudgetController extends Controller
             'closed' => $month->isClosed(),
             'summary' => $month->summary(),
             'transactions' => $month->transactions->sortByDesc('occurred_at')->values()
-                ->map(fn ($t) => [
-                    'id' => $t->id,
-                    'title' => $t->note ?: $budget->name,
-                    'user' => $t->user->name,
-                    'user_id' => $t->user_id,
-                    'type' => $t->type->value,
-                    'amount' => $t->amount,
-                    'note' => $t->note,
-                    'budget' => $budget->name,
-                    'budget_id' => $budget->id,
-                    'kind' => $t->transfer_id ? 'transfer' : $t->type->value,
-                    'signed' => $t->signedAmount(),
-                    'occurred_at' => $t->occurred_at->toIso8601String(),
-                    'left' => $month->balance(),
-                ]),
+                ->map(fn (Transaction $t) => TransactionRow::forBudget($t, $month, $budget)),
             'canEdit' => $request->user()->can('edit', $household),
-            'budgets' => $budgets,
+            'budgets' => $household->budgetBalances($period),
             'members' => $household->members()->get(['users.id', 'users.name'])->map->only(['id', 'name'])->values(),
             'defaults' => $defaults,
             'today' => now()->toDateString(),

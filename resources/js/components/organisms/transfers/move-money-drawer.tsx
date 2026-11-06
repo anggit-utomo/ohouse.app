@@ -31,6 +31,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { currency, plain, rupiah } from '@/lib/money';
+import { setIfNotNull } from '@/lib/utils';
 
 export type TransferBudget = { id: number; name: string; left: number };
 
@@ -125,9 +126,7 @@ export function MoveMoneyDrawer({
                 <Label>{label}</Label>
                 <Select
                     value={form.data[key]}
-                    onValueChange={(v) => {
-                        if (v !== null) form.setData(key, v);
-                    }}
+                    onValueChange={setIfNotNull((v) => form.setData(key, v))}
                 >
                     <SelectTrigger className="w-full">
                         <SelectValue placeholder="Choose a budget" />

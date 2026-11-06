@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Period;
 use App\Support\Periods;
 use Database\Factories\HouseholdFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -57,16 +58,16 @@ class Household extends Model
     }
 
     /**
-     * Active budgets with what is left this month, for pickers.
+     * Active budgets with what is left in the given period, for pickers.
      *
      * @return Collection<int, array{id: int, name: string, left: int}>
      */
-    public function budgetBalances(): Collection
+    public function budgetBalances(?Period $period = null): Collection
     {
-        $period = Periods::current($this)->key();
+        $period ??= Periods::current($this);
 
         return $this->budgets()->active()->orderBy('sort')
-            ->with(['months' => fn ($q) => $q->whereDate('period_start', $period)->with('transactions')])
+            ->with(['months' => fn ($q) => $q->whereDate('period_start', $period->key())->with('transactions')])
             ->get()
             ->map(fn ($b) => [
                 'id' => $b->id,

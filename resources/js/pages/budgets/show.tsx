@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
+import { isTransferType } from '@/lib/transactions';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
 import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
@@ -17,16 +18,15 @@ type Tx = {
     id: number;
     title: string;
     user: string;
+    user_id: number;
+    type: string;
+    amount: number;
+    note: string | null;
+    budget: string;
+    budget_id: number;
     signed: number;
     occurred_at: string;
-    type?: string;
-    kind?: string;
-    amount?: number;
-    budget?: string;
-    budget_id?: number;
-    user_id?: number;
-    note?: string | null;
-    left?: number;
+    left: number;
 };
 
 type Props = {
@@ -76,8 +76,7 @@ export default function ShowBudget({
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
     const handleOpenDetail = (t: Tx) => {
-        const isTransfer =
-            t.kind === 'transfer' || t.title.startsWith('Moved ');
+        const isTransfer = isTransferType(t.type);
         let moved: { from: string; to: string } | null = null;
 
         if (isTransfer && t.title.startsWith('Moved ')) {
@@ -90,16 +89,16 @@ export default function ShowBudget({
         setSelectedTxMeta({ isTransfer, moved });
         setSelectedTransaction({
             id: t.id,
-            type: t.type ?? (t.signed > 0 ? 'income' : 'expense'),
-            amount: t.amount ?? Math.abs(t.signed),
+            type: t.type,
+            amount: t.amount,
             signed: t.signed,
-            note: isTransfer ? null : (t.note ?? null),
-            budget: t.budget ?? budget.name,
+            note: isTransfer ? null : t.note,
+            budget: t.budget,
             budget_id: t.budget_id,
             user: t.user,
             user_id: t.user_id,
             occurred_at: t.occurred_at,
-            left: t.left ?? summary.left,
+            left: t.left,
         });
         setIsDetailDrawerOpen(true);
     };
