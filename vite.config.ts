@@ -55,6 +55,9 @@ export default defineConfig({
             denyWarnings: true,
             typeAware: true,
         },
+        rules: {
+            'typescript/consistent-type-imports': 'error',
+        },
     },
     fmt: {
         printWidth: 80,
