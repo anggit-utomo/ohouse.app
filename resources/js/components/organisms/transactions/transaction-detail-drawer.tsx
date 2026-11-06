@@ -28,7 +28,6 @@ import type {
     MemberOption,
     TransactionDefaults,
     TransactionDetail,
-    TransferEndpoints,
 } from '@/types';
 
 type Props = {
@@ -38,7 +37,6 @@ type Props = {
     transaction: TransactionDetail | null;
     locked?: boolean;
     canEdit?: boolean;
-    moved?: TransferEndpoints | null;
     transferId?: string | null;
     budgets?: BudgetOption[];
     members?: MemberOption[];
@@ -70,7 +68,6 @@ export function TransactionDetailDrawer({
     transaction: t,
     locked = false,
     canEdit = true,
-    moved = null,
     transferId = null,
     budgets = [],
     members = [],
@@ -86,6 +83,7 @@ export function TransactionDetailDrawer({
     const base = `/h/${householdId}/transactions`;
     const plus = t.signed > 0;
     const isTransfer = isTransferType(t.type);
+    const endpoints = t.endpoints;
 
     const { errors } = usePage().props as { errors?: Record<string, string> };
     const problem = errors?.transfer ?? errors?.occurred_at ?? errors?.type;
@@ -168,12 +166,12 @@ export function TransactionDetailDrawer({
                                         plus ? 'text-green-700' : ''
                                     }`}
                                 >
-                                    {moved ? '' : plus ? '+' : '-'}
+                                    {endpoints ? '' : plus ? '+' : '-'}
                                     {rupiah(t.amount)}
                                 </p>
-                                {moved ? (
+                                {endpoints ? (
                                     <p className="text-base font-semibold">
-                                        Moved {moved.from} → {moved.to}
+                                        Moved {endpoints.from} → {endpoints.to}
                                     </p>
                                 ) : (
                                     t.note && (

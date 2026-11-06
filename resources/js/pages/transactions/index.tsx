@@ -11,11 +11,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { rupiah } from '@/lib/money';
-import {
-    isTransferType,
-    toTransactionDetail,
-    transferEndpoints,
-} from '@/lib/transactions';
+import { isTransferType, toTransactionDetail } from '@/lib/transactions';
 import { BottomNav } from '@/components/bottom-nav';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
@@ -28,7 +24,6 @@ import type {
     TransactionDefaults,
     TransactionDetail,
     TransactionRow,
-    TransferEndpoints,
 } from '@/types';
 
 type Props = {
@@ -76,25 +71,10 @@ export default function History({
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] =
         useState<TransactionDetail | null>(null);
-    const [selectedTransferEndpoints, setSelectedTransferEndpoints] =
-        useState<TransferEndpoints | null>(null);
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
     const handleOpenDetail = (row: TransactionRow) => {
-        const isTransfer = isTransferType(row.type);
-
-        setSelectedTransferEndpoints(
-            isTransfer ? transferEndpoints(row.title) : null,
-        );
-        setSelectedTransaction(
-            toTransactionDetail(
-                row,
-                isTransfer
-                    ? null
-                    : (row.note ??
-                          (row.title !== row.budget ? row.title : null)),
-            ),
-        );
+        setSelectedTransaction(toTransactionDetail(row));
         setIsDetailDrawerOpen(true);
     };
 
@@ -275,7 +255,6 @@ export default function History({
                 transaction={selectedTransaction}
                 locked={closed}
                 canEdit={canEdit}
-                moved={selectedTransferEndpoints}
                 budgets={budgets}
                 members={members}
                 defaults={defaults}

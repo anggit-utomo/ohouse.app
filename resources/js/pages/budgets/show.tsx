@@ -4,11 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
-import {
-    isTransferType,
-    toTransactionDetail,
-    transferEndpoints,
-} from '@/lib/transactions';
+import { toTransactionDetail } from '@/lib/transactions';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
 import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
@@ -20,7 +16,6 @@ import type {
     TransactionDefaults,
     TransactionDetail,
     TransactionRow,
-    TransferEndpoints,
 } from '@/types';
 
 type Props = {
@@ -63,19 +58,10 @@ export default function ShowBudget({
     const [isMoveDrawerOpen, setIsMoveDrawerOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] =
         useState<TransactionDetail | null>(null);
-    const [selectedTransferEndpoints, setSelectedTransferEndpoints] =
-        useState<TransferEndpoints | null>(null);
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
     const handleOpenDetail = (row: TransactionRow) => {
-        const isTransfer = isTransferType(row.type);
-
-        setSelectedTransferEndpoints(
-            isTransfer ? transferEndpoints(row.title) : null,
-        );
-        setSelectedTransaction(
-            toTransactionDetail(row, isTransfer ? null : row.note),
-        );
+        setSelectedTransaction(toTransactionDetail(row));
         setIsDetailDrawerOpen(true);
     };
 
@@ -216,7 +202,6 @@ export default function ShowBudget({
                 transaction={selectedTransaction}
                 locked={closed}
                 canEdit={canEdit}
-                moved={selectedTransferEndpoints}
                 budgets={budgets}
                 members={members}
                 defaults={defaults}

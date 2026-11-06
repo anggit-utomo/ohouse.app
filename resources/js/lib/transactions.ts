@@ -19,21 +19,12 @@ export function transferEndpoints(title: string): TransferEndpoints | null {
     return parts.length === 2 ? { from: parts[0], to: parts[1] } : null;
 }
 
-export function toTransactionDetail(
-    row: TransactionRow,
-    note: string | null,
-): TransactionDetail {
+export function toTransactionDetail(row: TransactionRow): TransactionDetail {
+    const isTransfer = isTransferType(row.type);
+
     return {
-        id: row.id,
-        type: row.type,
-        amount: row.amount,
-        signed: row.signed,
-        note,
-        budget: row.budget,
-        budget_id: row.budget_id,
-        user: row.user,
-        user_id: row.user_id,
-        occurred_at: row.occurred_at,
-        left: row.left,
+        ...row,
+        note: isTransfer ? null : row.note,
+        endpoints: isTransfer ? transferEndpoints(row.title) : null,
     };
 }

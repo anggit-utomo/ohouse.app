@@ -19,18 +19,8 @@ export type TransactionRow = {
     user_id: number;
 };
 
-export type TransactionDetail = {
-    id: number;
-    type: TransactionType;
-    amount: number;
-    signed: number;
-    note: string | null;
-    budget: string;
-    budget_id: number;
-    user: string;
-    user_id: number;
-    occurred_at: string;
-    left: number;
+export type TransactionDetail = TransactionRow & {
+    endpoints: TransferEndpoints | null;
 };
 
 export type TransactionDefaults = {
