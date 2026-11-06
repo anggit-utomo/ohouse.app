@@ -1,7 +1,9 @@
 import { useHttp } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import { qrCode, recoveryCodes, secretKey } from '@/routes/two-factor';
-import type { TwoFactorSecretKey, TwoFactorSetupData } from '@/types/auth';
+import type { TwoFactorSecretKey, TwoFactorSetupData } from '@/types';
+
+type TwoFactorResponse = TwoFactorSetupData | TwoFactorSecretKey | string[];
 
 export type UseTwoFactorAuthReturn = {
     qrCodeSvg: string | null;
@@ -21,7 +23,7 @@ export type UseTwoFactorAuthReturn = {
 export const OTP_MAX_LENGTH = 6;
 
 export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
-    const { submit } = useHttp();
+    const { submit } = useHttp<Record<string, never>, TwoFactorResponse>();
 
     const [qrCodeSvg, setQrCodeSvg] = useState<string | null>(null);
     const [manualSetupKey, setManualSetupKey] = useState<string | null>(null);
@@ -49,9 +51,11 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
 
     const fetchQrCode = useCallback(async (): Promise<void> => {
         try {
-            const { svg } = (await submit(qrCode())) as TwoFactorSetupData;
+            const result = await submit(qrCode());
 
-            setQrCodeSvg(svg);
+            if ('svg' in result) {
+                setQrCodeSvg(result.svg);
+            }
         } catch {
             setErrors((prev) => [...prev, 'Failed to fetch QR code']);
             setQrCodeSvg(null);
@@ -60,11 +64,11 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
 
     const fetchSetupKey = useCallback(async (): Promise<void> => {
         try {
-            const { secretKey: key } = (await submit(
-                secretKey(),
-            )) as TwoFactorSecretKey;
+            const result = await submit(secretKey());
 
-            setManualSetupKey(key);
+            if ('secretKey' in result) {
+                setManualSetupKey(result.secretKey);
+            }
         } catch {
             setErrors((prev) => [...prev, 'Failed to fetch a setup key']);
             setManualSetupKey(null);
@@ -74,8 +78,8 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
     const fetchRecoveryCodes = useCallback(async (): Promise<void> => {
         try {
             setErrors([]);
-            const codes = (await submit(recoveryCodes())) as string[];
-            setRecoveryCodesList(codes);
+            const result = await submit(recoveryCodes());
+            setRecoveryCodesList(Array.isArray(result) ? result : []);
         } catch {
             setErrors((prev) => [...prev, 'Failed to fetch recovery codes']);
             setRecoveryCodesList([]);

@@ -14,8 +14,8 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 router.on('success', (event) => {
     const flash = event.detail.page.props.flash;
 
-    if (flash?.success) toast.success(flash.success, { id: flash.success });
-    if (flash?.error) toast.error(flash.error);
+    if (flash.success) toast.success(flash.success, { id: flash.success });
+    if (flash.error) toast.error(flash.error);
 });
 
 // validation errors and refusals, such as "this period is closed"

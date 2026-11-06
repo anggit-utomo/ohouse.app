@@ -4,7 +4,11 @@ import { ChevronLeft } from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
-import { isTransferType } from '@/lib/transactions';
+import {
+    isTransferType,
+    transactionDetail,
+    transferMoved,
+} from '@/lib/transactions';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
 import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
@@ -58,37 +62,22 @@ export default function ShowBudget({
     const [isMoveDrawerOpen, setIsMoveDrawerOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] =
         useState<TransactionDetail | null>(null);
-    const [selectedTxMeta, setSelectedTxMeta] = useState<{
+    const [selectedTransactionMeta, setSelectedTransactionMeta] = useState<{
         isTransfer: boolean;
         moved: { from: string; to: string } | null;
     }>({ isTransfer: false, moved: null });
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
-    const handleOpenDetail = (t: TransactionRow) => {
-        const isTransfer = isTransferType(t.type);
-        let moved: { from: string; to: string } | null = null;
+    const handleOpenDetail = (row: TransactionRow) => {
+        const isTransfer = isTransferType(row.type);
 
-        if (isTransfer && t.title.startsWith('Moved ')) {
-            const parts = t.title.replace('Moved ', '').split(' → ');
-            if (parts.length === 2) {
-                moved = { from: parts[0], to: parts[1] };
-            }
-        }
-
-        setSelectedTxMeta({ isTransfer, moved });
-        setSelectedTransaction({
-            id: t.id,
-            type: t.type,
-            amount: t.amount,
-            signed: t.signed,
-            note: isTransfer ? null : (t.note ?? null),
-            budget: t.budget,
-            budget_id: t.budget_id,
-            user: t.user,
-            user_id: t.user_id,
-            occurred_at: t.occurred_at,
-            left: t.left ?? 0,
+        setSelectedTransactionMeta({
+            isTransfer,
+            moved: isTransfer ? transferMoved(row.title) : null,
         });
+        setSelectedTransaction(
+            transactionDetail(row, isTransfer ? null : row.note),
+        );
         setIsDetailDrawerOpen(true);
     };
 
@@ -229,8 +218,8 @@ export default function ShowBudget({
                 transaction={selectedTransaction}
                 locked={closed}
                 canEdit={canEdit}
-                isTransfer={selectedTxMeta.isTransfer}
-                moved={selectedTxMeta.moved}
+                isTransfer={selectedTransactionMeta.isTransfer}
+                moved={selectedTransactionMeta.moved}
                 budgets={budgets}
                 members={members}
                 defaults={defaults}

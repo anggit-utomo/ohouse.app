@@ -27,10 +27,10 @@ import HeadTitle from '@/components/head-title';
 import { BottomNav } from '@/components/bottom-nav';
 import { LogOutIcon } from 'lucide-react';
 import { setIfNotNull } from '@/lib/utils';
-import type { HouseholdRef, PushDevice } from '@/types';
+import type { HouseholdDetails, PushDevice } from '@/types';
 
 type Props = {
-    household: HouseholdRef & { name: string; currency: string };
+    household: HouseholdDetails;
     currencies: { code: string; name: string; symbol: string }[];
     currencyLocked: boolean;
     user: { name: string; email: string; verified: boolean };

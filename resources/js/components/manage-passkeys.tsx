@@ -4,7 +4,7 @@ import { destroy } from '@/actions/Laravel/Passkeys/Http/Controllers/PasskeyRegi
 import Heading from '@/components/heading';
 import PasskeyItem from '@/components/passkey-item';
 import PasskeyRegistration from '@/components/passkey-register';
-import type { Passkey } from '@/types/auth';
+import type { Passkey } from '@/types';
 
 type Props = {
     canManagePasskeys?: boolean;

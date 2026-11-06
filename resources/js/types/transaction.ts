@@ -13,10 +13,10 @@ export type TransactionRow = {
     amount: number;
     signed: number;
     occurred_at: string;
-    note?: string | null;
-    left?: number;
-    budget_id?: number;
-    user_id?: number;
+    note: string | null;
+    left: number;
+    budget_id: number;
+    user_id: number;
 };
 
 export type TransactionDetail = {
@@ -26,15 +26,15 @@ export type TransactionDetail = {
     signed: number;
     note: string | null;
     budget: string;
-    budget_id?: number;
+    budget_id: number;
     user: string;
-    user_id?: number;
+    user_id: number;
     occurred_at: string;
     left: number;
 };
 
 export type TransactionDefaults = {
-    type: 'expense' | 'income';
+    type: Extract<TransactionType, 'expense' | 'income'>;
     budget_id: string;
     amount: string;
     note: string;

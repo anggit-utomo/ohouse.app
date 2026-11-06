@@ -6,7 +6,7 @@ export type {
     User,
 } from './auth';
 export type { BudgetOption, BudgetSummary } from './budget';
-export type { HouseholdRef, MemberOption } from './household';
+export type { HouseholdDetails, HouseholdRef, MemberOption } from './household';
 export type { MonthOption } from './period';
 export type { PushDevice } from './push';
 export type { Flash, SharedProps } from './shared';

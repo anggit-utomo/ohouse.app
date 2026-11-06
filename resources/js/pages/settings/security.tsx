@@ -8,11 +8,11 @@ import { Label } from '@/components/ui/label';
 import ManagePasskeys from '@/components/manage-passkeys';
 import ManageTwoFactor from '@/components/manage-two-factor';
 import { PageHeader } from '@/components/page-header';
-import type { HouseholdRef, Passkey } from '@/types';
+import type { HouseholdDetails, Passkey } from '@/types';
 
 type Props = {
     passwordRules: string;
-    household: HouseholdRef & { name: string; currency: string };
+    household: HouseholdDetails;
     canManagePasskeys: boolean;
     passkeys: Passkey[];
     canManageTwoFactor: boolean;

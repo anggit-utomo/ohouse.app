@@ -11,7 +11,11 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { rupiah } from '@/lib/money';
-import { isTransferType } from '@/lib/transactions';
+import {
+    isTransferType,
+    transactionDetail,
+    transferMoved,
+} from '@/lib/transactions';
 import { BottomNav } from '@/components/bottom-nav';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
@@ -71,39 +75,28 @@ export default function History({
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] =
         useState<TransactionDetail | null>(null);
-    const [selectedTxMeta, setSelectedTxMeta] = useState<{
+    const [selectedTransactionMeta, setSelectedTransactionMeta] = useState<{
         isTransfer: boolean;
         moved: { from: string; to: string } | null;
     }>({ isTransfer: false, moved: null });
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
-    const handleOpenDetail = (t: TransactionRow) => {
-        const isTransfer = isTransferType(t.type);
-        let moved: { from: string; to: string } | null = null;
+    const handleOpenDetail = (row: TransactionRow) => {
+        const isTransfer = isTransferType(row.type);
 
-        if (isTransfer && t.title.startsWith('Moved ')) {
-            const parts = t.title.replace('Moved ', '').split(' → ');
-            if (parts.length === 2) {
-                moved = { from: parts[0], to: parts[1] };
-            }
-        }
-
-        setSelectedTxMeta({ isTransfer, moved });
-        setSelectedTransaction({
-            id: t.id,
-            type: t.type,
-            amount: t.amount,
-            signed: t.signed,
-            note: isTransfer
-                ? null
-                : (t.note ?? (t.title !== t.budget ? t.title : null)),
-            budget: t.budget,
-            budget_id: t.budget_id,
-            user: t.user,
-            user_id: t.user_id,
-            occurred_at: t.occurred_at,
-            left: t.left ?? 0,
+        setSelectedTransactionMeta({
+            isTransfer,
+            moved: isTransfer ? transferMoved(row.title) : null,
         });
+        setSelectedTransaction(
+            transactionDetail(
+                row,
+                isTransfer
+                    ? null
+                    : (row.note ??
+                          (row.title !== row.budget ? row.title : null)),
+            ),
+        );
         setIsDetailDrawerOpen(true);
     };
 
@@ -284,8 +277,8 @@ export default function History({
                 transaction={selectedTransaction}
                 locked={closed}
                 canEdit={canEdit}
-                isTransfer={selectedTxMeta.isTransfer}
-                moved={selectedTxMeta.moved}
+                isTransfer={selectedTransactionMeta.isTransfer}
+                moved={selectedTransactionMeta.moved}
                 budgets={budgets}
                 members={members}
                 defaults={defaults}
