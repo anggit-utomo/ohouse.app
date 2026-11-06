@@ -1,6 +1,17 @@
 import { Head, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -50,6 +61,21 @@ export default function EditBudgets({
                 n === i ? { ...row, ...patch } : row,
             ),
         );
+
+    const [pendingRemoval, setPendingRemoval] = useState<{
+        index: number;
+        name: string;
+    } | null>(null);
+
+    const confirmRemoval = () => {
+        if (!pendingRemoval) return;
+
+        form.setData(
+            'budgets',
+            form.data.budgets.filter((_, n) => n !== pendingRemoval.index),
+        );
+        setPendingRemoval(null);
+    };
 
     const save = () => {
         form.transform((d) => ({
@@ -136,12 +162,10 @@ export default function EditBudgets({
                                     size="icon"
                                     aria-label={`Remove ${row.name || 'budget'}`}
                                     onClick={() =>
-                                        form.setData(
-                                            'budgets',
-                                            form.data.budgets.filter(
-                                                (_, n) => n !== i,
-                                            ),
-                                        )
+                                        setPendingRemoval({
+                                            index: i,
+                                            name: row.name,
+                                        })
                                     }
                                 >
                                     <Trash2 className="size-4" />
@@ -210,6 +234,36 @@ export default function EditBudgets({
                     </div>
                 </div>
             )}
+
+            <AlertDialog
+                open={pendingRemoval !== null}
+                onOpenChange={(open) => {
+                    if (!open) setPendingRemoval(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Remove{' '}
+                            {pendingRemoval?.name.trim() || 'this budget'}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Saving without it archives the budget. Past
+                            transactions stay in history, but it will no longer
+                            appear in this or future periods.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            variant="destructive"
+                            onClick={confirmRemoval}
+                        >
+                            Remove
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
