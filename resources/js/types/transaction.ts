@@ -49,3 +49,8 @@ export type TransferDefaults = {
     amount: string;
     note: string;
 };
+
+export type TransferEndpoints = {
+    from: string;
+    to: string;
+};

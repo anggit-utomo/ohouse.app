@@ -2,16 +2,20 @@ import type {
     TransactionDetail,
     TransactionRow,
     TransactionType,
+    TransferEndpoints,
 } from '@/types';
 
 export function isTransferType(type: TransactionType): boolean {
     return type === 'transfer_in' || type === 'transfer_out';
 }
 
-export function transferMoved(title: string): {
-    from: string;
-    to: string;
-} | null {
+export function isExpenseOrIncome(
+    type: TransactionType,
+): type is Extract<TransactionType, 'expense' | 'income'> {
+    return type === 'expense' || type === 'income';
+}
+
+export function transferEndpoints(title: string): TransferEndpoints | null {
     if (!title.startsWith('Moved ')) {
         return null;
     }
@@ -21,7 +25,7 @@ export function transferMoved(title: string): {
     return parts.length === 2 ? { from: parts[0], to: parts[1] } : null;
 }
 
-export function transactionDetail(
+export function toTransactionDetail(
     row: TransactionRow,
     note: string | null,
 ): TransactionDetail {

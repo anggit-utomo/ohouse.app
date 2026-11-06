@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
 import {
     isTransferType,
-    transactionDetail,
-    transferMoved,
+    toTransactionDetail,
+    transferEndpoints,
 } from '@/lib/transactions';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
@@ -20,6 +20,7 @@ import type {
     TransactionDefaults,
     TransactionDetail,
     TransactionRow,
+    TransferEndpoints,
 } from '@/types';
 
 type Props = {
@@ -64,7 +65,7 @@ export default function ShowBudget({
         useState<TransactionDetail | null>(null);
     const [selectedTransactionMeta, setSelectedTransactionMeta] = useState<{
         isTransfer: boolean;
-        moved: { from: string; to: string } | null;
+        moved: TransferEndpoints | null;
     }>({ isTransfer: false, moved: null });
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
@@ -73,10 +74,10 @@ export default function ShowBudget({
 
         setSelectedTransactionMeta({
             isTransfer,
-            moved: isTransfer ? transferMoved(row.title) : null,
+            moved: isTransfer ? transferEndpoints(row.title) : null,
         });
         setSelectedTransaction(
-            transactionDetail(row, isTransfer ? null : row.note),
+            toTransactionDetail(row, isTransfer ? null : row.note),
         );
         setIsDetailDrawerOpen(true);
     };

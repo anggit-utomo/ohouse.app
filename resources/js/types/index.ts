@@ -16,4 +16,5 @@ export type {
     TransactionRow,
     TransactionType,
     TransferDefaults,
+    TransferEndpoints,
 } from './transaction';

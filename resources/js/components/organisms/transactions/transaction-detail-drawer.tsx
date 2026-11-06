@@ -21,12 +21,14 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { rupiah } from '@/lib/money';
+import { isExpenseOrIncome } from '@/lib/transactions';
 import { TransactionDrawer } from './transaction-drawer';
 import type {
     BudgetOption,
     MemberOption,
     TransactionDefaults,
     TransactionDetail,
+    TransferEndpoints,
 } from '@/types';
 
 type Props = {
@@ -37,7 +39,7 @@ type Props = {
     locked?: boolean;
     isTransfer?: boolean;
     canEdit?: boolean;
-    moved?: { from: string; to: string } | null;
+    moved?: TransferEndpoints | null;
     transferId?: string | null;
     budgets?: BudgetOption[];
     members?: MemberOption[];
@@ -98,24 +100,29 @@ export function TransactionDetailDrawer({
         ? members.find((m) => m.id === Number(t.user_id))
         : members.find((m) => m.name === t.user);
 
+    // A Transfer is two linked Transactions and is never edited as a single row.
+    const editableType = isExpenseOrIncome(t.type) ? t.type : null;
+
     // Build editDefaults cleanly as string values
-    const editDefaults: TransactionDefaults = {
-        type: t.type === 'income' ? 'income' : 'expense',
-        amount: String(t.amount),
-        budget_id: currentBudget
-            ? String(currentBudget.id)
-            : defaults?.budget_id
-              ? String(defaults.budget_id)
-              : '',
-        note: t.note ?? '',
-        occurred_at: t.occurred_at ? t.occurred_at.slice(0, 10) : today,
-        user_id: currentMember
-            ? String(currentMember.id)
-            : defaults?.user_id
-              ? String(defaults.user_id)
-              : '',
-        corrects_transaction_id: null,
-    };
+    const editDefaults: TransactionDefaults | null = editableType
+        ? {
+              type: editableType,
+              amount: String(t.amount),
+              budget_id: currentBudget
+                  ? String(currentBudget.id)
+                  : defaults?.budget_id
+                    ? String(defaults.budget_id)
+                    : '',
+              note: t.note ?? '',
+              occurred_at: t.occurred_at ? t.occurred_at.slice(0, 10) : today,
+              user_id: currentMember
+                  ? String(currentMember.id)
+                  : defaults?.user_id
+                    ? String(defaults.user_id)
+                    : '',
+              corrects_transaction_id: null,
+          }
+        : null;
 
     const handleConfirmUndoMove = () => {
         if (!transferId) return;
@@ -274,21 +281,23 @@ export function TransactionDetailDrawer({
                     </div>
 
                     {/* NESTED DRAWER: Edit Transaction Form */}
-                    <TransactionDrawer
-                        open={isEditDrawerOpen}
-                        onOpenChange={setIsEditDrawerOpen}
-                        householdId={householdId}
-                        mode="edit"
-                        transactionId={t.id}
-                        defaults={editDefaults}
-                        budgets={budgets}
-                        members={members}
-                        today={today}
-                        onSuccess={() => {
-                            setIsEditDrawerOpen(false);
-                            onOpenChange(false);
-                        }}
-                    />
+                    {editDefaults && (
+                        <TransactionDrawer
+                            open={isEditDrawerOpen}
+                            onOpenChange={setIsEditDrawerOpen}
+                            householdId={householdId}
+                            mode="edit"
+                            transactionId={t.id}
+                            defaults={editDefaults}
+                            budgets={budgets}
+                            members={members}
+                            today={today}
+                            onSuccess={() => {
+                                setIsEditDrawerOpen(false);
+                                onOpenChange(false);
+                            }}
+                        />
+                    )}
                 </DrawerContent>
             </Drawer>
 

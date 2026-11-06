@@ -13,8 +13,8 @@ import {
 import { rupiah } from '@/lib/money';
 import {
     isTransferType,
-    transactionDetail,
-    transferMoved,
+    toTransactionDetail,
+    transferEndpoints,
 } from '@/lib/transactions';
 import { BottomNav } from '@/components/bottom-nav';
 import HeadTitle from '@/components/head-title';
@@ -28,6 +28,7 @@ import type {
     TransactionDefaults,
     TransactionDetail,
     TransactionRow,
+    TransferEndpoints,
 } from '@/types';
 
 type Props = {
@@ -77,7 +78,7 @@ export default function History({
         useState<TransactionDetail | null>(null);
     const [selectedTransactionMeta, setSelectedTransactionMeta] = useState<{
         isTransfer: boolean;
-        moved: { from: string; to: string } | null;
+        moved: TransferEndpoints | null;
     }>({ isTransfer: false, moved: null });
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
@@ -86,10 +87,10 @@ export default function History({
 
         setSelectedTransactionMeta({
             isTransfer,
-            moved: isTransfer ? transferMoved(row.title) : null,
+            moved: isTransfer ? transferEndpoints(row.title) : null,
         });
         setSelectedTransaction(
-            transactionDetail(
+            toTransactionDetail(
                 row,
                 isTransfer
                     ? null
