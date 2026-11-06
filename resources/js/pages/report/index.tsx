@@ -143,7 +143,9 @@ export default function Report({
                 }
             >
                 <SelectTrigger className="w-full">
-                    <SelectValue />
+                    <SelectValue>
+                        {months.find((m) => m.value === month)?.label}
+                    </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                     {months.map((m) => (

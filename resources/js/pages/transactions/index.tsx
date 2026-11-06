@@ -133,7 +133,9 @@ export default function History({
 
             <Select value={month} onValueChange={(m) => go({ month: m })}>
                 <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue>
+                        {months.find((m) => m.value === month)?.label}
+                    </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                     {months.map((m) => (

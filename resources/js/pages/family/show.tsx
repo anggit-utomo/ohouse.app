@@ -265,7 +265,11 @@ export default function Family({
                             }
                         >
                             <SelectTrigger className="w-28">
-                                <SelectValue />
+                                <SelectValue>
+                                    {m.role === 'viewer'
+                                        ? 'View only'
+                                        : 'Can edit'}
+                                </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="editor">Can edit</SelectItem>
