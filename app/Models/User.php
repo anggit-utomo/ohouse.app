@@ -8,7 +8,6 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -55,16 +54,15 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             ->withPivot('role', 'joined_at');
     }
 
-    /** @return BelongsTo<Household, $this> */
-    public function currentHousehold(): BelongsTo
-    {
-        return $this->belongsTo(Household::class, 'current_household_id');
-    }
-
     public function currentOrFirstHousehold(): ?Household
     {
-        return $this->households()->whereKey($this->current_household_id)->first()
-            ?? $this->households()->first();
+        return $this->households()
+            ->whereKey($this->current_household_id)
+            ->first()
+            ?? $this->households()
+                ->orderBy('household_user.joined_at')
+                ->orderBy('households.id')
+                ->first();
     }
 
     public function roleIn(Household $household): ?HouseholdRoleEnum

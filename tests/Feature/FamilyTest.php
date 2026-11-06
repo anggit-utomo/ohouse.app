@@ -222,8 +222,10 @@ it('links the join page to the current household when the user has one', functio
         ->assertInertia(fn (Assert $p) => $p->where('household.id', $this->household->id));
 });
 
-it('falls back to a member household when the current one is unset', function () {
-    $this->household->members()->attach($this->guest->id, ['role' => 'editor']);
+it('falls back to the earliest joined household when the current one is unset', function () {
+    $later = Household::factory()->create();
+    $later->members()->attach($this->guest->id, ['role' => 'editor', 'joined_at' => now()->addDay()]);
+    $this->household->members()->attach($this->guest->id, ['role' => 'editor', 'joined_at' => now()]);
 
     $this->actingAs($this->guest)->get('/join')
         ->assertInertia(fn (Assert $p) => $p->where('household.id', $this->household->id));
