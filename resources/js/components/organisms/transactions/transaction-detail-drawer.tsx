@@ -21,7 +21,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { rupiah } from '@/lib/money';
-import { isExpenseOrIncome } from '@/lib/transactions';
+import { isTransferType } from '@/lib/transactions';
 import { TransactionDrawer } from './transaction-drawer';
 import type {
     BudgetOption,
@@ -37,7 +37,6 @@ type Props = {
     householdId: number;
     transaction: TransactionDetail | null;
     locked?: boolean;
-    isTransfer?: boolean;
     canEdit?: boolean;
     moved?: TransferEndpoints | null;
     transferId?: string | null;
@@ -70,7 +69,6 @@ export function TransactionDetailDrawer({
     householdId,
     transaction: t,
     locked = false,
-    isTransfer = false,
     canEdit = true,
     moved = null,
     transferId = null,
@@ -87,6 +85,7 @@ export function TransactionDetailDrawer({
 
     const base = `/h/${householdId}/transactions`;
     const plus = t.signed > 0;
+    const isTransfer = isTransferType(t.type);
 
     const { errors } = usePage().props as { errors?: Record<string, string> };
     const problem = errors?.transfer ?? errors?.occurred_at ?? errors?.type;
@@ -100,8 +99,9 @@ export function TransactionDetailDrawer({
         ? members.find((m) => m.id === Number(t.user_id))
         : members.find((m) => m.name === t.user);
 
-    // A Transfer is two linked Transactions and is never edited as a single row.
-    const editableType = isExpenseOrIncome(t.type) ? t.type : null;
+    // A Transfer is never edited as a single row.
+    const editableType: TransactionDefaults['type'] | null =
+        t.type === 'expense' || t.type === 'income' ? t.type : null;
 
     // Build editDefaults cleanly as string values
     const editDefaults: TransactionDefaults | null = editableType

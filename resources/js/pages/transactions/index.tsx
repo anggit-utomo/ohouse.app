@@ -76,19 +76,16 @@ export default function History({
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] =
         useState<TransactionDetail | null>(null);
-    const [selectedTransactionMeta, setSelectedTransactionMeta] = useState<{
-        isTransfer: boolean;
-        moved: TransferEndpoints | null;
-    }>({ isTransfer: false, moved: null });
+    const [selectedTransferEndpoints, setSelectedTransferEndpoints] =
+        useState<TransferEndpoints | null>(null);
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
     const handleOpenDetail = (row: TransactionRow) => {
         const isTransfer = isTransferType(row.type);
 
-        setSelectedTransactionMeta({
-            isTransfer,
-            moved: isTransfer ? transferEndpoints(row.title) : null,
-        });
+        setSelectedTransferEndpoints(
+            isTransfer ? transferEndpoints(row.title) : null,
+        );
         setSelectedTransaction(
             toTransactionDetail(
                 row,
@@ -278,8 +275,7 @@ export default function History({
                 transaction={selectedTransaction}
                 locked={closed}
                 canEdit={canEdit}
-                isTransfer={selectedTransactionMeta.isTransfer}
-                moved={selectedTransactionMeta.moved}
+                moved={selectedTransferEndpoints}
                 budgets={budgets}
                 members={members}
                 defaults={defaults}

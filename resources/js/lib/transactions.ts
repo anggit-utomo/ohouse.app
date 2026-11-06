@@ -9,12 +9,6 @@ export function isTransferType(type: TransactionType): boolean {
     return type === 'transfer_in' || type === 'transfer_out';
 }
 
-export function isExpenseOrIncome(
-    type: TransactionType,
-): type is Extract<TransactionType, 'expense' | 'income'> {
-    return type === 'expense' || type === 'income';
-}
-
 export function transferEndpoints(title: string): TransferEndpoints | null {
     if (!title.startsWith('Moved ')) {
         return null;
