@@ -83,7 +83,7 @@ export function TransactionDetailDrawer({
     const base = `/h/${householdId}/transactions`;
     const plus = t.signed > 0;
     const isTransfer = isTransferType(t.type);
-    const endpoints = t.endpoints;
+    const endpoints = t.transferEndpoints;
 
     const { errors } = usePage().props as { errors?: Record<string, string> };
     const problem = errors?.transfer ?? errors?.occurred_at ?? errors?.type;

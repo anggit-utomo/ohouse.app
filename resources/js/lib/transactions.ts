@@ -25,6 +25,6 @@ export function toTransactionDetail(row: TransactionRow): TransactionDetail {
     return {
         ...row,
         note: isTransfer ? null : row.note,
-        endpoints: isTransfer ? transferEndpoints(row.title) : null,
+        transferEndpoints: isTransfer ? transferEndpoints(row.title) : null,
     };
 }

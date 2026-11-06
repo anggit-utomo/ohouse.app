@@ -20,7 +20,7 @@ export type TransactionRow = {
 };
 
 export type TransactionDetail = TransactionRow & {
-    endpoints: TransferEndpoints | null;
+    transferEndpoints: TransferEndpoints | null;
 };
 
 export type TransactionDefaults = {
