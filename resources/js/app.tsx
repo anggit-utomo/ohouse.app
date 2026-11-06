@@ -5,18 +5,14 @@ import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import { toast } from 'sonner';
-import { setCurrency, type Currency } from './lib/money';
+import { setCurrency } from './lib/money';
 import { createRoot } from 'react-dom/client';
-
-type Flash = { success?: string | null; error?: string | null };
-
-type WithCurrency = { currency?: Currency };
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 // a message the server flashed after an action
 router.on('success', (event) => {
-    const flash = (event.detail.page.props as { flash?: Flash }).flash;
+    const flash = event.detail.page.props.flash;
 
     if (flash?.success) toast.success(flash.success, { id: flash.success });
     if (flash?.error) toast.error(flash.error);
@@ -51,13 +47,11 @@ router.on('networkError', () => {
     toast.error('Could not reach the server. Check your connection.');
 });
 
-router.on('navigate', (event) =>
-    setCurrency((event.detail.page.props as WithCurrency).currency),
-);
+router.on('navigate', (event) => setCurrency(event.detail.page.props.currency));
 
 void createInertiaApp({
     setup({ el, App, props }) {
-        setCurrency((props.initialPage.props as WithCurrency).currency);
+        setCurrency(props.initialPage.props.currency);
 
         if (!el) {
             throw new Error('Inertia root element not found.');

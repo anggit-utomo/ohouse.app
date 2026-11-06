@@ -6,29 +6,20 @@ type Props = {
     code: string;
     preview: { name: string; budgets: number; members: number } | null;
     invalid: boolean;
-    household: { id: number };
+    household: { id: string | null };
 };
 
 export default function Join({ code, preview, invalid, household }: Props) {
     const { user } = usePage().props.auth;
     const form = useForm({ code });
-    const base =
-        user && user !== undefined && household?.id !== null
-            ? `/h/${household.id}/family`
-            : '/setup';
+    const canJoin = user !== null && household.id !== null;
+    const base = canJoin ? `/h/${household.id}/family` : '/setup';
 
     return (
         <>
             <Head title="Join a family budget" />
 
-            <PageHeader
-                title={
-                    user && user !== undefined && household?.id !== null
-                        ? 'Join'
-                        : 'Setup'
-                }
-                href={base}
-            />
+            <PageHeader title={canJoin ? 'Join' : 'Setup'} href={base} />
 
             <h1 className="text-lg font-semibold">Join a family budget</h1>
             <p className="text-muted-foreground">

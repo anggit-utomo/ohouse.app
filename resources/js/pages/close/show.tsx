@@ -10,7 +10,7 @@ type Row = {
     budget_id: number;
     name: string;
     leftover: number;
-    next_allocated: number;
+    next_allocated: number | null;
 };
 
 type Props = {
@@ -68,7 +68,7 @@ export default function StartPeriod({
     const total = rows.reduce(
         (sum, r) =>
             sum +
-            r.next_allocated +
+            (r.next_allocated ?? 0) +
             (form.data.decisions[r.budget_id] === 'reset' ? 0 : r.leftover),
         0,
     );

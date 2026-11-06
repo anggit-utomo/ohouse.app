@@ -36,6 +36,7 @@ type Member = {
 type Props = {
     household: { id: number };
     canManage: boolean;
+    canEdit: boolean;
     invite: { code: string; url: string; expires_at: string } | null;
     members: Member[];
 };

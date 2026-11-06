@@ -35,14 +35,14 @@ type ExpenseItem = {
     name: string;
     category: string;
     date: string;
-    amount: number;
+    amount: number | null;
     initial?: string;
 };
 
 type DailyItem = {
     date: string;
     amount: number;
-    label?: string;
+    label: string;
 };
 
 type Props = {
@@ -374,7 +374,9 @@ export default function Report({
                                                 </div>
                                             </div>
                                             <span className="text-sm font-bold text-foreground">
-                                                -{rupiah(exp.amount)}
+                                                {exp.amount === null
+                                                    ? '—'
+                                                    : `-${rupiah(exp.amount)}`}
                                             </span>
                                         </div>
                                     ))}

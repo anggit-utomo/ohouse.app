@@ -12,14 +12,14 @@ import {
     TransactionDetail,
     TransactionDetailDrawer,
 } from '@/components/organisms/transactions/transaction-detail-drawer';
-import { Defaults } from '@/types';
+import { Defaults, TransactionType } from '@/types';
 
 type Tx = {
     id: number;
     title: string;
     user: string;
     user_id: number;
-    type: string;
+    type: TransactionType;
     amount: number;
     note: string | null;
     budget: string;

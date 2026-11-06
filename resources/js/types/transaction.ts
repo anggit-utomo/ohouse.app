@@ -1,3 +1,9 @@
+export type TransactionType =
+    | 'expense'
+    | 'income'
+    | 'transfer_out'
+    | 'transfer_in';
+
 export type Defaults = {
     type: 'expense' | 'income';
     budget_id: string;

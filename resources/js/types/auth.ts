@@ -3,16 +3,14 @@ export type User = {
     name: string;
     email: string;
     current_household_id: number | null;
-    avatar?: string;
     email_verified_at: string | null;
-    two_factor_enabled?: boolean;
+    two_factor_confirmed_at: string | null;
     created_at: string;
     updated_at: string;
-    [key: string]: unknown;
 };
 
 export type Auth = {
-    user: User;
+    user: User | null;
 };
 
 export type Passkey = {

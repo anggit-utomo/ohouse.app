@@ -22,11 +22,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { rupiah } from '@/lib/money';
 import { TransactionDrawer } from './transaction-drawer';
-import { Defaults } from '@/types';
+import { Defaults, TransactionType } from '@/types';
 
 export type TransactionDetail = {
     id: number;
-    type: string;
+    type: TransactionType;
     amount: number;
     signed: number;
     note: string | null;
@@ -109,7 +109,7 @@ export function TransactionDetailDrawer({
 
     // Build editDefaults cleanly as string values
     const editDefaults: Defaults = {
-        type: (t.type as 'expense' | 'income') ?? 'expense',
+        type: t.type === 'income' ? 'income' : 'expense',
         amount: String(t.amount),
         budget_id: currentBudget
             ? String(currentBudget.id)

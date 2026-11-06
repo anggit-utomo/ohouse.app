@@ -15,7 +15,7 @@ import { isTransferType } from '@/lib/transactions';
 import { BottomNav } from '@/components/bottom-nav';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
-import { Defaults } from '@/types';
+import { Defaults, TransactionType } from '@/types';
 import {
     TransactionDetail,
     TransactionDetailDrawer,
@@ -26,7 +26,7 @@ type Tx = {
     title: string;
     budget: string;
     user: string;
-    type: string;
+    type: TransactionType;
     amount: number;
     signed: number;
     occurred_at: string;
