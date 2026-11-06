@@ -154,7 +154,7 @@ export function NotificationsSection({
                                 )}
                             </span>
                             <Button
-                                variant="ghost"
+                                variant="destructive"
                                 size="icon"
                                 aria-label={`Remove ${d.device}`}
                                 onClick={() =>

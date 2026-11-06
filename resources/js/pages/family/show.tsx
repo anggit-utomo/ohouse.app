@@ -287,7 +287,7 @@ export default function Family({
                     {((canManage && m.role !== 'owner') ||
                         (m.you && m.role !== 'owner')) && (
                         <Button
-                            variant="ghost"
+                            variant="destructive"
                             size="icon"
                             aria-label={
                                 m.you ? 'Leave household' : `Remove ${m.name}`
@@ -333,7 +333,7 @@ export default function Family({
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={confirmRemove}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            variant="destructive"
                         >
                             {selectedMember?.you ? 'Leave' : 'Remove'}
                         </AlertDialogAction>

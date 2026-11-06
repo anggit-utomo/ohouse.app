@@ -132,9 +132,9 @@ export default function EditBudgets({
                             {canEdit && (
                                 <Button
                                     type="button"
-                                    variant="ghost"
+                                    variant="destructive"
                                     size="icon"
-                                    aria-label={`Remove ${row.name || 'category'}`}
+                                    aria-label={`Remove ${row.name || 'budget'}`}
                                     onClick={() =>
                                         form.setData(
                                             'budgets',

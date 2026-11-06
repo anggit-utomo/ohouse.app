@@ -310,8 +310,7 @@ export default function Settings({
                             </p>
                         )}
                         <Button
-                            variant="outline"
-                            className="text-destructive"
+                            variant="destructive"
                             disabled={
                                 del.data.confirm !== household.name ||
                                 del.processing
@@ -354,8 +353,7 @@ export default function Settings({
                                 </p>
                             )}
                             <Button
-                                variant="outline"
-                                className="text-destructive"
+                                variant="destructive"
                                 disabled={
                                     !account.data.password || account.processing
                                 }

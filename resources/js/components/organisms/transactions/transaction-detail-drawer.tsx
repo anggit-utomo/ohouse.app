@@ -234,8 +234,8 @@ export function TransactionDetailDrawer({
                                 <div className="flex gap-2">
                                     {isTransfer ? (
                                         <Button
-                                            variant="outline"
-                                            className="h-11 flex-1 text-destructive"
+                                            variant="destructive"
+                                            className="h-11 flex-1"
                                             onClick={() =>
                                                 setIsUndoMoveAlertOpen(true)
                                             }
@@ -254,8 +254,8 @@ export function TransactionDetailDrawer({
                                                 Edit
                                             </Button>
                                             <Button
-                                                variant="outline"
-                                                className="h-11 flex-1 text-destructive"
+                                                variant="destructive"
+                                                className="h-11 flex-1"
                                                 onClick={() =>
                                                     setIsDeleteAlertOpen(true)
                                                 }
@@ -314,7 +314,7 @@ export function TransactionDetailDrawer({
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmUndoMove}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            variant="destructive"
                         >
                             Undo Move
                         </AlertDialogAction>
@@ -339,7 +339,7 @@ export function TransactionDetailDrawer({
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmDelete}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            variant="destructive"
                         >
                             Delete
                         </AlertDialogAction>
