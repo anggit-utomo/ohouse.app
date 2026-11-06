@@ -243,7 +243,6 @@ export function TransactionDetailDrawer({
                                     {isTransfer ? (
                                         <Button
                                             variant="destructive"
-                                            className="h-11 flex-1"
                                             onClick={() =>
                                                 setIsUndoMoveAlertOpen(true)
                                             }
@@ -254,7 +253,6 @@ export function TransactionDetailDrawer({
                                         <>
                                             <Button
                                                 variant="outline"
-                                                className="h-11 flex-1"
                                                 onClick={() =>
                                                     setIsEditDrawerOpen(true)
                                                 }
@@ -263,7 +261,6 @@ export function TransactionDetailDrawer({
                                             </Button>
                                             <Button
                                                 variant="destructive"
-                                                className="h-11 flex-1"
                                                 onClick={() =>
                                                     setIsDeleteAlertOpen(true)
                                                 }
