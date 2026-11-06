@@ -25,11 +25,11 @@ A budgeting window that starts on the household's payday and is named for the mo
 _Avoid_: Month, cycle
 
 **Transaction**:
-A single amount recorded against a budget in a period; it is an expense, income, transfer out, or transfer in.
+A single amount against a budget in a period, of type expense, income, transfer out, or transfer in.
 _Avoid_: Entry, record
 
 **Transfer**:
-A pair of linked transactions — a transfer out and a transfer in — that move money between budgets without changing the household total.
+A pair of linked transactions — a transfer out and a transfer in — moving money between budgets without changing the household total.
 _Avoid_: Move (for the record)
 
 **Move**:

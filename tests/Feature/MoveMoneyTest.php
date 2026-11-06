@@ -141,7 +141,8 @@ it('shows a move as one row in history', function () {
     $this->actingAs($this->owner)->get("/h/{$this->household->id}/transactions")->assertInertia(fn (Assert $p) => $p
         ->has('transactions', 3) // the two earlier expenses and one move
         ->where('transactions.0.title', 'Moved Gasoline → Transport')
-        ->where('transactions.0.budget', 'Move')->where('transactions.0.signed', 0)->where('transactions.0.amount', 100_000));
+        ->where('transactions.0.type', fn (string $type) => in_array($type, ['transfer_in', 'transfer_out'], true))
+        ->where('transactions.0.budget', 'Transfer')->where('transactions.0.signed', 0)->where('transactions.0.amount', 100_000));
 });
 
 it('keeps moves out of the expense and income filters', function () {

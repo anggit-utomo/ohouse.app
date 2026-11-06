@@ -95,7 +95,7 @@ export default function EditBudgets({
                     >
                         <div className="flex items-center gap-2">
                             <Input
-                                aria-label="Category name"
+                                aria-label="Budget name"
                                 className="w-32 shrink-0"
                                 value={row.name}
                                 placeholder="Name"

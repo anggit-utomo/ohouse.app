@@ -75,9 +75,10 @@ class TransactionController extends Controller
                 'expense' => $rows->filter(fn ($t) => $t->type === TransactionTypeEnum::EXPENSE)->sum('amount'),
                 'income' => $rows->filter(fn ($t) => $t->type === TransactionTypeEnum::INCOME)->sum('amount'),
             ],
-            'transactions' => $rows->map(
-                fn (Transaction $t) => TransactionRow::forHistory($t, $moveTitle($t))
-            ),
+            'transactions' => $rows->map(fn (Transaction $t) => TransactionRow::forHistory(
+                $t,
+                $t->transfer_id ? $moveTitle($t) : '',
+            )),
             'canEdit' => $request->user()->can('edit', $household),
             'budgets' => $household->budgetBalances($period),
             'defaults' => $defaults,

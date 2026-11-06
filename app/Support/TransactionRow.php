@@ -54,7 +54,7 @@ final class TransactionRow
         return self::make(
             $transaction,
             title: $isTransfer ? $transferTitle : ($transaction->note ?: $budget->name),
-            budget: $isTransfer ? 'Move' : $budget->name,
+            budget: $isTransfer ? 'Transfer' : $budget->name,
             budgetId: $transaction->budgetMonth->budget_id,
             signed: $isTransfer ? 0 : $transaction->signedAmount(),
             left: $transaction->budgetMonth->balance(),
