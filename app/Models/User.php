@@ -61,6 +61,12 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->belongsTo(Household::class, 'current_household_id');
     }
 
+    public function currentOrFirstHousehold(): ?Household
+    {
+        return $this->households()->whereKey($this->current_household_id)->first()
+            ?? $this->households()->first();
+    }
+
     public function roleIn(Household $household): ?HouseholdRoleEnum
     {
         $role = $this->households()->whereKey($household->id)->first()?->pivot->role;

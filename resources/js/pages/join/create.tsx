@@ -6,7 +6,7 @@ type Props = {
     code: string;
     preview: { name: string; budgets: number; members: number } | null;
     invalid: boolean;
-    household: { id: string | null };
+    household: { id: number | null };
 };
 
 export default function Join({ code, preview, invalid, household }: Props) {

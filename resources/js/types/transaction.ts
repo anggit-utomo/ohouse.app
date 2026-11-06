@@ -17,6 +17,7 @@ export type TransactionRow = {
     left: number;
     budget_id: number;
     user_id: number;
+    transfer_id: string | null;
 };
 
 export type TransactionDetail = TransactionRow & {

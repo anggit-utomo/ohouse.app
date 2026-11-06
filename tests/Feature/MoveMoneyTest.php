@@ -161,3 +161,20 @@ it('lets viewers see nothing here and hides the household from outsiders', funct
 
     $this->actingAs(User::factory()->create())->get("/h/{$this->household->id}/transactions")->assertNotFound();
 });
+
+it('exposes the transfer id on the collapsed history row', function () {
+    $household = Household::factory()->create();
+    $owner = $household->owner;
+    $source = moveBudget($household, 'Source', 1_000_000);
+    $target = moveBudget($household, 'Target', 1_000_000);
+
+    $this->actingAs($owner)->post("/h/{$household->id}/transfers", movePayload($source, $target));
+
+    $transferId = Transaction::where('type', TransactionTypeEnum::TRANSFER_OUT)->value('transfer_id');
+
+    $this->actingAs($owner)->get("/h/{$household->id}/transactions")
+        ->assertInertia(fn (Assert $p) => $p
+            ->component('transactions/index')
+            ->has('transactions', 1)
+            ->where('transactions.0.transfer_id', $transferId));
+});

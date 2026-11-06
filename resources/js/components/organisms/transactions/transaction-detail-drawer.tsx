@@ -37,7 +37,6 @@ type Props = {
     transaction: TransactionDetail | null;
     locked?: boolean;
     canEdit?: boolean;
-    transferId?: string | null;
     budgets?: BudgetOption[];
     members?: MemberOption[];
     defaults?: TransactionDefaults;
@@ -68,7 +67,6 @@ export function TransactionDetailDrawer({
     transaction: t,
     locked = false,
     canEdit = true,
-    transferId = null,
     budgets = [],
     members = [],
     defaults,
@@ -123,8 +121,8 @@ export function TransactionDetailDrawer({
         : null;
 
     const handleConfirmUndoMove = () => {
-        if (!transferId) return;
-        router.delete(`/h/${householdId}/transfers/${transferId}`, {
+        if (!t.transfer_id) return;
+        router.delete(`/h/${householdId}/transfers/${t.transfer_id}`, {
             onSuccess: () => {
                 setIsUndoMoveAlertOpen(false);
                 onOpenChange(false);

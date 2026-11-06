@@ -23,8 +23,7 @@ Route::inertia('/', 'welcome')->name('home');
 
 Route::get('dashboard', function (Request $request) {
     $user = $request->user();
-    $household = $user->households()->whereKey($user->current_household_id)->first()
-        ?? $user->households()->first();
+    $household = $user->currentOrFirstHousehold();
 
     if ($household) {
         return redirect()->route('households.home', $household);

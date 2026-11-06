@@ -19,7 +19,8 @@ use App\Models\Transaction;
  *     budget_id: int,
  *     signed: int,
  *     occurred_at: string,
- *     left: int
+ *     left: int,
+ *     transfer_id: string|null
  * }
  */
 final class TransactionRow
@@ -83,6 +84,7 @@ final class TransactionRow
             'signed' => $signed,
             'occurred_at' => $transaction->occurred_at->toIso8601String(),
             'left' => $left,
+            'transfer_id' => $transaction->transfer_id,
         ];
     }
 }

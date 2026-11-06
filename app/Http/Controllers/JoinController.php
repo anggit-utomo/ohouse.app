@@ -29,6 +29,7 @@ class JoinController extends Controller
     {
         $code = (string) ($request->query('code') ?: session('join_code', ''));
         $invite = $code !== '' ? HouseholdInvite::findActive($code) : null;
+        $household = $request->user()->currentOrFirstHousehold();
 
         return Inertia::render('join/create', [
             'code' => $invite->code ?? $code,
@@ -38,7 +39,7 @@ class JoinController extends Controller
                 'members' => $invite->household->members()->count(),
             ] : null,
             'invalid' => $code !== '' && ! $invite,
-            'household' => ['id' => $request->query('householdId') ?? null],
+            'household' => ['id' => $household?->id],
         ]);
     }
 

@@ -210,3 +210,21 @@ it('remembers the QR code, then makes guests sign in', function () {
     $this->get('/join/ktr-4829')->assertRedirect('/join')->assertSessionHas('join_code', 'KTR-4829');
     $this->get('/join')->assertRedirect('/login');
 });
+
+it('links the join page to the current household when the user has one', function () {
+    $this->actingAs($this->guest)->get('/join')
+        ->assertInertia(fn (Assert $p) => $p->where('household.id', null));
+
+    $this->household->members()->attach($this->guest->id, ['role' => 'editor']);
+    $this->guest->update(['current_household_id' => $this->household->id]);
+
+    $this->actingAs($this->guest)->get('/join')
+        ->assertInertia(fn (Assert $p) => $p->where('household.id', $this->household->id));
+});
+
+it('falls back to a member household when the current one is unset', function () {
+    $this->household->members()->attach($this->guest->id, ['role' => 'editor']);
+
+    $this->actingAs($this->guest)->get('/join')
+        ->assertInertia(fn (Assert $p) => $p->where('household.id', $this->household->id));
+});
