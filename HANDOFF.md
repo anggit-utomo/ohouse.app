@@ -4,7 +4,7 @@
 
 - Repo: `ohouse`, branch `master`, remote `git@github.com:anggit-utomo/ohouse.app.git`.
 - Fixed point for this work: `b1f79a5`. Current `origin/master` is `a4cde7c`.
-- **Twelve commits on top of the fixed point; HEAD is six commits ahead of `origin/master` and not pushed:**
+- **The work spans these commits on top of the fixed point; HEAD is ahead of `origin/master` and not pushed:**
     - `2bcd626` `test: decouple feature tests from the Vite manifest`
     - `82e4c67` `fix: clear PHPStan level 7 findings`
     - `3db71b1` `refactor: finish Base UI migration and drop dead settings code`
@@ -17,7 +17,7 @@
     - `a3701d9` `refactor: align transfer vocabulary and history labels`
     - `ba51811` `test: cover the transfer notification path`
     - `2716665` `refactor: require a period for budget balances`
-- Working tree clean. `composer ci:check` is green: Pint, PHPStan 0 findings, `pnpm check`, `pnpm types:check`, Pest **185 passed / 1,175 assertions**.
+- Working tree clean. `composer ci:check` is green: Pint, PHPStan 0 findings, `pnpm check`, `pnpm types:check`, Pest **185 passed / 1,179 assertions**.
 - `CONTEXT.md` defines **Household**, **Member**, **Membership**, **Budget**, **Period**, **Transaction**, **Transfer**, and **Move**.
 
 ## What was done
@@ -32,7 +32,7 @@
     - `setIfNotNull` replaces the four Base UI `Select` null guards.
     - `HouseholdSettingsController` serialises dates with `toIso8601String()`.
     - `CONTEXT.md` gains Budget, Period, Transaction, Transfer, and Move.
-- The fix pass (`fdd97f2`..`2716665`) closed the remaining review findings:
+- The fix pass (`fdd97f2`..HEAD) closed the remaining review findings:
     - History labels a Transfer as "Transfer"; the "Moved A → B" title and the "Move money" action keep the verb. The move title is built only for transfers.
     - `Household::budgetBalances(Period)` requires a Period; the unreachable current-period default is gone.
     - `CONTEXT.md` defines Transaction as the row (including transfer legs), Transfer as the pair, and Move as the action.
@@ -69,11 +69,11 @@ composer ci:check
 pnpm build
 ```
 
-Expected: Pint passes, PHPStan 0, `pnpm check` and `pnpm types:check` pass, Pest 185/1,175.
+Expected: Pint passes, PHPStan 0, `pnpm check` and `pnpm types:check` pass, Pest 185/1,179.
 
 ## Running this on the work PC
 
-1. The branch is local: `origin/master` is six commits behind. Push before switching machines, then pull on the work PC or clone the remote.
+1. The branch is local: `origin/master` is behind. Push before switching machines, then pull on the work PC or clone the remote.
 2. Run `composer setup` (installs PHP/JS deps, creates `.env`, generates the key, migrates, builds assets).
 3. Run `composer dev` to serve.
 4. The local SQLite database uses the demo users in `database/seeders/DemoSeeder.php`. Do not copy real credentials into the repo.

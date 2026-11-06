@@ -77,7 +77,7 @@ class TransactionController extends Controller
             ],
             'transactions' => $rows->map(fn (Transaction $t) => TransactionRow::forHistory(
                 $t,
-                $t->transfer_id ? $moveTitle($t) : '',
+                $t->transfer_id !== null ? $moveTitle($t) : null,
             )),
             'canEdit' => $request->user()->can('edit', $household),
             'budgets' => $household->budgetBalances($period),

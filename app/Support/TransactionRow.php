@@ -46,14 +46,14 @@ final class TransactionRow
      *
      * @return Row
      */
-    public static function forHistory(Transaction $transaction, string $transferTitle): array
+    public static function forHistory(Transaction $transaction, ?string $transferTitle): array
     {
         $isTransfer = $transaction->transfer_id !== null;
         $budget = $transaction->budgetMonth->budget;
 
         return self::make(
             $transaction,
-            title: $isTransfer ? $transferTitle : ($transaction->note ?: $budget->name),
+            title: $isTransfer ? ($transferTitle ?? $budget->name) : ($transaction->note ?: $budget->name),
             budget: $isTransfer ? 'Transfer' : $budget->name,
             budgetId: $transaction->budgetMonth->budget_id,
             signed: $isTransfer ? 0 : $transaction->signedAmount(),

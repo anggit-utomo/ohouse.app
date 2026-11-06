@@ -69,7 +69,7 @@ it('describes a transfer entry as a move', function () {
 
     $gas = notificationBudget($household, 'Gasoline', 500_000);
     $transport = notificationBudget($household, 'Transport', 500_000);
-    $move = notificationTransfer($household, $gas, $transport);
+    $transfer = notificationTransfer($household, $gas, $transport);
 
     Notification::fake();
 
@@ -77,7 +77,7 @@ it('describes a transfer entry as a move', function () {
         $household->id,
         $actor->id,
         'transfer',
-        $move->id,
+        $transfer->id,
         100_000,
     ));
 
@@ -129,7 +129,7 @@ it('does not notify the actor or a member with notifications off', function () {
 
     $gas = notificationBudget($household, 'Gasoline', 500_000);
     $transport = notificationBudget($household, 'Transport', 500_000);
-    $move = notificationTransfer($household, $gas, $transport);
+    $transfer = notificationTransfer($household, $gas, $transport);
 
     Notification::fake();
 
@@ -137,7 +137,7 @@ it('does not notify the actor or a member with notifications off', function () {
         $household->id,
         $actor->id,
         'transfer',
-        $move->id,
+        $transfer->id,
         100_000,
     ));
 

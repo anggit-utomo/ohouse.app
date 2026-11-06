@@ -142,7 +142,9 @@ it('shows a move as one row in history', function () {
         ->has('transactions', 3) // the two earlier expenses and one move
         ->where('transactions.0.title', 'Moved Gasoline → Transport')
         ->where('transactions.0.type', fn (string $type) => in_array($type, ['transfer_in', 'transfer_out'], true))
-        ->where('transactions.0.budget', 'Transfer')->where('transactions.0.signed', 0)->where('transactions.0.amount', 100_000));
+        ->where('transactions.0.budget', 'Transfer')->where('transactions.0.signed', 0)->where('transactions.0.amount', 100_000)
+        ->where('transactions.1.title', fn (string $title) => $title !== 'Moved  → ')
+        ->where('transactions.2.title', fn (string $title) => $title !== 'Moved  → '));
 });
 
 it('keeps moves out of the expense and income filters', function () {
