@@ -27,9 +27,10 @@ import HeadTitle from '@/components/head-title';
 import { BottomNav } from '@/components/bottom-nav';
 import { LogOutIcon } from 'lucide-react';
 import { setIfNotNull } from '@/lib/utils';
+import type { HouseholdRef, PushDevice } from '@/types';
 
 type Props = {
-    household: { id: number; name: string; currency: string };
+    household: HouseholdRef & { name: string; currency: string };
     currencies: { code: string; name: string; symbol: string }[];
     currencyLocked: boolean;
     user: { name: string; email: string; verified: boolean };
@@ -37,12 +38,7 @@ type Props = {
     ownsHousehold: boolean;
     push: {
         publicKey: string | null;
-        devices: {
-            id: number;
-            device: string;
-            endpoint: string;
-            added: string;
-        }[];
+        devices: PushDevice[];
     };
     notify: { entries: boolean; amounts: boolean };
 };

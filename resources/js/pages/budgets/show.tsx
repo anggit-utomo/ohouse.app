@@ -8,29 +8,18 @@ import { isTransferType } from '@/lib/transactions';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
 import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
-import {
+import { TransactionDetailDrawer } from '@/components/organisms/transactions/transaction-detail-drawer';
+import type {
+    BudgetOption,
+    HouseholdRef,
+    MemberOption,
+    TransactionDefaults,
     TransactionDetail,
-    TransactionDetailDrawer,
-} from '@/components/organisms/transactions/transaction-detail-drawer';
-import { Defaults, TransactionType } from '@/types';
-
-type Tx = {
-    id: number;
-    title: string;
-    user: string;
-    user_id: number;
-    type: TransactionType;
-    amount: number;
-    note: string | null;
-    budget: string;
-    budget_id: number;
-    signed: number;
-    occurred_at: string;
-    left: number;
-};
+    TransactionRow,
+} from '@/types';
 
 type Props = {
-    household: { id: number };
+    household: HouseholdRef;
     budget: { id: number; name: string };
     monthLabel: string;
     closed: boolean;
@@ -41,11 +30,11 @@ type Props = {
         pct: number;
         over: boolean;
     };
-    transactions: Tx[];
+    transactions: TransactionRow[];
     canEdit: boolean;
-    budgets: { id: number; name: string; left: number }[];
-    members: { id: number; name: string }[];
-    defaults: Defaults;
+    budgets: BudgetOption[];
+    members: MemberOption[];
+    defaults: TransactionDefaults;
     today: string;
 };
 
@@ -75,7 +64,7 @@ export default function ShowBudget({
     }>({ isTransfer: false, moved: null });
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
-    const handleOpenDetail = (t: Tx) => {
+    const handleOpenDetail = (t: TransactionRow) => {
         const isTransfer = isTransferType(t.type);
         let moved: { from: string; to: string } | null = null;
 
@@ -92,13 +81,13 @@ export default function ShowBudget({
             type: t.type,
             amount: t.amount,
             signed: t.signed,
-            note: isTransfer ? null : t.note,
+            note: isTransfer ? null : (t.note ?? null),
             budget: t.budget,
             budget_id: t.budget_id,
             user: t.user,
             user_id: t.user_id,
             occurred_at: t.occurred_at,
-            left: t.left,
+            left: t.left ?? 0,
         });
         setIsDetailDrawerOpen(true);
     };

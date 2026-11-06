@@ -1,4 +1,4 @@
-export type Budget = {
+export type BudgetSummary = {
     id: number;
     name: string;
     left: number;
@@ -6,4 +6,10 @@ export type Budget = {
     available: number;
     pct: number;
     over: boolean;
+};
+
+export type BudgetOption = {
+    id: number;
+    name: string;
+    left: number;
 };

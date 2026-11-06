@@ -21,7 +21,7 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { TransactionFormFields } from './transaction-form-fields';
-import { Defaults } from '@/types';
+import type { BudgetOption, MemberOption, TransactionDefaults } from '@/types';
 
 type Props = {
     open: boolean;
@@ -29,9 +29,9 @@ type Props = {
     householdId: number;
     mode?: 'create' | 'edit';
     transactionId?: number;
-    defaults: Defaults;
-    budgets: { id: number; name: string; left: number }[];
-    members: { id: number; name: string }[];
+    defaults: TransactionDefaults;
+    budgets: BudgetOption[];
+    members: MemberOption[];
     today: string;
     onSuccess?: () => void;
 };
@@ -48,7 +48,7 @@ export function TransactionDrawer({
     today,
     onSuccess,
 }: Props) {
-    const form = useForm<Defaults>(defaults);
+    const form = useForm<TransactionDefaults>(defaults);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
 
     useEffect(() => {

@@ -5,18 +5,20 @@ import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys';
 import ManagePasskeys from '@/components/manage-passkeys';
-import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
 import ManageTwoFactor from '@/components/manage-two-factor';
 import { PageHeader } from '@/components/page-header';
+import type { HouseholdRef, Passkey } from '@/types';
 
-// oxfmt-ignore
 type Props = {
     passwordRules: string;
-    household: { id: number; name: string; currency: string };
-} & ManagePasskeysProps &
-    ManageTwoFactorProps;
+    household: HouseholdRef & { name: string; currency: string };
+    canManagePasskeys: boolean;
+    passkeys: Passkey[];
+    canManageTwoFactor: boolean;
+    requiresConfirmation?: boolean;
+    twoFactorEnabled?: boolean;
+};
 
 export default function Security(props: Props) {
     const base = `/h/${props.household.id}`;

@@ -32,22 +32,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { currency, plain, rupiah } from '@/lib/money';
 import { setIfNotNull } from '@/lib/utils';
-
-export type TransferBudget = { id: number; name: string; left: number };
-
-export type TransferFormDefaults = {
-    from_budget_id: string;
-    to_budget_id: string;
-    amount: string;
-    note: string;
-};
+import type { BudgetOption, TransferDefaults } from '@/types';
 
 type Props = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     householdId: number;
-    budgets: TransferBudget[];
-    defaults?: TransferFormDefaults;
+    budgets: BudgetOption[];
+    defaults?: TransferDefaults;
 };
 
 const leftText = (n: number) =>
@@ -61,7 +53,7 @@ export function MoveMoneyDrawer({
     defaults = { from_budget_id: '', to_budget_id: '', amount: '', note: '' },
 }: Props) {
     const base = `/h/${householdId}`;
-    const form = useForm<TransferFormDefaults>(defaults);
+    const form = useForm<TransferDefaults>(defaults);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
 
     const find = (id: string) => budgets.find((b) => String(b.id) === id);

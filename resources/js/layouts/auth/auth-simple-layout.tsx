@@ -1,7 +1,13 @@
 import { Link } from '@inertiajs/react';
+import type { ReactNode } from 'react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { home } from '@/routes';
-import type { AuthLayoutProps } from '@/types';
+
+type AuthLayoutProps = {
+    children?: ReactNode;
+    title?: string;
+    description?: string;
+};
 
 export default function AuthSimpleLayout({
     children,

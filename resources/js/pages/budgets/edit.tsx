@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { currency, plain, rupiah } from '@/lib/money';
 import { Spinner } from '@/components/ui/spinner';
+import type { HouseholdRef } from '@/types';
 
 type Row = { id: number | null; name: string; amount: string; repeat: boolean };
 
 type Props = {
-    household: { id: number };
+    household: HouseholdRef;
     periodLabel: string;
     justStarted: boolean;
     budgets: { id: number; name: string; amount: number; repeat: boolean }[];

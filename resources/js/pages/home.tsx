@@ -9,22 +9,25 @@ import AlertBanner from '@/components/organisms/home/alert-banner';
 import BudgetEmpty from '@/components/organisms/home/budget-empty';
 import BudgetList from '@/components/organisms/home/budget-list';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
-import {
-    MoveMoneyDrawer,
-    TransferFormDefaults,
-} from '@/components/organisms/transfers/move-money-drawer';
-import { Budget, Defaults } from '@/types';
+import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
+import type {
+    BudgetSummary,
+    HouseholdRef,
+    MemberOption,
+    TransactionDefaults,
+    TransferDefaults,
+} from '@/types';
 
 type Props = {
-    household: { id: number };
+    household: HouseholdRef;
     monthLabel: string;
     periodRange: string;
     summary: { left: number; spent: number; available: number; pct: number };
     banner: { days: number } | null;
-    budgets: Budget[];
-    members: { id: number; name: string }[];
+    budgets: BudgetSummary[];
+    members: MemberOption[];
     canEdit: boolean;
-    defaults: Defaults;
+    defaults: TransactionDefaults;
     today: string;
 };
 
@@ -44,7 +47,7 @@ export default function Home({
     const [isTransactionDrawerOpen, setIsTransactionDrawerOpen] =
         useState(false);
     const [isMoveDrawerOpen, setIsMoveDrawerOpen] = useState(false);
-    const [moveDefaults, setMoveDefaults] = useState<TransferFormDefaults>({
+    const [moveDefaults, setMoveDefaults] = useState<TransferDefaults>({
         from_budget_id: '',
         to_budget_id: '',
         amount: '',

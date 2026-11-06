@@ -22,21 +22,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { rupiah } from '@/lib/money';
 import { TransactionDrawer } from './transaction-drawer';
-import { Defaults, TransactionType } from '@/types';
-
-export type TransactionDetail = {
-    id: number;
-    type: TransactionType;
-    amount: number;
-    signed: number;
-    note: string | null;
-    budget: string;
-    budget_id?: number;
-    user: string;
-    user_id?: number;
-    occurred_at: string;
-    left: number;
-};
+import type {
+    BudgetOption,
+    MemberOption,
+    TransactionDefaults,
+    TransactionDetail,
+} from '@/types';
 
 type Props = {
     open: boolean;
@@ -48,9 +39,9 @@ type Props = {
     canEdit?: boolean;
     moved?: { from: string; to: string } | null;
     transferId?: string | null;
-    budgets?: { id: number; name: string; left: number }[];
-    members?: { id: number; name: string }[];
-    defaults?: Defaults;
+    budgets?: BudgetOption[];
+    members?: MemberOption[];
+    defaults?: TransactionDefaults;
     today?: string;
 };
 
@@ -108,7 +99,7 @@ export function TransactionDetailDrawer({
         : members.find((m) => m.name === t.user);
 
     // Build editDefaults cleanly as string values
-    const editDefaults: Defaults = {
+    const editDefaults: TransactionDefaults = {
         type: t.type === 'income' ? 'income' : 'expense',
         amount: String(t.amount),
         budget_id: currentBudget

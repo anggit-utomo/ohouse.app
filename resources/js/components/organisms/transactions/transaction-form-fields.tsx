@@ -11,12 +11,12 @@ import {
 } from '@/components/ui/select';
 import { currency, plain, rupiah } from '@/lib/money';
 import { setIfNotNull } from '@/lib/utils';
-import { Defaults } from '@/types';
+import type { BudgetOption, MemberOption, TransactionDefaults } from '@/types';
 
 type Props = {
-    form: InertiaForm<Defaults>;
-    budgets: { id: number; name: string; left: number }[];
-    members: { id: number; name: string }[];
+    form: InertiaForm<TransactionDefaults>;
+    budgets: BudgetOption[];
+    members: MemberOption[];
     today: string;
     showAfterBalance?: boolean;
 };

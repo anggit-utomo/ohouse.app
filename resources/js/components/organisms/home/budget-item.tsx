@@ -1,11 +1,11 @@
 import { BudgetBar } from '@/components/budget-bar';
 import { rupiah } from '@/lib/money';
-import { Budget } from '@/types';
+import type { BudgetSummary } from '@/types';
 import { Link } from '@inertiajs/react';
 import { ChevronRightIcon } from 'lucide-react';
 
 interface BudgetItemProps {
-    b: Budget;
+    b: BudgetSummary;
     base: string;
     canEdit: boolean;
     onMoveMoney?: (budgetId: number) => void;

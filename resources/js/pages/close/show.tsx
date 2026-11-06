@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { rupiah } from '@/lib/money';
+import type { HouseholdRef } from '@/types';
 
 type Choice = 'carry' | 'reset';
 type Row = {
@@ -14,7 +15,7 @@ type Row = {
 };
 
 type Props = {
-    household: { id: number };
+    household: HouseholdRef;
     currentTitle: string;
     currentRange: string;
     startDate: string;

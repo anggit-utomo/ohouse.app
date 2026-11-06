@@ -15,39 +15,29 @@ import { isTransferType } from '@/lib/transactions';
 import { BottomNav } from '@/components/bottom-nav';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
-import { Defaults, TransactionType } from '@/types';
-import {
+import { TransactionDetailDrawer } from '@/components/organisms/transactions/transaction-detail-drawer';
+import type {
+    BudgetOption,
+    HouseholdRef,
+    MemberOption,
+    MonthOption,
+    TransactionDefaults,
     TransactionDetail,
-    TransactionDetailDrawer,
-} from '@/components/organisms/transactions/transaction-detail-drawer';
-
-type Tx = {
-    id: number;
-    title: string;
-    budget: string;
-    user: string;
-    type: TransactionType;
-    amount: number;
-    signed: number;
-    occurred_at: string;
-    note?: string | null;
-    left?: number;
-    budget_id?: number;
-    user_id?: number;
-};
+    TransactionRow,
+} from '@/types';
 
 type Props = {
-    household: { id: number };
+    household: HouseholdRef;
     month: string;
-    months: { value: string; label: string }[];
+    months: MonthOption[];
     filters: { type: string | null; person: number | null; q: string };
-    members: { id: number; name: string }[];
+    members: MemberOption[];
     totals: { expense: number; income: number };
-    transactions: Tx[];
+    transactions: TransactionRow[];
     canEdit: boolean;
     closed: boolean;
-    budgets: { id: number; name: string; left: number }[];
-    defaults: Defaults;
+    budgets: BudgetOption[];
+    defaults: TransactionDefaults;
     today: string;
 };
 
@@ -87,7 +77,7 @@ export default function History({
     }>({ isTransfer: false, moved: null });
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
-    const handleOpenDetail = (t: Tx) => {
+    const handleOpenDetail = (t: TransactionRow) => {
         const isTransfer = isTransferType(t.type);
         let moved: { from: string; to: string } | null = null;
 
@@ -130,10 +120,13 @@ export default function History({
             { preserveState: true, replace: true },
         );
 
-    const groups = transactions.reduce<Record<string, Tx[]>>((acc, t) => {
-        (acc[dayLabel(t.occurred_at)] ??= []).push(t);
-        return acc;
-    }, {});
+    const groups = transactions.reduce<Record<string, TransactionRow[]>>(
+        (acc, t) => {
+            (acc[dayLabel(t.occurred_at)] ??= []).push(t);
+            return acc;
+        },
+        {},
+    );
 
     const chip = (label: string, active: boolean, onClick: () => void) => (
         <Button

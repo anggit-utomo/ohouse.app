@@ -13,6 +13,7 @@ import { rupiah } from '@/lib/money';
 import { BottomNav } from '@/components/bottom-nav';
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import HeadTitle from '@/components/head-title';
+import type { HouseholdRef, MonthOption } from '@/types';
 
 type BudgetItem = {
     id: number;
@@ -46,9 +47,9 @@ type DailyItem = {
 };
 
 type Props = {
-    household: { id: number };
+    household: HouseholdRef;
     month: string;
-    months: { value: string; label: string }[];
+    months: MonthOption[];
     hasData: boolean;
     spent: number;
     income: number;

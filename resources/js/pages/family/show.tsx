@@ -24,6 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import type { HouseholdRef } from '@/types';
 
 type Member = {
     id: number;
@@ -34,7 +35,7 @@ type Member = {
 };
 
 type Props = {
-    household: { id: number };
+    household: HouseholdRef;
     canManage: boolean;
     canEdit: boolean;
     invite: { code: string; url: string; expires_at: string } | null;

@@ -1,9 +1,9 @@
-import { Budget } from '@/types';
+import type { BudgetSummary } from '@/types';
 import BudgetItem from './budget-item';
 
 interface BudgetListProps {
     base: string;
-    budgets: Budget[];
+    budgets: BudgetSummary[];
     canEdit: boolean;
     onMoveMoney?: (budgetId: number) => void;
 }

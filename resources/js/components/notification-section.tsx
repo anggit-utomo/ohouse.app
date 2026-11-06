@@ -5,13 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { diagnose, usePush } from '@/hooks/use-push';
 import { useState } from 'react';
-
-type Device = { id: number; device: string; endpoint: string; added: string };
+import type { PushDevice } from '@/types';
 
 type Props = {
     base: string;
     publicKey: string | null;
-    devices: Device[];
+    devices: PushDevice[];
     notify: { entries: boolean; amounts: boolean };
 };
 
