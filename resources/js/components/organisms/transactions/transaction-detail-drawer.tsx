@@ -76,7 +76,15 @@ export function TransactionDetailDrawer({
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
 
-    if (!t) return null;
+    // Keep the Drawer root mounted while empty so the first open animates:
+    // mounting a Base UI Drawer already-open skips its starting-style transition.
+    if (!t) {
+        return (
+            <>
+                <Drawer open={false} onOpenChange={onOpenChange} />
+            </>
+        );
+    }
 
     const base = `/h/${householdId}/transactions`;
     const plus = t.signed > 0;

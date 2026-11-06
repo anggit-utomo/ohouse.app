@@ -198,6 +198,7 @@ export default function EditBudgets({
                     <Button
                         type="button"
                         variant="outline"
+                        className="mb-6"
                         onClick={() =>
                             form.setData('budgets', [
                                 ...form.data.budgets,
