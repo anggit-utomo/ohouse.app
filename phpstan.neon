@@ -14,3 +14,4 @@ parameters:
     treatPhpDocTypesAsCertain: false   # silences the two "array_values has no effect" notes
     stubFiles:
         - stubs/PushSubscription.stub
+        - stubs/ContentEncoding.stub

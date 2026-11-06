@@ -45,6 +45,7 @@ type Props = {
     totals: { expense: number; income: number };
     transactions: Tx[];
     canEdit: boolean;
+    closed: boolean;
     budgets: { id: number; name: string; left: number }[];
     defaults: Defaults;
     today: string;
@@ -70,6 +71,7 @@ export default function History({
     totals,
     transactions,
     canEdit,
+    closed,
     budgets,
     defaults,
     today,
@@ -101,6 +103,7 @@ export default function History({
             id: t.id,
             type: t.type,
             amount: t.amount,
+            signed: t.signed,
             note: isTransfer
                 ? null
                 : (t.note ?? (t.title !== t.budget ? t.title : null)),
@@ -286,6 +289,7 @@ export default function History({
                 onOpenChange={setIsDetailDrawerOpen}
                 householdId={household.id}
                 transaction={selectedTransaction}
+                locked={closed}
                 canEdit={canEdit}
                 isTransfer={selectedTxMeta.isTransfer}
                 moved={selectedTxMeta.moved}

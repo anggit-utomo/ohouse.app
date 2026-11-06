@@ -73,6 +73,7 @@ class TransactionController extends Controller
         return Inertia::render('transactions/index', [
             'household' => ['id' => $household->id],
             'month' => $period->key(),
+            'closed' => ! $period->isCurrent(),
             'months' => Periods::all($household)
                 ->take(12)
                 ->map(fn ($p) => ['value' => $p->key(), 'label' => $p->label()])

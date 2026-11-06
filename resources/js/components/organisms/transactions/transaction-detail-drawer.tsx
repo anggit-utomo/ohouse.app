@@ -28,6 +28,7 @@ export type TransactionDetail = {
     id: number;
     type: string;
     amount: number;
+    signed: number;
     note: string | null;
     budget: string;
     budget_id?: number;
@@ -92,7 +93,7 @@ export function TransactionDetailDrawer({
     if (!t) return null;
 
     const base = `/h/${householdId}/transactions`;
-    const plus = t.type === 'income';
+    const plus = t.signed > 0;
 
     const { errors } = usePage().props as { errors?: Record<string, string> };
     const problem = errors?.transfer ?? errors?.occurred_at ?? errors?.type;

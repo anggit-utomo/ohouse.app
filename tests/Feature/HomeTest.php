@@ -127,6 +127,22 @@ it('includes the note and payer when opening a budget transaction', function () 
             ->where('transactions.0.budget_id', $food->budget_id));
 });
 
+it('passes a positive sign for an incoming move on the budget page', function () {
+    $source = homeBudget($this->household, 'Source', 500_000);
+    $destination = homeBudget($this->household, 'Destination', 500_000);
+
+    $this->actingAs($this->owner)->post("{$this->url}/transfers", [
+        'from_budget_id' => $source->budget_id,
+        'to_budget_id' => $destination->budget_id,
+        'amount' => 50_000,
+    ])->assertRedirect();
+
+    $this->actingAs($this->owner)->get("{$this->url}/budgets/{$destination->budget_id}")
+        ->assertInertia(fn (Assert $p) => $p
+            ->where('transactions.0.type', 'transfer_in')
+            ->where('transactions.0.signed', 50_000));
+});
+
 it('opens a past period of a budget and falls back to the open one', function () {
     $food = homeBudget($this->household, 'Food', 2_000_000); // the open period, from 1 Oct
     BudgetMonth::factory()->for($food->budget)->create([

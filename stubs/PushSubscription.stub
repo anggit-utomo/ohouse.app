@@ -8,7 +8,7 @@ namespace NotificationChannels\WebPush;
  * @property string $endpoint
  * @property string|null $public_key
  * @property string|null $auth_token
- * @property string|null $content_encoding
+ * @property \Minishlink\WebPush\ContentEncoding|null $content_encoding
  * @property string|null $device
  * @property \DateTimeInterface $created_at
  * @property \DateTimeInterface $updated_at

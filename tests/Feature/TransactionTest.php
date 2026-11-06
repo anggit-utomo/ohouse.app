@@ -201,3 +201,15 @@ it('filters history by period, type, person and search text', function () {
         ->and($get('?q=gasoline'))->toBe(['Petrol'])
         ->and($get('?month=2026-09'))->toBe(['Last month']);
 });
+
+it('marks a selected closed period in transaction history', function () {
+    $september = octoberBudget($this->household, 'Gas', 700_000, '2026-09-01');
+    entry($september, ['occurred_at' => '2026-09-10 12:00:00']);
+    $september->update(['closed_at' => now()]);
+
+    $this->actingAs($this->owner)->get("{$this->base}?month=2026-09")
+        ->assertInertia(fn (Assert $p) => $p
+            ->component('transactions/index')
+            ->where('closed', true)
+            ->where('canEdit', true));
+});

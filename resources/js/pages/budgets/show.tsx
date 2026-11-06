@@ -92,6 +92,7 @@ export default function ShowBudget({
             id: t.id,
             type: t.type ?? (t.signed > 0 ? 'income' : 'expense'),
             amount: t.amount ?? Math.abs(t.signed),
+            signed: t.signed,
             note: isTransfer ? null : (t.note ?? null),
             budget: t.budget ?? budget.name,
             budget_id: t.budget_id,

@@ -1,0 +1,9 @@
+<?php
+
+namespace Minishlink\WebPush;
+
+enum ContentEncoding: string
+{
+    case aesgcm = 'aesgcm';
+    case aes128gcm = 'aes128gcm';
+}
