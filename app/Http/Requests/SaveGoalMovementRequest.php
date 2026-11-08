@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\GoalMovementTypeEnum;
 use App\Http\Requests\Concerns\ResolvesHousehold;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -19,6 +20,7 @@ class SaveGoalMovementRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'type' => ['required', Rule::enum(GoalMovementTypeEnum::class)],
             'budget_id' => [
                 'nullable',
                 'integer',

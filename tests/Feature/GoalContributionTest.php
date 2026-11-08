@@ -52,6 +52,7 @@ function budgetMonth(
 
 it('adds money from outside the budget and shows it in the ledger', function () {
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'amount' => 250_000,
         'note' => 'Bonus',
         'occurred_at' => '2026-10-10',
@@ -94,6 +95,7 @@ it('leaves every budget untouched', function () {
     ]);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'amount' => 200_000,
     ])->assertRedirect();
 
@@ -107,6 +109,7 @@ it('shows progress beyond the target', function () {
     $this->goal->update(['target_amount' => 100_000]);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'amount' => 150_000,
     ])->assertRedirect();
 
@@ -121,6 +124,7 @@ it('shows progress beyond the target', function () {
 it('lists movements newest first', function () {
     foreach ([['2026-10-05', 100_000], ['2026-10-12', 75_000]] as [$date, $amount]) {
         $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+            'type' => 'contribution',
             'amount' => $amount,
             'occurred_at' => $date,
         ])->assertRedirect();
@@ -145,6 +149,7 @@ it('keeps savings totals for closed periods', function () {
     ]);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'amount' => 250_000,
     ])->assertRedirect();
 
@@ -159,6 +164,7 @@ it('keeps savings totals for closed periods', function () {
 it('rejects an amount of zero or less', function () {
     foreach ([0, -50_000] as $amount) {
         $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+            'type' => 'contribution',
             'amount' => $amount,
         ])->assertSessionHasErrors('amount');
     }
@@ -170,6 +176,7 @@ it('rejects a contribution in a closed period', function () {
     closedSeptember($this->household);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'amount' => 100_000,
         'occurred_at' => '2026-09-10',
     ])->assertSessionHasErrors([
@@ -184,6 +191,7 @@ it('attributes a contribution to its period-start, not its calendar month', func
     $this->travelTo('2026-11-08 09:00:00');
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'amount' => 200_000,
         'occurred_at' => '2026-11-05',
     ])->assertRedirect();
@@ -226,6 +234,7 @@ it('rejects a contribution to an archived goal', function () {
     $this->goal->update(['archived_at' => now()]);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'amount' => 100_000,
     ])->assertSessionHasErrors('goal');
 
@@ -239,6 +248,7 @@ it('lets viewers read but not add money', function () {
     $this->actingAs($viewer)->get("{$this->url}/goals/{$this->goal->id}")->assertOk();
 
     $this->actingAs($viewer)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'amount' => 100_000,
     ])->assertForbidden();
 
@@ -249,6 +259,7 @@ it('does not add money to another household goal', function () {
     $other = Goal::factory()->for(Household::factory())->create();
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$other->id}/movements", [
+        'type' => 'contribution',
         'amount' => 100_000,
     ])->assertNotFound();
 
@@ -259,6 +270,7 @@ it('moves money out of a budget without calling it spending', function () {
     $food = budgetMonth($this->household, 'Food', 1_000_000);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $food->budget_id,
         'amount' => 300_000,
     ])->assertRedirect();
@@ -288,6 +300,7 @@ it('rejects a contribution above what the budget has left', function () {
     $food = budgetMonth($this->household, 'Food', 1_000_000);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $food->budget_id,
         'amount' => 1_100_000,
     ])->assertSessionHasErrors([
@@ -301,6 +314,7 @@ it('accepts a contribution for exactly what the budget has left', function () {
     $food = budgetMonth($this->household, 'Food', 1_000_000);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $food->budget_id,
         'amount' => 1_000_000,
     ])->assertRedirect();
@@ -315,6 +329,7 @@ it('rejects a contribution from a closed source month', function () {
     $food->update(['closed_at' => now()]);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $food->budget_id,
         'amount' => 100_000,
     ])->assertSessionHasErrors('occurred_at');
@@ -327,6 +342,7 @@ it('stops offering saved money to a transfer', function () {
     $gas = budgetMonth($this->household, 'Gas', 500_000, sort: 2);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $food->budget_id,
         'amount' => 300_000,
     ])->assertRedirect();
@@ -354,6 +370,7 @@ it('attributes a budget contribution to the source period', function () {
     $food = budgetMonth($this->household, 'Food', 1_000_000, periodStart: '2026-10-27');
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $food->budget_id,
         'amount' => 200_000,
         'occurred_at' => '2026-11-05',
@@ -367,6 +384,7 @@ it('rejects a source budget from another household', function () {
     $foreign = Budget::factory()->for($other)->create();
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $foreign->id,
         'amount' => 100_000,
     ])->assertSessionHasErrors('budget_id');
@@ -379,6 +397,7 @@ it('rejects an archived source budget', function () {
     $food->budget->update(['archived_at' => now()]);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $food->budget_id,
         'amount' => 100_000,
     ])->assertSessionHasErrors('budget_id');
@@ -391,6 +410,7 @@ it('carries the reduced leftover into the next period', function () {
     $food = budgetMonth($this->household, 'Food', 1_000_000);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $food->budget_id,
         'amount' => 300_000,
         'occurred_at' => '2026-10-10',
@@ -413,6 +433,7 @@ it('keeps a same-day contribution out of the carry', function () {
     $food = budgetMonth($this->household, 'Food', 1_000_000);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $food->budget_id,
         'amount' => 300_000,
         'occurred_at' => '2026-10-29',
@@ -435,6 +456,7 @@ it('rejects a budget contribution in a closed period', function () {
     $september = BudgetMonth::whereDate('period_start', '2026-09-01')->sole();
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'contribution',
         'budget_id' => $september->budget_id,
         'amount' => 100_000,
         'occurred_at' => '2026-09-10',

@@ -1,11 +1,12 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { PencilIcon, PlusIcon } from 'lucide-react';
+import { MinusIcon, PencilIcon, PlusIcon, Trash2 } from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { GoalContributionDrawer } from '@/components/organisms/goals/goal-contribution-drawer';
 import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
+import { GoalWithdrawalDrawer } from '@/components/organisms/goals/goal-withdrawal-drawer';
 import { rupiah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type {
@@ -38,6 +39,13 @@ export default function ShowGoal({
     const base = `/h/${household.id}`;
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isContributionOpen, setIsContributionOpen] = useState(false);
+    const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
+
+    const removeMovement = (id: number) => {
+        router.delete(`${base}/goals/${goal.id}/movements/${id}`, {
+            preserveScroll: true,
+        });
+    };
 
     return (
         <>
@@ -106,12 +114,21 @@ export default function ShowGoal({
             </div>
 
             {canEdit && (
-                <Button
-                    type="button"
-                    onClick={() => setIsContributionOpen(true)}
-                >
-                    <PlusIcon className="mr-1 size-4" /> Add money
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                    <Button
+                        type="button"
+                        onClick={() => setIsContributionOpen(true)}
+                    >
+                        <PlusIcon className="mr-1 size-4" /> Add money
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsWithdrawalOpen(true)}
+                    >
+                        <MinusIcon className="mr-1 size-4" /> Take out
+                    </Button>
+                </div>
             )}
 
             {savings.length > 0 && (
@@ -125,8 +142,17 @@ export default function ShowGoal({
                             <span className="text-muted-foreground">
                                 {saving.label}
                             </span>
-                            <span className="font-semibold">
-                                {rupiah(saving.saved)}
+                            <span className="text-right">
+                                {saving.saved > 0 && (
+                                    <span className="block font-semibold">
+                                        {rupiah(saving.saved)} saved
+                                    </span>
+                                )}
+                                {saving.withdrawn > 0 && (
+                                    <span className="block text-xs text-muted-foreground">
+                                        {rupiah(saving.withdrawn)} taken out
+                                    </span>
+                                )}
                             </span>
                         </div>
                     ))}
@@ -148,10 +174,16 @@ export default function ShowGoal({
                     </span>
                     <span className="min-w-0 flex-1">
                         <span className="block truncate font-semibold">
-                            {movement.note ?? 'Money added'}
+                            {movement.note ??
+                                (movement.type === 'withdrawal'
+                                    ? 'Money taken out'
+                                    : 'Money added')}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                            {movement.user} ·{' '}
+                            {movement.type === 'withdrawal'
+                                ? 'Taken out'
+                                : 'Added'}{' '}
+                            · {movement.user} ·{' '}
                             {new Date(movement.occurred_at).toLocaleDateString(
                                 'en-GB',
                                 {
@@ -170,6 +202,17 @@ export default function ShowGoal({
                         {movement.signed > 0 ? '+' : '-'}
                         {rupiah(Math.abs(movement.signed))}
                     </span>
+                    {movement.can_remove && canEdit && (
+                        <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Remove movement"
+                            onClick={() => removeMovement(movement.id)}
+                        >
+                            <Trash2 className="size-4" />
+                        </Button>
+                    )}
                 </div>
             ))}
 
@@ -187,6 +230,17 @@ export default function ShowGoal({
                 onOpenChange={setIsContributionOpen}
                 householdId={household.id}
                 goalId={goal.id}
+                budgets={budgets}
+                today={today}
+            />
+
+            <GoalWithdrawalDrawer
+                key={today}
+                open={isWithdrawalOpen}
+                onOpenChange={setIsWithdrawalOpen}
+                householdId={household.id}
+                goalId={goal.id}
+                balance={goal.balance}
                 budgets={budgets}
                 today={today}
             />

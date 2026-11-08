@@ -19,7 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *     note: string|null,
  *     user: string,
  *     occurred_at: string,
- *     period_start: string
+ *     period_start: string,
+ *     can_remove: bool
  * }
  */
 #[Fillable([
@@ -80,7 +81,7 @@ class GoalMovement extends Model
      *
      * @return Row
      */
-    public function row(): array
+    public function row(bool $canRemove = false): array
     {
         return [
             'id' => $this->id,
@@ -91,6 +92,7 @@ class GoalMovement extends Model
             'user' => $this->user->name,
             'occurred_at' => $this->occurred_at->toIso8601String(),
             'period_start' => $this->period_start->toDateString(),
+            'can_remove' => $canRemove,
         ];
     }
 }

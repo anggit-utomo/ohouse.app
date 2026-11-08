@@ -66,12 +66,12 @@ class BudgetMonth extends Model
             ->sum('amount');
     }
 
-    /** What is left: allocated + carried in + income/transfers in - spent - money saved. */
+    /** What is left: allocated + carried in + income/transfers in - spent - saved + returned. */
     public function balance(): int
     {
         $net = $this->transactions->sum(fn (Transaction $t) => $t->signedAmount());
 
-        return $this->allocated + $this->carried_in + $net - $this->movedToGoals();
+        return $this->allocated + $this->carried_in + $net + $this->goalNet();
     }
 
     /**
@@ -84,7 +84,7 @@ class BudgetMonth extends Model
         $spent = $this->spent();
         $left = $this->balance();
         $moved = $this->movedToGoals();
-        $available = $this->allocated + $this->carried_in + $this->incoming();
+        $available = $this->allocated + $this->carried_in + $this->incoming() + $this->returnedFromGoals();
 
         return [
             'spent' => $spent,
@@ -107,8 +107,25 @@ class BudgetMonth extends Model
     /** Money that left this budget for a goal. */
     public function movedToGoals(): int
     {
+        return $this->goalMovementsOfType(GoalMovementTypeEnum::CONTRIBUTION);
+    }
+
+    /** Money returned to this budget from a goal. */
+    public function returnedFromGoals(): int
+    {
+        return $this->goalMovementsOfType(GoalMovementTypeEnum::WITHDRAWAL);
+    }
+
+    /** The net effect of goals on this budget: money returned minus money saved. */
+    public function goalNet(): int
+    {
+        return $this->returnedFromGoals() - $this->movedToGoals();
+    }
+
+    private function goalMovementsOfType(GoalMovementTypeEnum $type): int
+    {
         return $this->goalMovements
-            ->filter(fn (GoalMovement $m) => $m->type === GoalMovementTypeEnum::CONTRIBUTION)
+            ->filter(fn (GoalMovement $m) => $m->type === $type)
             ->sum('amount');
     }
 

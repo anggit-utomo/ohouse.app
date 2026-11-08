@@ -100,6 +100,7 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
             ->name('goals.movements.')
             ->group(function () {
                 Route::post('/', 'store')->name('store');
+                Route::delete('/{movement}', 'destroy')->name('destroy');
             });
 
         Route::controller(TransferController::class)

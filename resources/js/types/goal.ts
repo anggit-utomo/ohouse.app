@@ -17,6 +17,7 @@ export type GoalSaving = {
     period_start: string;
     label: string;
     saved: number;
+    withdrawn: number;
 };
 
 export type GoalMovementRow = {
@@ -28,4 +29,5 @@ export type GoalMovementRow = {
     user: string;
     occurred_at: string;
     period_start: string;
+    can_remove: boolean;
 };

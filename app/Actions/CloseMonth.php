@@ -37,8 +37,8 @@ class CloseMonth
 
     /**
      * What a budget has left if the new period starts on $start: Transactions
-     * dated on or after it move on, while goal money always reduces the month
-     * it left.
+     * dated on or after it move on, while goal money always counts against
+     * the month it left or returned to.
      */
     private function leftoverBefore(BudgetMonth $m, CarbonInterface $start): int
     {
@@ -48,7 +48,7 @@ class CloseMonth
             ->filter(fn (Transaction $t) => $t->occurred_at < $day)
             ->sum(fn (Transaction $t) => $t->signedAmount());
 
-        return $m->allocated + $m->carried_in + $net - $m->movedToGoals();
+        return $m->allocated + $m->carried_in + $net + $m->goalNet();
     }
 
     /**

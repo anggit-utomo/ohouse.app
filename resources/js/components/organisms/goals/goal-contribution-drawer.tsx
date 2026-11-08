@@ -76,6 +76,7 @@ export function GoalContributionDrawer({
         e.preventDefault();
 
         form.transform((d) => ({
+            type: 'contribution',
             budget_id: d.budget_id === OUTSIDE ? null : Number(d.budget_id),
             amount: Number(d.amount || 0),
             note: d.note || null,
