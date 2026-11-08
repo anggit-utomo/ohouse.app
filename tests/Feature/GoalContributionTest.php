@@ -158,7 +158,9 @@ it('keeps savings totals for closed periods', function () {
             ->where('savings.0.label', 'October')
             ->where('savings.0.saved', 250_000)
             ->where('savings.1.label', 'September')
-            ->where('savings.1.saved', 300_000));
+            ->where('savings.1.saved', 300_000)
+            ->where('movements.0.can_remove', true)
+            ->where('movements.1.can_remove', false));
 });
 
 it('rejects an amount of zero or less', function () {

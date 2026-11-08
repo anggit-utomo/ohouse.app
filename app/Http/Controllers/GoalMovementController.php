@@ -22,7 +22,7 @@ class GoalMovementController extends Controller
         WithdrawFromGoal $withdraw
     ): RedirectResponse {
         $data = $request->validated();
-        $type = $data['type'] ?? GoalMovementTypeEnum::CONTRIBUTION->value;
+        $type = $data['type'];
 
         $amount = (int) $data['amount'];
         $when = isset($data['occurred_at']) ? (string) $data['occurred_at'] : null;

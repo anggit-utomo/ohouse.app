@@ -37,13 +37,12 @@ trait RecordsGoalMovements
     protected function moment(Household $household, ?string $when): array
     {
         $date = EntryTime::at($when);
-        $current = Periods::current($household);
         $period = Periods::containing($household, $date)
             ?? throw ValidationException::withMessages([
                 'occurred_at' => 'There is no budget period for that date.',
             ]);
 
-        if ($period->key() !== $current->key()) {
+        if (! Periods::isOpen($household, $period->key())) {
             throw ValidationException::withMessages([
                 'occurred_at' => 'That period is closed. Add it to the current period instead.',
             ]);

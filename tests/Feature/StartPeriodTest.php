@@ -56,6 +56,16 @@ it('finds the current period from the household, or from the open rows when it i
     expect(Periods::current($other)->key())->toBe('2026-10-05');
 });
 
+it('knows whether a period is the open one', function () {
+    expect(Periods::isOpen($this->household, '2026-10-27'))->toBeTrue()
+        ->and(Periods::isOpen($this->household, '2026-09-01'))->toBeFalse();
+
+    $this->household->update(['period_start' => '2026-11-25']);
+
+    expect(Periods::isOpen($this->household, '2026-10-27'))->toBeFalse()
+        ->and(Periods::isOpen($this->household->fresh(), '2026-11-25'))->toBeTrue();
+});
+
 it('previews what is left as of the chosen payday, ignoring entries after it', function () {
     $food = spBudget($this->household, 'Food', 2_000_000, 1_640_000);
     spEntry($food, 90_000, '2026-11-26 12:00:00');

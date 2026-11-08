@@ -31,7 +31,6 @@ final class GoalLedger
     public static function for(Goal $goal, Household $household): array
     {
         $periods = Periods::all($household)->keyBy(fn (Period $period) => $period->key());
-        $current = Periods::current($household)->key();
 
         $movements = $goal->movements
             ->sortByDesc(fn (GoalMovement $movement) => [$movement->occurred_at->timestamp, $movement->id])
@@ -57,7 +56,7 @@ final class GoalLedger
         return [
             'movements' => array_values($movements
                 ->map(fn (GoalMovement $movement) => $movement->row(
-                    $movement->period_start->toDateString() === $current,
+                    $movement->canBeRemoved($household),
                 ))
                 ->all()),
             'savings' => array_values($savings),

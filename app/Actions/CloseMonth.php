@@ -91,7 +91,9 @@ class CloseMonth
         $day = $start->copy()->startOfDay();
 
         DB::transaction(function () use ($household, $day, $decisions) {
-            foreach ($this->open($household, lock: true, withArchived: true) as $month) {
+            $lockedHousehold = Household::lockForUpdate()->findOrFail($household->id);
+
+            foreach ($this->open($lockedHousehold, lock: true, withArchived: true) as $month) {
                 $budget = $month->budget;
                 $active = $budget->archived_at === null;
                 $repeats = $active && $budget->repeat_monthly;
@@ -134,7 +136,7 @@ class CloseMonth
                 ]);
             }
 
-            $household->update(['period_start' => $day->toDateString()]);
+            $lockedHousehold->update(['period_start' => $day->toDateString()]);
         });
     }
 }

@@ -3,6 +3,16 @@ import { useState } from 'react';
 import { MinusIcon, PencilIcon, PlusIcon, Trash2 } from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
 import { PageHeader } from '@/components/page-header';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { GoalContributionDrawer } from '@/components/organisms/goals/goal-contribution-drawer';
 import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
@@ -40,11 +50,22 @@ export default function ShowGoal({
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isContributionOpen, setIsContributionOpen] = useState(false);
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
+    const [pendingMovement, setPendingMovement] =
+        useState<GoalMovementRow | null>(null);
 
-    const removeMovement = (id: number) => {
-        router.delete(`${base}/goals/${goal.id}/movements/${id}`, {
-            preserveScroll: true,
-        });
+    const pendingLabel =
+        pendingMovement?.type === 'withdrawal' ? 'withdrawal' : 'contribution';
+
+    const removeMovement = () => {
+        if (!pendingMovement) return;
+
+        router.delete(
+            `${base}/goals/${goal.id}/movements/${pendingMovement.id}`,
+            {
+                preserveScroll: true,
+                onSuccess: () => setPendingMovement(null),
+            },
+        );
     };
 
     return (
@@ -208,13 +229,42 @@ export default function ShowGoal({
                             size="icon"
                             variant="ghost"
                             aria-label="Remove movement"
-                            onClick={() => removeMovement(movement.id)}
+                            onClick={() => setPendingMovement(movement)}
                         >
                             <Trash2 className="size-4" />
                         </Button>
                     )}
                 </div>
             ))}
+
+            <AlertDialog
+                open={pendingMovement !== null}
+                onOpenChange={(open) => {
+                    if (!open) setPendingMovement(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Remove this {pendingLabel}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {pendingMovement
+                                ? `The ${pendingLabel} of ${rupiah(pendingMovement.amount)} will be deleted. The Goal balance and any linked Budget will go back to their previous values.`
+                                : null}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={removeMovement}
+                            variant="destructive"
+                        >
+                            Remove
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <GoalDrawer
                 key={goal.id}

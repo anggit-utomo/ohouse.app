@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\EncryptedInteger;
 use App\Enums\GoalMovementTypeEnum;
+use App\Support\Periods;
 use Database\Factories\GoalMovementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -74,6 +75,12 @@ class GoalMovement extends Model
     public function signedAmount(): int
     {
         return $this->type->sign() * $this->amount;
+    }
+
+    /** True while its Period is open; the hook Sweeps will extend. */
+    public function canBeRemoved(Household $household): bool
+    {
+        return Periods::isOpen($household, $this->period_start->toDateString());
     }
 
     /**

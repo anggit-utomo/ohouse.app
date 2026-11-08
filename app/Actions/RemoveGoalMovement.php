@@ -14,13 +14,21 @@ class RemoveGoalMovement
     /** Deletes a movement while its Period is still open. */
     public function handle(Household $household, Goal $goal, GoalMovement $movement): void
     {
-        if ($movement->period_start->toDateString() !== Periods::current($household)->key()) {
+        if ($movement->goal_id !== $goal->id || $movement->household_id !== $household->id) {
             throw ValidationException::withMessages([
-                'movement' => 'That period is closed. Add a correction in the current period instead.',
+                'movement' => 'That movement does not belong to this goal.',
             ]);
         }
 
-        DB::transaction(function () use ($goal, $movement) {
+        DB::transaction(function () use ($household, $goal, $movement) {
+            $lockedHousehold = Household::lockForUpdate()->findOrFail($household->id);
+
+            if (! Periods::isOpen($lockedHousehold, $movement->period_start->toDateString())) {
+                throw ValidationException::withMessages([
+                    'movement' => 'That period is closed. Add a correction in the current period instead.',
+                ]);
+            }
+
             $locked = Goal::lockForUpdate()->with('movements')->findOrFail($goal->id);
 
             if ($locked->balance() - $movement->signedAmount() < 0) {

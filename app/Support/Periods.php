@@ -20,6 +20,12 @@ final class Periods
         return new Period(CarbonImmutable::parse($start)->startOfDay());
     }
 
+    /** True while $periodStart is the household's open period. */
+    public static function isOpen(Household $household, string $periodStart): bool
+    {
+        return self::current($household)->key() === $periodStart;
+    }
+
     /** @return Collection<int, Period> newest first: the open period, then the closed ones */
     public static function all(Household $household): Collection
     {

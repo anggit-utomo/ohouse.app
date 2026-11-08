@@ -31,10 +31,11 @@ class ContributeToGoal
     ): GoalMovement {
         $this->assertCanMove($household, $goal, $amount);
 
-        [$date, $period] = $this->moment($household, $when);
         $sourceBudget = $this->goalBudget($household, $budgetId);
 
-        return DB::transaction(function () use ($household, $by, $goal, $amount, $date, $note, $sourceBudget, $period) {
+        return DB::transaction(function () use ($household, $by, $goal, $amount, $when, $note, $sourceBudget) {
+            $lockedHousehold = Household::lockForUpdate()->findOrFail($household->id);
+            [$date, $period] = $this->moment($lockedHousehold, $when);
             $month = null;
 
             if ($sourceBudget instanceof Budget) {

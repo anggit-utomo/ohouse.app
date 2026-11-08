@@ -1,11 +1,13 @@
 <?php
 
+use App\Actions\RemoveGoalMovement;
 use App\Models\Budget;
 use App\Models\BudgetMonth;
 use App\Models\Goal;
 use App\Models\GoalMovement;
 use App\Models\Household;
 use App\Models\User;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -283,6 +285,31 @@ it('does not remove another goal movement', function () {
         ->assertNotFound();
 
     expect(GoalMovement::count())->toBe(1);
+});
+
+it('refuses at the writer level to remove a movement outside the goal or household', function () {
+    $otherGoal = Goal::factory()->for(Household::factory())->create();
+    $foreign = GoalMovement::factory()->create([
+        'goal_id' => $otherGoal->id,
+        'household_id' => $otherGoal->household_id,
+        'user_id' => $otherGoal->household->owner_id,
+        'type' => 'withdrawal',
+    ]);
+    $misattributed = GoalMovement::factory()->create([
+        'goal_id' => $this->goal->id,
+        'household_id' => Household::factory(),
+        'user_id' => $this->owner->id,
+        'type' => 'withdrawal',
+    ]);
+
+    $remove = app(RemoveGoalMovement::class);
+
+    foreach ([$foreign, $misattributed] as $movement) {
+        expect(fn () => $remove->handle($this->household, $this->goal, $movement))
+            ->toThrow(ValidationException::class, 'That movement does not belong to this goal.');
+    }
+
+    expect(GoalMovement::count())->toBe(2);
 });
 
 it('carries net goal money into the next period', function () {

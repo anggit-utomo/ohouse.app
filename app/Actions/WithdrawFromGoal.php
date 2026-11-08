@@ -31,10 +31,11 @@ class WithdrawFromGoal
     ): GoalMovement {
         $this->assertCanMove($household, $goal, $amount);
 
-        [$date, $period] = $this->moment($household, $when);
         $destination = $this->goalBudget($household, $budgetId);
 
-        return DB::transaction(function () use ($household, $by, $goal, $amount, $date, $note, $destination, $period) {
+        return DB::transaction(function () use ($household, $by, $goal, $amount, $when, $note, $destination) {
+            $lockedHousehold = Household::lockForUpdate()->findOrFail($household->id);
+            [$date, $period] = $this->moment($lockedHousehold, $when);
             $locked = Goal::lockForUpdate()->with('movements')->findOrFail($goal->id);
 
             if ($amount > $locked->balance()) {
