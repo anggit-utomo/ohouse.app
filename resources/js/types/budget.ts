@@ -4,6 +4,7 @@ export type BudgetSummary = {
     left: number;
     spent: number;
     available: number;
+    moved: number;
     pct: number;
     over: boolean;
 };

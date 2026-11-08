@@ -43,6 +43,7 @@ it('shows the numbers from the Home screen', function () {
         ->where('monthLabel', 'October')->where('periodRange', '1 Oct – today')
         ->where('summary.left', 630_000)->where('summary.spent', 3_870_000)->where('summary.available', 4_500_000)->where('summary.pct', 86)
         ->where('budgets.0.name', 'Food')->where('budgets.0.left', 360_000)->where('budgets.0.over', false)
+        ->where('budgets.0.moved', 0)
         ->where('budgets.1.left', 0)
         ->where('budgets.4.name', 'Transport')->where('budgets.4.left', -110_000)->where('budgets.4.over', true)->where('budgets.4.pct', 100));
 });

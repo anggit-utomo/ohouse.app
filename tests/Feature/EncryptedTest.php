@@ -2,6 +2,7 @@
 
 use App\Models\Budget;
 use App\Models\BudgetMonth;
+use App\Models\Goal;
 use App\Models\Household;
 use App\Models\Transaction;
 use Illuminate\Contracts\Encryption\DecryptException;
@@ -21,6 +22,10 @@ it('stores every sensitive column as an encrypted payload and reads it back', fu
         'amount' => 6_172_845,
         'note' => 'Kado ulang tahun kejutan',
     ]);
+    $goal = Goal::factory()->for($household)->create([
+        'name' => 'Liburan Pantai Rahasia',
+        'target_amount' => 4_915_372,
+    ]);
 
     $columns = [
         ['households', 'name'],
@@ -30,6 +35,8 @@ it('stores every sensitive column as an encrypted payload and reads it back', fu
         ['budget_months', 'carried_in'],
         ['transactions', 'amount'],
         ['transactions', 'note'],
+        ['goals', 'name'],
+        ['goals', 'target_amount'],
     ];
 
     foreach ($columns as [$table, $column]) {
@@ -44,6 +51,7 @@ it('stores every sensitive column as an encrypted payload and reads it back', fu
         'budgets',
         'budget_months',
         'transactions',
+        'goals',
         'household_invites',
         'household_user',
     ])
@@ -58,6 +66,8 @@ it('stores every sensitive column as an encrypted payload and reads it back', fu
             '5283091',
             '6172845',
             'Kado ulang tahun kejutan',
+            'Liburan Pantai Rahasia',
+            '4915372',
         ] as $secret
     ) {
         expect($everything)->not->toContain($secret);
@@ -67,7 +77,9 @@ it('stores every sensitive column as an encrypted payload and reads it back', fu
         ->and($budget->fresh()->default_amount)->toBe(7_391_204)
         ->and($month->fresh()->carried_in)->toBe(-5_283_091)
         ->and($transaction->fresh()->amount)->toBe(6_172_845)
-        ->and($transaction->fresh()->note)->toBe('Kado ulang tahun kejutan');
+        ->and($transaction->fresh()->note)->toBe('Kado ulang tahun kejutan')
+        ->and($goal->fresh()->name)->toBe('Liburan Pantai Rahasia')
+        ->and($goal->fresh()->target_amount)->toBe(4_915_372);
 });
 
 it('cannot read the data with a different app key', function () {

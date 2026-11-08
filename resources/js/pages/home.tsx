@@ -8,10 +8,15 @@ import BalanceComponent from '@/components/organisms/home/balance';
 import AlertBanner from '@/components/organisms/home/alert-banner';
 import BudgetEmpty from '@/components/organisms/home/budget-empty';
 import BudgetList from '@/components/organisms/home/budget-list';
+import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
+import GoalEmpty from '@/components/organisms/goals/goal-empty';
+import GoalList from '@/components/organisms/goals/goal-list';
+import { rupiah } from '@/lib/money';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
 import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
 import type {
     BudgetSummary,
+    GoalSummary,
     HouseholdRef,
     MemberOption,
     TransactionDefaults,
@@ -25,6 +30,8 @@ type Props = {
     summary: { left: number; spent: number; available: number; pct: number };
     banner: { days: number } | null;
     budgets: BudgetSummary[];
+    goals: GoalSummary[];
+    saved: number;
     members: MemberOption[];
     canEdit: boolean;
     defaults: TransactionDefaults;
@@ -38,6 +45,8 @@ export default function Home({
     summary,
     banner,
     budgets,
+    goals,
+    saved,
     members,
     canEdit,
     defaults,
@@ -47,6 +56,7 @@ export default function Home({
     const [isTransactionDrawerOpen, setIsTransactionDrawerOpen] =
         useState(false);
     const [isMoveDrawerOpen, setIsMoveDrawerOpen] = useState(false);
+    const [isGoalDrawerOpen, setIsGoalDrawerOpen] = useState(false);
     const [moveDefaults, setMoveDefaults] = useState<TransferDefaults>({
         from_budget_id: '',
         to_budget_id: '',
@@ -143,6 +153,35 @@ export default function Home({
                 />
             )}
 
+            <div className="mt-2 flex items-center justify-between">
+                <h2 className="text-base font-semibold">Goals</h2>
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                        {rupiah(saved)} saved
+                    </span>
+                    {canEdit && (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            type="button"
+                            className="text-xs"
+                            onClick={() => setIsGoalDrawerOpen(true)}
+                        >
+                            <PlusIcon className="size-4" /> Goal
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            {goals.length === 0 ? (
+                <GoalEmpty
+                    canEdit={canEdit}
+                    onNew={() => setIsGoalDrawerOpen(true)}
+                />
+            ) : (
+                <GoalList goals={goals} base={base} />
+            )}
+
             <BottomNav householdId={household.id} active="home" />
 
             <TransactionDrawer
@@ -162,6 +201,13 @@ export default function Home({
                 householdId={household.id}
                 budgets={budgets}
                 defaults={moveDefaults}
+            />
+
+            <GoalDrawer
+                key="new"
+                open={isGoalDrawerOpen}
+                onOpenChange={setIsGoalDrawerOpen}
+                householdId={household.id}
             />
         </>
     );

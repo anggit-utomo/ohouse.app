@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CloseMonthController;
 use App\Http\Controllers\FamilyController;
+use App\Http\Controllers\GoalController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HouseholdSettingsController;
 use App\Http\Controllers\JoinController;
@@ -82,6 +83,16 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
             });
 
         Route::resource('transactions', TransactionController::class)->except(['create', 'edit', 'show']);
+
+        Route::controller(GoalController::class)
+            ->prefix('goals')
+            ->name('goals.')
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+                Route::get('/{goal}', 'show')->name('show');
+                Route::patch('/{goal}', 'update')->name('update');
+            });
 
         Route::controller(TransferController::class)
             ->prefix('transfers')

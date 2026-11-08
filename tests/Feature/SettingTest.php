@@ -2,6 +2,7 @@
 
 use App\Models\Budget;
 use App\Models\BudgetMonth;
+use App\Models\Goal;
 use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\User;
@@ -49,6 +50,16 @@ it('changes the currency and scales the budget amounts to keep the same number',
         ->assertRedirect();
 
     expect($this->month->fresh()->allocated)->toBe(2_000_000)->and($this->household->fresh()->currency)->toBe('JPY');
+});
+
+it('scales goal targets with the currency', function () {
+    $goal = Goal::factory()->for($this->household)->create(['target_amount' => 6_000_000]);
+
+    $this->actingAs($this->owner)
+        ->put("{$this->base}/settings", ['name' => 'Our home', 'currency' => 'USD'])
+        ->assertRedirect();
+
+    expect($goal->fresh()->target_amount)->toBe(600_000_000);
 });
 
 it('refuses to change the currency once anything has been recorded, even if deleted', function () {

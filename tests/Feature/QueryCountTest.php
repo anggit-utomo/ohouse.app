@@ -2,6 +2,7 @@
 
 use App\Models\Budget;
 use App\Models\BudgetMonth;
+use App\Models\Goal;
 use App\Models\Household;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,8 @@ function qcHousehold(int $budgets, int $entriesEach): array
     $household = Household::factory()->create();
     $household->owner->forceFill(['current_household_id' => $household->id])->save();
     $first = null;
+
+    Goal::factory()->count($budgets)->create(['household_id' => $household->id]);
 
     foreach (range(1, $budgets) as $i) {
         $month = BudgetMonth::factory()
@@ -55,6 +58,7 @@ it('runs the same number of queries for 3 budgets and 12 budgets', function (str
     '/report',
     '/budgets',
     '/budgets/{budget}',
+    '/goals',
     '/close',
     '/family',
 ]);

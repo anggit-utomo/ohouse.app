@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Models\BudgetMonth;
+use App\Models\Goal;
 use App\Models\Household;
 use App\Support\Currencies;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +41,12 @@ class ChangeCurrency
                     fn ($m) => $m->update([
                         'allocated' => $scale($m->allocated),
                         'carried_in' => $scale($m->carried_in),
+                    ])
+                );
+
+                $household->goals()->get()->each(
+                    fn (Goal $goal) => $goal->update([
+                        'target_amount' => $scale($goal->target_amount),
                     ])
                 );
             }

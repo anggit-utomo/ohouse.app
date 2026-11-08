@@ -69,21 +69,43 @@ class BudgetMonth extends Model
     /**
      * Numbers for one budget this month. Amounts are encrypted, so this runs in PHP.
      *
-     * @return array{spent: int, left: int, available: int, pct: int, over: bool}
+     * @return array{spent: int, left: int, available: int, moved: int, pct: int, over: bool}
      */
     public function summary(): array
     {
         $spent = $this->spent();
         $left = $this->balance();
-        $available = $left + $spent;
+        $moved = $this->movedToGoals();
+        $available = $this->allocated + $this->carried_in + $this->incoming() + $this->returnedFromGoals();
 
         return [
             'spent' => $spent,
             'left' => $left,
             'available' => $available,
+            'moved' => $moved,
             'pct' => $available > 0 ? min(100, (int) round($spent / $available * 100)) : ($spent > 0 ? 100 : 0),
             'over' => $left < 0,
         ];
+    }
+
+    /** Everything that came into the budget: income and incoming moves. */
+    private function incoming(): int
+    {
+        return $this->transactions
+            ->filter(fn (Transaction $t) => $t->type->sign() > 0)
+            ->sum('amount');
+    }
+
+    /** Money that left this budget for a goal. Goals arrive in a later ticket. */
+    private function movedToGoals(): int
+    {
+        return 0;
+    }
+
+    /** Money returned to this budget from a goal. Goals arrive in a later ticket. */
+    private function returnedFromGoals(): int
+    {
+        return 0;
     }
 
     /**

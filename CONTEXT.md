@@ -43,3 +43,19 @@ _Avoid_: Move (for the record)
 **Move**:
 The action of creating a transfer.
 _Avoid_: Transfer (for the action)
+
+**Goal**:
+A household-owned pot of money earmarked for a purpose, with a target amount, an optional deadline, and a balance that survives Period close.
+_Avoid_: Fund, savings account, envelope, savings budget
+
+**Contribution**:
+Money moved into a Goal, either from a Budget in the open Period or from outside the budget.
+_Avoid_: Deposit, top-up, income
+
+**Withdrawal**:
+Money moved out of a Goal, either to a Budget in the open Period or to outside the budget.
+_Avoid_: Expense, spend
+
+**Sweep**:
+An automatic Contribution taken from a Budget's leftover when its Period closes.
+_Avoid_: Rollover, carry

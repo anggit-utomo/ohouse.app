@@ -50,6 +50,12 @@ class Household extends Model
         return $this->hasMany(Transaction::class);
     }
 
+    /** @return HasMany<Goal, $this> */
+    public function goals(): HasMany
+    {
+        return $this->hasMany(Goal::class);
+    }
+
     /** @return HasMany<HouseholdInvite, $this> */
     public function invites(): HasMany
     {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\TransactionTypeEnum;
 use App\Models\BudgetMonth;
+use App\Models\Goal;
 use App\Models\Household;
 use App\Support\Periods;
 use Illuminate\Http\Request;
@@ -31,7 +32,11 @@ class HomeController extends Controller
             ->values();
 
         $rows = $months->map(
-            fn (BudgetMonth $m) => ['id' => $m->budget_id, 'name' => $m->budget->name, ...$m->summary()]
+            fn (BudgetMonth $m) => [
+                'id' => $m->budget_id,
+                'name' => $m->budget->name,
+                ...$m->summary(),
+            ]
         );
 
         $spent = $rows->sum('spent');
@@ -39,8 +44,12 @@ class HomeController extends Controller
         $canEdit = $user->can('edit', $household);
         $days = (int) abs($period->start->diffInDays(now()->startOfDay()));
 
+        $goals = $household->goals()->active()->orderBy('sort')->orderBy('id')->get();
+
         // for transaction form in homepage
-        $preselected = $household->budgets()->active()->whereKey($request->integer('budget'))->value('id');
+        $preselected = $household->budgets()->active()
+            ->whereKey($request->integer('budget'))
+            ->value('id');
         $defaults = [
             'type' => 'expense',
             'budget_id' => $preselected ? (string) $preselected : '',
@@ -52,7 +61,9 @@ class HomeController extends Controller
         ];
 
         // "Add correction" from a locked transaction: prefill the opposite entry.
-        if ($original = $household->transactions()->with('budgetMonth')->find($request->integer('corrects'))) {
+        if ($original = $household->transactions()->with('budgetMonth')
+            ->find($request->integer('corrects'))
+        ) {
             $budgetId = $original->budgetMonth->budget_id;
             $defaults = [
                 ...$defaults,
@@ -80,6 +91,8 @@ class HomeController extends Controller
             // a gentle reminder once the period has run 25 days
             'banner' => $canEdit && $days >= 25 ? ['days' => $days] : null,
             'budgets' => $rows,
+            'goals' => $goals->map(fn (Goal $g) => $g->row())->values(),
+            'saved' => $goals->sum(fn (Goal $g) => $g->balance()),
             'members' => $household->members()
                 ->get(['users.id', 'users.name'])
                 ->map->only(['id', 'name'])
