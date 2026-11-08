@@ -3,7 +3,6 @@
 namespace App\Actions;
 
 use App\Models\BudgetMonth;
-use App\Models\GoalMovement;
 use App\Models\Household;
 use App\Models\Transaction;
 use App\Support\Periods;
@@ -28,7 +27,8 @@ class CloseMonth
             ->whereDate('period_start', Periods::current($household)->key())
             ->whereNull('closed_at')
             ->when(! $withArchived, fn ($q) => $q->whereHas('budget', fn ($b) => $b->active()))
-            ->with(['budget', 'transactions', 'goalMovements'])
+            ->with(['budget'])
+            ->withMoney()
             ->when($lock, fn ($q) => $q->lockForUpdate())
             ->get()
             ->sortBy(fn (BudgetMonth $m) => [$m->budget->sort, $m->budget_id])
@@ -36,8 +36,9 @@ class CloseMonth
     }
 
     /**
-     * What a budget has left if the new period starts on $start:
-     * entries dated on or after it move on.
+     * What a budget has left if the new period starts on $start: Transactions
+     * dated on or after it move on, while goal money always reduces the month
+     * it left.
      */
     private function leftoverBefore(BudgetMonth $m, CarbonInterface $start): int
     {
@@ -47,12 +48,7 @@ class CloseMonth
             ->filter(fn (Transaction $t) => $t->occurred_at < $day)
             ->sum(fn (Transaction $t) => $t->signedAmount());
 
-        // Goal money belongs to the budget month it left, even when it was
-        // recorded on or after the new period's first day.
-        $goalNet = $m->goalMovements
-            ->sum(fn (GoalMovement $movement) => $movement->signedAmount());
-
-        return $m->allocated + $m->carried_in + $net - $goalNet;
+        return $m->allocated + $m->carried_in + $net - $m->movedToGoals();
     }
 
     /**

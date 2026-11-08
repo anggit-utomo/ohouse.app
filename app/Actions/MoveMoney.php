@@ -7,7 +7,6 @@ use App\Models\BudgetMonth;
 use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Support\Currencies;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -41,16 +40,13 @@ class MoveMoney
             $toMonth = $this->transactions->openMonth($budgets[$toId], now());
 
             // lock the source month so two people can't overspend it at the same moment
-            $left = BudgetMonth::lockForUpdate()->with(['transactions', 'goalMovements'])->find($fromMonth->id)->balance();
+            $source = BudgetMonth::lockForUpdate()
+                ->with(['budget'])
+                ->withMoney()
+                ->findOrFail($fromMonth->id);
 
-            if ($amount > $left) {
-                throw ValidationException::withMessages([
-                    'amount' => sprintf(
-                        '%s only has %s left.',
-                        $budgets[$fromId]->name,
-                        Currencies::format(max($left, 0), $household->currency)
-                    ),
-                ]);
+            if ($message = $source->shortfallMessage($amount, $household->currency)) {
+                throw ValidationException::withMessages(['amount' => $message]);
             }
 
             $shared = [

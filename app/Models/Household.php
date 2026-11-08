@@ -94,8 +94,8 @@ class Household extends Model
     {
         return $this->budgets()->active()->orderBy('sort')
             ->with([
-                'months' => fn ($q) => $q->whereDate('period_start', $period->key())
-                    ->with(['transactions', 'goalMovements']),
+                'months' => fn ($q) => $q->withMoney()
+                    ->whereDate('period_start', $period->key()),
             ])
             ->get()
             ->map(fn ($b) => [

@@ -277,6 +277,11 @@ it('moves money out of a budget without calling it spending', function () {
 
     $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
         ->assertInertia(fn (Assert $p) => $p->where('goal.balance', 300_000));
+
+    $this->actingAs($this->owner)->get("{$this->url}/report")
+        ->assertInertia(fn (Assert $p) => $p
+            ->where('spent', 0)
+            ->where('hasData', false));
 });
 
 it('rejects a contribution above what the budget has left', function () {
@@ -288,6 +293,31 @@ it('rejects a contribution above what the budget has left', function () {
     ])->assertSessionHasErrors([
         'amount' => 'Food only has Rp 1.000.000 left.',
     ]);
+
+    expect(GoalMovement::count())->toBe(0);
+});
+
+it('accepts a contribution for exactly what the budget has left', function () {
+    $food = budgetMonth($this->household, 'Food', 1_000_000);
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $food->budget_id,
+        'amount' => 1_000_000,
+    ])->assertRedirect();
+
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
+        ->where('budgets.0.left', 0)
+        ->where('budgets.0.moved', 1_000_000));
+});
+
+it('rejects a contribution from a closed source month', function () {
+    $food = budgetMonth($this->household, 'Food', 1_000_000);
+    $food->update(['closed_at' => now()]);
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $food->budget_id,
+        'amount' => 100_000,
+    ])->assertSessionHasErrors('occurred_at');
 
     expect(GoalMovement::count())->toBe(0);
 });

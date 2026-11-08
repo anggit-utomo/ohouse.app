@@ -9,7 +9,6 @@ use App\Models\Goal;
 use App\Models\GoalMovement;
 use App\Models\Household;
 use App\Models\User;
-use App\Support\Currencies;
 use App\Support\EntryTime;
 use App\Support\Periods;
 use Illuminate\Support\Facades\DB;
@@ -52,31 +51,25 @@ class ContributeToGoal
             ]);
         }
 
-        $source = $budgetId === null
+        $sourceBudget = $budgetId === null
             ? null
             : ($household->budgets()->active()->find($budgetId)
                 ?? throw ValidationException::withMessages(['budget_id' => 'Budget not found.']));
 
-        return DB::transaction(function () use ($household, $by, $goal, $amount, $date, $note, $source, $period) {
+        return DB::transaction(function () use ($household, $by, $goal, $amount, $date, $note, $sourceBudget, $period) {
             $month = null;
-            $periodStart = $period->key();
 
-            if ($source instanceof Budget) {
+            if ($sourceBudget instanceof Budget) {
+                $sourceMonth = $this->transactions->openMonth($sourceBudget, $date);
+
                 $month = BudgetMonth::lockForUpdate()
-                    ->with(['transactions', 'goalMovements'])
-                    ->findOrFail($this->transactions->openMonth($source, $date)->id);
+                    ->with(['budget'])
+                    ->withMoney()
+                    ->findOrFail($sourceMonth->id);
 
-                if ($amount > $month->balance()) {
-                    throw ValidationException::withMessages([
-                        'amount' => sprintf(
-                            '%s only has %s left.',
-                            $source->name,
-                            Currencies::format(max($month->balance(), 0), $household->currency)
-                        ),
-                    ]);
+                if ($message = $month->shortfallMessage($amount, $household->currency)) {
+                    throw ValidationException::withMessages(['amount' => $message]);
                 }
-
-                $periodStart = $month->period_start->toDateString();
             }
 
             return $goal->movements()->create([
@@ -87,7 +80,7 @@ class ContributeToGoal
                 'amount' => $amount,
                 'note' => $note,
                 'occurred_at' => $date,
-                'period_start' => $periodStart,
+                'period_start' => $period->key(),
             ]);
         });
     }

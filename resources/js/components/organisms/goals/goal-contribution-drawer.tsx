@@ -38,6 +38,8 @@ type Data = {
     occurred_at: string;
 };
 
+const OUTSIDE = 'outside';
+
 export function GoalContributionDrawer({
     open,
     onOpenChange,
@@ -48,7 +50,7 @@ export function GoalContributionDrawer({
 }: Props) {
     const base = `/h/${householdId}`;
     const form = useForm<Data>({
-        budget_id: 'outside',
+        budget_id: OUTSIDE,
         amount: '',
         note: '',
         occurred_at: today,
@@ -74,7 +76,7 @@ export function GoalContributionDrawer({
         e.preventDefault();
 
         form.transform((d) => ({
-            budget_id: d.budget_id === 'outside' ? null : Number(d.budget_id),
+            budget_id: d.budget_id === OUTSIDE ? null : Number(d.budget_id),
             amount: Number(d.amount || 0),
             note: d.note || null,
             occurred_at: d.occurred_at || null,
@@ -116,7 +118,7 @@ export function GoalContributionDrawer({
                                             <SelectValue placeholder="Outside the budget" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="outside">
+                                            <SelectItem value={OUTSIDE}>
                                                 Outside the budget
                                             </SelectItem>
                                             {budgets.map((budget) => (

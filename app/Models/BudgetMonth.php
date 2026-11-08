@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\EncryptedInteger;
 use App\Enums\GoalMovementTypeEnum;
+use App\Support\Currencies;
 use Database\Factories\BudgetMonthFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -57,7 +58,7 @@ class BudgetMonth extends Model
         return $this->closed_at !== null;
     }
 
-    /** Spent so far (expenses and money moved out). Amounts are encrypted, so this sums in PHP. */
+    /** Spent so far: expenses and money moved to another budget, not money saved to a goal. */
     public function spent(): int
     {
         return $this->transactions
@@ -70,9 +71,7 @@ class BudgetMonth extends Model
     {
         $net = $this->transactions->sum(fn (Transaction $t) => $t->signedAmount());
 
-        return $this->allocated + $this->carried_in + $net
-            - $this->movedToGoals()
-            + $this->returnedFromGoals();
+        return $this->allocated + $this->carried_in + $net - $this->movedToGoals();
     }
 
     /**
@@ -85,7 +84,7 @@ class BudgetMonth extends Model
         $spent = $this->spent();
         $left = $this->balance();
         $moved = $this->movedToGoals();
-        $available = $this->allocated + $this->carried_in + $this->incoming() + $this->returnedFromGoals();
+        $available = $this->allocated + $this->carried_in + $this->incoming();
 
         return [
             'spent' => $spent,
@@ -106,19 +105,36 @@ class BudgetMonth extends Model
     }
 
     /** Money that left this budget for a goal. */
-    private function movedToGoals(): int
+    public function movedToGoals(): int
     {
         return $this->goalMovements
             ->filter(fn (GoalMovement $m) => $m->type === GoalMovementTypeEnum::CONTRIBUTION)
             ->sum('amount');
     }
 
-    /** Money returned to this budget from a goal. */
-    private function returnedFromGoals(): int
+    /** Null when the amount fits, otherwise the message to show. */
+    public function shortfallMessage(int $amount, string $currency): ?string
     {
-        return $this->goalMovements
-            ->filter(fn (GoalMovement $m) => $m->type === GoalMovementTypeEnum::WITHDRAWAL)
-            ->sum('amount');
+        $left = $this->balance();
+
+        if ($amount <= $left) {
+            return null;
+        }
+
+        return sprintf(
+            '%s only has %s left.',
+            $this->budget->name,
+            Currencies::format(max($left, 0), $currency)
+        );
+    }
+
+    /**
+     * @param  Builder<BudgetMonth>  $q
+     * @return Builder<BudgetMonth>
+     */
+    public function scopeWithMoney(Builder $q): Builder
+    {
+        return $q->with(['transactions', 'goalMovements']);
     }
 
     /**

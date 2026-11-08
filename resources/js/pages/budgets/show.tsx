@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { ChevronLeft } from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
+import { MovedToGoals } from '@/components/moved-to-goals';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
 import { toTransactionDetail } from '@/lib/transactions';
@@ -108,11 +109,7 @@ export default function ShowBudget({
                     <span>Spent {rupiah(summary.spent)}</span>
                     <span>of {rupiah(summary.available)}</span>
                 </div>
-                {summary.moved > 0 && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                        Moved {rupiah(summary.moved)} to goals
-                    </p>
-                )}
+                <MovedToGoals amount={summary.moved} />
             </div>
 
             {canEdit && !closed && (
