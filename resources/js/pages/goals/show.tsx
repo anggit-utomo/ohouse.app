@@ -9,6 +9,7 @@ import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
 import { rupiah } from '@/lib/money';
 import { cn } from '@/lib/utils';
 import type {
+    BudgetOption,
     GoalDetail,
     GoalMovementRow,
     GoalSaving,
@@ -20,6 +21,7 @@ type Props = {
     goal: GoalDetail;
     movements: GoalMovementRow[];
     savings: GoalSaving[];
+    budgets: BudgetOption[];
     today: string;
     canEdit: boolean;
 };
@@ -29,6 +31,7 @@ export default function ShowGoal({
     goal,
     movements,
     savings,
+    budgets,
     today,
     canEdit,
 }: Props) {
@@ -184,6 +187,7 @@ export default function ShowGoal({
                 onOpenChange={setIsContributionOpen}
                 householdId={household.id}
                 goalId={goal.id}
+                budgets={budgets}
                 today={today}
             />
         </>

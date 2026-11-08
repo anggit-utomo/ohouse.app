@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\EncryptedInteger;
+use App\Enums\GoalMovementTypeEnum;
 use Database\Factories\BudgetMonthFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -45,6 +46,12 @@ class BudgetMonth extends Model
         return $this->hasMany(Transaction::class);
     }
 
+    /** @return HasMany<GoalMovement, $this> */
+    public function goalMovements(): HasMany
+    {
+        return $this->hasMany(GoalMovement::class);
+    }
+
     public function isClosed(): bool
     {
         return $this->closed_at !== null;
@@ -58,12 +65,14 @@ class BudgetMonth extends Model
             ->sum('amount');
     }
 
-    /** What is left: allocated + carried in + income/transfers in - spent. */
+    /** What is left: allocated + carried in + income/transfers in - spent - money saved. */
     public function balance(): int
     {
         $net = $this->transactions->sum(fn (Transaction $t) => $t->signedAmount());
 
-        return $this->allocated + $this->carried_in + $net;
+        return $this->allocated + $this->carried_in + $net
+            - $this->movedToGoals()
+            + $this->returnedFromGoals();
     }
 
     /**
@@ -96,16 +105,20 @@ class BudgetMonth extends Model
             ->sum('amount');
     }
 
-    /** Money that left this budget for a goal. Goals arrive in a later ticket. */
+    /** Money that left this budget for a goal. */
     private function movedToGoals(): int
     {
-        return 0;
+        return $this->goalMovements
+            ->filter(fn (GoalMovement $m) => $m->type === GoalMovementTypeEnum::CONTRIBUTION)
+            ->sum('amount');
     }
 
-    /** Money returned to this budget from a goal. Goals arrive in a later ticket. */
+    /** Money returned to this budget from a goal. */
     private function returnedFromGoals(): int
     {
-        return 0;
+        return $this->goalMovements
+            ->filter(fn (GoalMovement $m) => $m->type === GoalMovementTypeEnum::WITHDRAWAL)
+            ->sum('amount');
     }
 
     /**

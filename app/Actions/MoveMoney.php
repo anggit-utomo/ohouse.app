@@ -41,7 +41,7 @@ class MoveMoney
             $toMonth = $this->transactions->openMonth($budgets[$toId], now());
 
             // lock the source month so two people can't overspend it at the same moment
-            $left = BudgetMonth::lockForUpdate()->with('transactions')->find($fromMonth->id)->balance();
+            $left = BudgetMonth::lockForUpdate()->with(['transactions', 'goalMovements'])->find($fromMonth->id)->balance();
 
             if ($amount > $left) {
                 throw ValidationException::withMessages([

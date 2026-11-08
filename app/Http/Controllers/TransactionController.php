@@ -25,7 +25,7 @@ class TransactionController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $rows = $household->transactions()
-            ->with(['budgetMonth.budget', 'budgetMonth.transactions', 'user'])
+            ->with(['budgetMonth.budget', 'budgetMonth.transactions', 'budgetMonth.goalMovements', 'user'])
             ->whereBetween('occurred_at', [$period->start->startOfDay(), $period->endOrNow()])
             ->when($type, fn ($x) => $x->where('type', $type))
             ->when($person, fn ($x) => $x->where('user_id', $person))

@@ -7,6 +7,7 @@ use App\Http\Requests\SaveGoalRequest;
 use App\Models\Goal;
 use App\Models\Household;
 use App\Support\GoalLedger;
+use App\Support\Periods;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -49,6 +50,7 @@ class GoalController extends Controller
             ],
             'movements' => $ledger['movements'],
             'savings' => $ledger['savings'],
+            'budgets' => $household->budgetBalances(Periods::current($household)),
             'today' => now()->toDateString(),
             'canEdit' => $request->user()->can('edit', $household),
         ]);

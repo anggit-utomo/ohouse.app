@@ -26,7 +26,7 @@ class HomeController extends Controller
         $months = BudgetMonth::query()
             ->whereDate('period_start', $period->key())
             ->whereHas('budget', fn ($q) => $q->active()->where('household_id', $household->id))
-            ->with(['budget', 'transactions'])
+            ->with(['budget', 'transactions', 'goalMovements'])
             ->get()
             ->sortBy(fn (BudgetMonth $m) => $m->budget->sort)
             ->values();

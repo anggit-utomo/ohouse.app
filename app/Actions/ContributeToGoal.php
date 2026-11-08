@@ -3,24 +3,31 @@
 namespace App\Actions;
 
 use App\Enums\GoalMovementTypeEnum;
+use App\Models\Budget;
+use App\Models\BudgetMonth;
 use App\Models\Goal;
 use App\Models\GoalMovement;
 use App\Models\Household;
 use App\Models\User;
+use App\Support\Currencies;
 use App\Support\EntryTime;
 use App\Support\Periods;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class ContributeToGoal
 {
-    /** Adds money from outside the budget; a Budget source arrives in a later ticket. */
+    public function __construct(private SaveTransaction $transactions) {}
+
+    /** Adds money from outside the budget, or from a Budget in the open Period. */
     public function handle(
         Household $household,
         User $by,
         Goal $goal,
         int $amount,
         ?string $when = null,
-        ?string $note = null
+        ?string $note = null,
+        ?int $budgetId = null
     ): GoalMovement {
         if ($goal->household_id !== $household->id || $goal->archived_at !== null) {
             throw ValidationException::withMessages(['goal' => 'That goal is not open.']);
@@ -45,14 +52,43 @@ class ContributeToGoal
             ]);
         }
 
-        return $goal->movements()->create([
-            'household_id' => $household->id,
-            'user_id' => $by->id,
-            'type' => GoalMovementTypeEnum::CONTRIBUTION,
-            'amount' => $amount,
-            'note' => $note,
-            'occurred_at' => $date,
-            'period_start' => $period->key(),
-        ]);
+        $source = $budgetId === null
+            ? null
+            : ($household->budgets()->active()->find($budgetId)
+                ?? throw ValidationException::withMessages(['budget_id' => 'Budget not found.']));
+
+        return DB::transaction(function () use ($household, $by, $goal, $amount, $date, $note, $source, $period) {
+            $month = null;
+            $periodStart = $period->key();
+
+            if ($source instanceof Budget) {
+                $month = BudgetMonth::lockForUpdate()
+                    ->with(['transactions', 'goalMovements'])
+                    ->findOrFail($this->transactions->openMonth($source, $date)->id);
+
+                if ($amount > $month->balance()) {
+                    throw ValidationException::withMessages([
+                        'amount' => sprintf(
+                            '%s only has %s left.',
+                            $source->name,
+                            Currencies::format(max($month->balance(), 0), $household->currency)
+                        ),
+                    ]);
+                }
+
+                $periodStart = $month->period_start->toDateString();
+            }
+
+            return $goal->movements()->create([
+                'household_id' => $household->id,
+                'user_id' => $by->id,
+                'budget_month_id' => $month?->id,
+                'type' => GoalMovementTypeEnum::CONTRIBUTION,
+                'amount' => $amount,
+                'note' => $note,
+                'occurred_at' => $date,
+                'period_start' => $periodStart,
+            ]);
+        });
     }
 }

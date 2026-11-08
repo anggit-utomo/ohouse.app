@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Http\Requests\Concerns\ResolvesHousehold;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SaveGoalMovementRequest extends FormRequest
 {
@@ -18,6 +19,13 @@ class SaveGoalMovementRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'budget_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('budgets', 'id')
+                    ->where('household_id', $this->household()->id)
+                    ->whereNull('archived_at'),
+            ],
             'amount' => ['required', 'integer', 'min:1', 'max:100000000000'],
             'note' => ['nullable', 'string', 'max:200'],
             'occurred_at' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],

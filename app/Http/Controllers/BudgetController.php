@@ -55,7 +55,7 @@ class BudgetController extends Controller
 
         $month = $budget->months()
             ->whereDate('period_start', $period->key())
-            ->with('transactions.user')
+            ->with(['transactions.user', 'goalMovements'])
             ->first();
 
         abort_if($month === null, 404);

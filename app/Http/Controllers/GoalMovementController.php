@@ -25,6 +25,7 @@ class GoalMovementController extends Controller
             (int) $data['amount'],
             isset($data['occurred_at']) ? (string) $data['occurred_at'] : null,
             isset($data['note']) ? (string) $data['note'] : null,
+            isset($data['budget_id']) ? (int) $data['budget_id'] : null,
         );
 
         return back()->with('success', "Money added to {$goal->name}.");

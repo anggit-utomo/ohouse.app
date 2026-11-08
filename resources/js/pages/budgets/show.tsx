@@ -27,6 +27,7 @@ type Props = {
         left: number;
         spent: number;
         available: number;
+        moved: number;
         pct: number;
         over: boolean;
     };
@@ -107,6 +108,11 @@ export default function ShowBudget({
                     <span>Spent {rupiah(summary.spent)}</span>
                     <span>of {rupiah(summary.available)}</span>
                 </div>
+                {summary.moved > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Moved {rupiah(summary.moved)} to goals
+                    </p>
+                )}
             </div>
 
             {canEdit && !closed && (

@@ -30,6 +30,26 @@ function closedSeptember(Household $household): void
     ]);
 }
 
+function budgetMonth(
+    Household $household,
+    string $name,
+    int $allocated,
+    string $periodStart = '2026-10-01',
+    int $sort = 0
+): BudgetMonth {
+    $budget = Budget::factory()->for($household)->create([
+        'name' => $name,
+        'default_amount' => $allocated,
+        'sort' => $sort,
+    ]);
+
+    return BudgetMonth::factory()->for($budget)->create([
+        'period_start' => $periodStart,
+        'allocated' => $allocated,
+        'carried_in' => 0,
+    ]);
+}
+
 it('adds money from outside the budget and shows it in the ledger', function () {
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
         'amount' => 250_000,
@@ -231,6 +251,164 @@ it('does not add money to another household goal', function () {
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$other->id}/movements", [
         'amount' => 100_000,
     ])->assertNotFound();
+
+    expect(GoalMovement::count())->toBe(0);
+});
+
+it('moves money out of a budget without calling it spending', function () {
+    $food = budgetMonth($this->household, 'Food', 1_000_000);
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $food->budget_id,
+        'amount' => 300_000,
+    ])->assertRedirect();
+
+    $movement = GoalMovement::sole();
+
+    expect($movement->budget_month_id)->toBe($food->id)
+        ->and($movement->period_start->toDateString())->toBe('2026-10-01');
+
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
+        ->where('budgets.0.left', 700_000)
+        ->where('budgets.0.moved', 300_000)
+        ->where('budgets.0.spent', 0)
+        ->where('budgets.0.available', 1_000_000)
+        ->where('budgets.0.pct', 0));
+
+    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+        ->assertInertia(fn (Assert $p) => $p->where('goal.balance', 300_000));
+});
+
+it('rejects a contribution above what the budget has left', function () {
+    $food = budgetMonth($this->household, 'Food', 1_000_000);
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $food->budget_id,
+        'amount' => 1_100_000,
+    ])->assertSessionHasErrors([
+        'amount' => 'Food only has Rp 1.000.000 left.',
+    ]);
+
+    expect(GoalMovement::count())->toBe(0);
+});
+
+it('stops offering saved money to a transfer', function () {
+    $food = budgetMonth($this->household, 'Food', 1_000_000, sort: 1);
+    $gas = budgetMonth($this->household, 'Gas', 500_000, sort: 2);
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $food->budget_id,
+        'amount' => 300_000,
+    ])->assertRedirect();
+
+    $this->actingAs($this->owner)->get("{$this->url}/budgets/{$food->budget_id}")
+        ->assertInertia(fn (Assert $p) => $p
+            ->where('budgets.0.id', $food->budget_id)
+            ->where('budgets.0.left', 700_000));
+
+    $this->actingAs($this->owner)->get("{$this->url}/transactions")
+        ->assertInertia(fn (Assert $p) => $p
+            ->where('budgets.0.id', $food->budget_id)
+            ->where('budgets.0.left', 700_000));
+
+    $this->actingAs($this->owner)->post("{$this->url}/transfers", [
+        'from_budget_id' => $food->budget_id,
+        'to_budget_id' => $gas->budget_id,
+        'amount' => 800_000,
+    ])->assertSessionHasErrors('amount');
+});
+
+it('attributes a budget contribution to the source period', function () {
+    $this->household->update(['period_start' => '2026-10-27']);
+    $this->travelTo('2026-11-08 09:00:00');
+    $food = budgetMonth($this->household, 'Food', 1_000_000, periodStart: '2026-10-27');
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $food->budget_id,
+        'amount' => 200_000,
+        'occurred_at' => '2026-11-05',
+    ])->assertRedirect();
+
+    expect(GoalMovement::sole()->period_start->toDateString())->toBe('2026-10-27');
+});
+
+it('rejects a source budget from another household', function () {
+    $other = Household::factory()->create();
+    $foreign = Budget::factory()->for($other)->create();
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $foreign->id,
+        'amount' => 100_000,
+    ])->assertSessionHasErrors('budget_id');
+
+    expect(GoalMovement::count())->toBe(0);
+});
+
+it('rejects an archived source budget', function () {
+    $food = budgetMonth($this->household, 'Food', 1_000_000);
+    $food->budget->update(['archived_at' => now()]);
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $food->budget_id,
+        'amount' => 100_000,
+    ])->assertSessionHasErrors('budget_id');
+
+    expect(GoalMovement::count())->toBe(0);
+});
+
+it('carries the reduced leftover into the next period', function () {
+    $this->travelTo('2026-10-29 09:00:00');
+    $food = budgetMonth($this->household, 'Food', 1_000_000);
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $food->budget_id,
+        'amount' => 300_000,
+        'occurred_at' => '2026-10-10',
+    ])->assertRedirect();
+
+    $this->actingAs($this->owner)->post("{$this->url}/close", [
+        'start' => '2026-10-27',
+        'decisions' => [$food->budget_id => 'carry'],
+    ])->assertRedirect();
+
+    $next = BudgetMonth::where('budget_id', $food->budget_id)
+        ->whereDate('period_start', '2026-10-27')
+        ->sole();
+
+    expect($next->carried_in)->toBe(700_000);
+});
+
+it('keeps a same-day contribution out of the carry', function () {
+    $this->travelTo('2026-10-29 09:00:00');
+    $food = budgetMonth($this->household, 'Food', 1_000_000);
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $food->budget_id,
+        'amount' => 300_000,
+        'occurred_at' => '2026-10-29',
+    ])->assertRedirect();
+
+    $this->actingAs($this->owner)->post("{$this->url}/close", [
+        'start' => '2026-10-29',
+        'decisions' => [$food->budget_id => 'carry'],
+    ])->assertRedirect();
+
+    $next = BudgetMonth::where('budget_id', $food->budget_id)
+        ->whereDate('period_start', '2026-10-29')
+        ->sole();
+
+    expect($next->carried_in)->toBe(700_000);
+});
+
+it('rejects a budget contribution in a closed period', function () {
+    closedSeptember($this->household);
+    $september = BudgetMonth::whereDate('period_start', '2026-09-01')->sole();
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'budget_id' => $september->budget_id,
+        'amount' => 100_000,
+        'occurred_at' => '2026-09-10',
+    ])->assertSessionHasErrors('occurred_at');
 
     expect(GoalMovement::count())->toBe(0);
 });

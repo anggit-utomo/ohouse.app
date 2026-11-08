@@ -11,17 +11,28 @@ import {
     DrawerHeader,
     DrawerTitle,
 } from '@/components/ui/drawer';
-import { currency, plain } from '@/lib/money';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { currency, plain, rupiah } from '@/lib/money';
+import { setIfNotNull } from '@/lib/utils';
+import type { BudgetOption } from '@/types';
 
 type Props = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     householdId: number;
     goalId: number;
+    budgets: BudgetOption[];
     today: string;
 };
 
 type Data = {
+    budget_id: string;
     amount: string;
     note: string;
     occurred_at: string;
@@ -32,10 +43,12 @@ export function GoalContributionDrawer({
     onOpenChange,
     householdId,
     goalId,
+    budgets,
     today,
 }: Props) {
     const base = `/h/${householdId}`;
     const form = useForm<Data>({
+        budget_id: 'outside',
         amount: '',
         note: '',
         occurred_at: today,
@@ -43,12 +56,25 @@ export function GoalContributionDrawer({
 
     const errors = form.errors as Record<string, string>;
     const error =
-        errors.amount ?? errors.note ?? errors.occurred_at ?? errors.goal;
+        errors.amount ??
+        errors.note ??
+        errors.occurred_at ??
+        errors.goal ??
+        errors.budget_id;
+
+    const source = budgets.find(
+        (budget) => String(budget.id) === form.data.budget_id,
+    );
+    const amount = Number(form.data.amount || 0);
+    const tooMuch = !!source && amount > Math.max(source.left, 0);
+    const leftText = (left: number) =>
+        left < 0 ? `over by ${rupiah(-left)}` : `${rupiah(left)} left`;
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
 
         form.transform((d) => ({
+            budget_id: d.budget_id === 'outside' ? null : Number(d.budget_id),
             amount: Number(d.amount || 0),
             note: d.note || null,
             occurred_at: d.occurred_at || null,
@@ -72,12 +98,40 @@ export function GoalContributionDrawer({
                             <DrawerHeader className="px-0">
                                 <DrawerTitle>Add money</DrawerTitle>
                                 <DrawerDescription>
-                                    Money that never entered the monthly
-                                    budgets.
+                                    From a budget this month, or from outside
+                                    the monthly budgets.
                                 </DrawerDescription>
                             </DrawerHeader>
 
                             <div className="grid gap-3 px-4">
+                                <div className="grid gap-1.5">
+                                    <Label>From</Label>
+                                    <Select
+                                        value={form.data.budget_id}
+                                        onValueChange={setIfNotNull((value) =>
+                                            form.setData('budget_id', value),
+                                        )}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Outside the budget" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="outside">
+                                                Outside the budget
+                                            </SelectItem>
+                                            {budgets.map((budget) => (
+                                                <SelectItem
+                                                    key={budget.id}
+                                                    value={String(budget.id)}
+                                                >
+                                                    {budget.name} ·{' '}
+                                                    {leftText(budget.left)}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
                                 <div className="grid gap-1.5">
                                     <Label htmlFor="contribution-amount">
                                         Amount
@@ -145,9 +199,12 @@ export function GoalContributionDrawer({
                                     />
                                 </div>
 
-                                {error && (
+                                {(error || tooMuch) && (
                                     <p className="text-sm text-destructive">
-                                        {error}
+                                        {error ??
+                                            `${source?.name} only has ${leftText(
+                                                Math.max(source?.left ?? 0, 0),
+                                            )}.`}
                                     </p>
                                 )}
                             </div>
@@ -158,7 +215,9 @@ export function GoalContributionDrawer({
                                 <Button
                                     type="submit"
                                     disabled={
-                                        form.processing || !form.data.amount
+                                        form.processing ||
+                                        !form.data.amount ||
+                                        tooMuch
                                     }
                                 >
                                     {form.processing ? (

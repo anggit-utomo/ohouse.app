@@ -35,6 +35,11 @@ export default function BudgetItem({
                     </span>
                 </div>
                 <BudgetBar pct={b.pct} over={b.over} />
+                {b.moved > 0 && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Moved {rupiah(b.moved)} to goals
+                    </p>
+                )}
             </Link>
             {b.over && canEdit && (
                 <div className="mt-2 flex justify-between text-xs">
