@@ -116,7 +116,19 @@ export function GoalContributionDrawer({
                                         )}
                                     >
                                         <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Outside the budget" />
+                                            <SelectValue placeholder="Outside the budget">
+                                                {source ? (
+                                                    <span>
+                                                        {source.name} ·{' '}
+                                                        {leftText(source.left)}
+                                                    </span>
+                                                ) : form.data.budget_id ===
+                                                  OUTSIDE ? (
+                                                    <span>
+                                                        Outside the budget
+                                                    </span>
+                                                ) : null}
+                                            </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value={OUTSIDE}>

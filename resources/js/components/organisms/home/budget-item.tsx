@@ -1,5 +1,5 @@
 import { BudgetBar } from '@/components/budget-bar';
-import { MovedToGoals } from '@/components/moved-to-goals';
+import { MovedToGoals, ReturnedFromGoals } from '@/components/moved-to-goals';
 import { rupiah } from '@/lib/money';
 import type { BudgetSummary } from '@/types';
 import { Link } from '@inertiajs/react';
@@ -37,6 +37,7 @@ export default function BudgetItem({
                 </div>
                 <BudgetBar pct={b.pct} over={b.over} />
                 <MovedToGoals amount={b.moved} />
+                <ReturnedFromGoals amount={b.returned} />
             </Link>
             {b.over && canEdit && (
                 <div className="mt-2 flex justify-between text-xs">

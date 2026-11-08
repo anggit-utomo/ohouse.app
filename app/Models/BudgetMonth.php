@@ -77,20 +77,22 @@ class BudgetMonth extends Model
     /**
      * Numbers for one budget this month. Amounts are encrypted, so this runs in PHP.
      *
-     * @return array{spent: int, left: int, available: int, moved: int, pct: int, over: bool}
+     * @return array{spent: int, left: int, available: int, moved: int, returned: int, pct: int, over: bool}
      */
     public function summary(): array
     {
         $spent = $this->spent();
         $left = $this->balance();
         $moved = $this->movedToGoals();
-        $available = $this->allocated + $this->carried_in + $this->incoming() + $this->returnedFromGoals();
+        $returned = $this->returnedFromGoals();
+        $available = $this->allocated + $this->carried_in + $this->incoming() + $returned;
 
         return [
             'spent' => $spent,
             'left' => $left,
             'available' => $available,
             'moved' => $moved,
+            'returned' => $returned,
             'pct' => $available > 0 ? min(100, (int) round($spent / $available * 100)) : ($spent > 0 ? 100 : 0),
             'over' => $left < 0,
         ];

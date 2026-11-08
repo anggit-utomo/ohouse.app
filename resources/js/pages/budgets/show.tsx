@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { ChevronLeft } from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
-import { MovedToGoals } from '@/components/moved-to-goals';
+import { MovedToGoals, ReturnedFromGoals } from '@/components/moved-to-goals';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
 import { toTransactionDetail } from '@/lib/transactions';
@@ -29,6 +29,7 @@ type Props = {
         spent: number;
         available: number;
         moved: number;
+        returned: number;
         pct: number;
         over: boolean;
     };
@@ -110,6 +111,7 @@ export default function ShowBudget({
                     <span>of {rupiah(summary.available)}</span>
                 </div>
                 <MovedToGoals amount={summary.moved} />
+                <ReturnedFromGoals amount={summary.returned} />
             </div>
 
             {canEdit && !closed && (

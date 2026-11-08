@@ -68,6 +68,9 @@ export function GoalWithdrawalDrawer({
 
     const amount = Number(form.data.amount || 0);
     const tooMuch = amount > balance;
+    const destination = budgets.find(
+        (budget) => String(budget.id) === form.data.budget_id,
+    );
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -154,7 +157,18 @@ export function GoalWithdrawalDrawer({
                                         )}
                                     >
                                         <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Outside the budget" />
+                                            <SelectValue placeholder="Outside the budget">
+                                                {destination ? (
+                                                    <span>
+                                                        {destination.name}
+                                                    </span>
+                                                ) : form.data.budget_id ===
+                                                  OUTSIDE ? (
+                                                    <span>
+                                                        Outside the budget
+                                                    </span>
+                                                ) : null}
+                                            </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value={OUTSIDE}>
