@@ -8,8 +8,11 @@ permission:
         'docs/**': allow
         'tickets/**': allow
     bash:
-        '*': ask
-        'gh *': allow
+        '*': allow
+        'rm *': deny
+        'rmdir *': deny
+        'git rm *': deny
+        'git push*': deny
     skill:
         '*': deny
         'to-spec': allow

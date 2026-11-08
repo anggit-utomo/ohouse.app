@@ -5,11 +5,10 @@ model: opencode-go/deepseek-v4.1-flash
 permission:
     edit: allow
     bash:
-        '*': ask
-        'git status*': allow
-        'git diff*': allow
-        'git add*': allow
-        'git commit*': allow
+        '*': allow
+        'rm *': deny
+        'rmdir *': deny
+        'git rm *': deny
         'git push*': deny
     skill:
         '*': deny

@@ -7,7 +7,12 @@ permission:
         '*': deny
         'GLOSSARY.md': allow
         'docs/**': allow
-    bash: ask
+    bash:
+        '*': allow
+        'rm *': deny
+        'rmdir *': deny
+        'git rm *': deny
+        'git push*': deny
     skill:
         '*': deny
         'grill-with-docs': allow

@@ -5,12 +5,11 @@ model: opencode-go/muse-spark-1.3-contributor
 permission:
     edit: deny
     bash:
-        '*': deny
-        'git diff*': allow
-        'git show*': allow
-        'git log*': allow
-        'git status*': allow
-        'git blame*': allow
+        '*': allow
+        'rm *': deny
+        'rmdir *': deny
+        'git rm *': deny
+        'git push*': deny
     skill:
         '*': deny
         'code-review': allow
