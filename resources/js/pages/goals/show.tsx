@@ -384,7 +384,7 @@ export default function ShowGoal({
             />
 
             <GoalContributionDrawer
-                key={today}
+                key={`contribute-${today}`}
                 open={isContributionOpen}
                 onOpenChange={setIsContributionOpen}
                 householdId={household.id}
@@ -394,7 +394,7 @@ export default function ShowGoal({
             />
 
             <GoalWithdrawalDrawer
-                key={today}
+                key={`withdraw-${today}`}
                 open={isWithdrawalOpen}
                 onOpenChange={setIsWithdrawalOpen}
                 householdId={household.id}
