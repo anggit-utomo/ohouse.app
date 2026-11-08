@@ -45,6 +45,15 @@ class Goal extends Model
         return $q->whereNull('archived_at');
     }
 
+    /**
+     * @param  Builder<Goal>  $q
+     * @return Builder<Goal>
+     */
+    public function scopeOrdered(Builder $q): Builder
+    {
+        return $q->orderBy('sort')->orderBy('id');
+    }
+
     /** A Goal's balance is its contributions minus its withdrawals, summed in PHP. */
     public function balance(): int
     {

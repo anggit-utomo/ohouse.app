@@ -11,10 +11,10 @@ use App\Support\EntryTime;
 use App\Support\Periods;
 use Illuminate\Validation\ValidationException;
 
-class MoveToGoal
+class ContributeToGoal
 {
     /** Adds money from outside the budget; a Budget source arrives in a later ticket. */
-    public function contribute(
+    public function handle(
         Household $household,
         User $by,
         Goal $goal,
@@ -31,12 +31,15 @@ class MoveToGoal
         }
 
         $date = EntryTime::at($when);
+        $current = Periods::current($household);
         $period = Periods::containing($household, $date)
             ?? throw ValidationException::withMessages([
                 'occurred_at' => 'There is no budget period for that date.',
             ]);
 
-        if (! $period->isCurrent()) {
+        // Compare the period itself, not just its end date, so a closed
+        // period can never accept money even if its end was never written.
+        if ($period->key() !== $current->key()) {
             throw ValidationException::withMessages([
                 'occurred_at' => 'That period is closed. Add it to the current period instead.',
             ]);

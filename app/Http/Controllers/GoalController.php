@@ -7,7 +7,6 @@ use App\Http\Requests\SaveGoalRequest;
 use App\Models\Goal;
 use App\Models\Household;
 use App\Support\GoalLedger;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,7 +16,7 @@ class GoalController extends Controller
 {
     public function index(Request $request, Household $household): Response
     {
-        $goals = $this->ordered($household);
+        $goals = $household->activeGoals();
 
         return Inertia::render('goals/index', [
             'household' => ['id' => $household->id],
@@ -64,16 +63,5 @@ class GoalController extends Controller
         $save->update($goal, $request->validated());
 
         return back()->with('success', 'Goal updated.');
-    }
-
-    /** @return Collection<int, Goal> */
-    private function ordered(Household $household): Collection
-    {
-        return $household->goals()
-            ->active()
-            ->with('movements')
-            ->orderBy('sort')
-            ->orderBy('id')
-            ->get();
     }
 }

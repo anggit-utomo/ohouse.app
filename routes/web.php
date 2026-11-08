@@ -93,8 +93,13 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
                 Route::post('/', 'store')->name('store');
                 Route::get('/{goal}', 'show')->name('show');
                 Route::patch('/{goal}', 'update')->name('update');
-                Route::post('/{goal}/movements', [GoalMovementController::class, 'store'])
-                    ->name('movements.store');
+            });
+
+        Route::controller(GoalMovementController::class)
+            ->prefix('goals/{goal}/movements')
+            ->name('goals.movements.')
+            ->group(function () {
+                Route::post('/', 'store')->name('store');
             });
 
         Route::controller(TransferController::class)

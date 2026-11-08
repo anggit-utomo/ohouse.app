@@ -59,3 +59,11 @@ _Avoid_: Expense, spend
 **Sweep**:
 An automatic Contribution taken from a Budget's leftover when its Period closes.
 _Avoid_: Rollover, carry
+
+**Goal Movement**:
+One entry in a Goal's ledger, either a Contribution or a Withdrawal.
+_Avoid_: Entry, record, deposit
+
+**Goal Ledger**:
+The read projection of a Goal's Goal Movements and its saved amount per Period.
+_Avoid_: History, activity

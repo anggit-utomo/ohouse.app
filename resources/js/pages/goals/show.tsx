@@ -130,7 +130,7 @@ export default function ShowGoal({
                 </div>
             )}
 
-            <h2 className="text-base font-semibold">Activity</h2>
+            <h2 className="text-base font-semibold">Movements</h2>
 
             {movements.length === 0 && (
                 <p className="py-6 text-center text-muted-foreground">

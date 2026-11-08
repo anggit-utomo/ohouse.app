@@ -76,6 +76,16 @@ class Household extends Model
     }
 
     /**
+     * Active goals with their movements loaded, in display order.
+     *
+     * @return Collection<int, Goal>
+     */
+    public function activeGoals(): Collection
+    {
+        return $this->goals()->active()->ordered()->with('movements')->get();
+    }
+
+    /**
      * Active budgets with what is left in the given period, for pickers.
      *
      * @return Collection<int, array{id: int, name: string, left: int}>

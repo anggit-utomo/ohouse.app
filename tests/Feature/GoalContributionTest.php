@@ -19,6 +19,17 @@ beforeEach(function () {
     ]);
 });
 
+function closedSeptember(Household $household): void
+{
+    $budget = Budget::factory()->for($household)->create();
+    BudgetMonth::factory()->for($budget)->create([
+        'period_start' => '2026-09-01',
+        'period_end' => '2026-09-30',
+        'allocated' => 500_000,
+        'closed_at' => now(),
+    ]);
+}
+
 it('adds money from outside the budget and shows it in the ledger', function () {
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
         'amount' => 250_000,
@@ -102,13 +113,7 @@ it('lists movements newest first', function () {
 });
 
 it('keeps savings totals for closed periods', function () {
-    $budget = Budget::factory()->for($this->household)->create();
-    BudgetMonth::factory()->for($budget)->create([
-        'period_start' => '2026-09-01',
-        'period_end' => '2026-09-30',
-        'allocated' => 500_000,
-        'closed_at' => now(),
-    ]);
+    closedSeptember($this->household);
 
     GoalMovement::factory()->create([
         'goal_id' => $this->goal->id,
@@ -142,20 +147,59 @@ it('rejects an amount of zero or less', function () {
 });
 
 it('rejects a contribution in a closed period', function () {
-    $budget = Budget::factory()->for($this->household)->create();
-    BudgetMonth::factory()->for($budget)->create([
-        'period_start' => '2026-09-01',
-        'period_end' => '2026-09-30',
-        'allocated' => 500_000,
-        'closed_at' => now(),
-    ]);
+    closedSeptember($this->household);
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
         'amount' => 100_000,
         'occurred_at' => '2026-09-10',
-    ])->assertSessionHasErrors('occurred_at');
+    ])->assertSessionHasErrors([
+        'occurred_at' => 'That period is closed. Add it to the current period instead.',
+    ]);
 
     expect(GoalMovement::count())->toBe(0);
+});
+
+it('attributes a contribution to its period-start, not its calendar month', function () {
+    $this->household->update(['period_start' => '2026-10-27']);
+    $this->travelTo('2026-11-08 09:00:00');
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'amount' => 200_000,
+        'occurred_at' => '2026-11-05',
+    ])->assertRedirect();
+
+    expect(GoalMovement::sole()->period_start->toDateString())->toBe('2026-10-27');
+
+    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+        ->assertInertia(fn (Assert $p) => $p
+            ->where('savings.0.period_start', '2026-10-27')
+            ->where('savings.0.label', 'October'));
+});
+
+it('keeps a movement when its budget month is deleted', function () {
+    $budget = Budget::factory()->for($this->household)->create();
+    $month = BudgetMonth::factory()->for($budget)->create([
+        'period_start' => '2026-10-01',
+        'allocated' => 1_000_000,
+    ]);
+
+    $movement = GoalMovement::factory()->create([
+        'goal_id' => $this->goal->id,
+        'household_id' => $this->household->id,
+        'user_id' => $this->owner->id,
+        'budget_month_id' => $month->id,
+        'amount' => 100_000,
+    ]);
+
+    $month->delete();
+
+    expect($movement->fresh()->budget_month_id)->toBeNull()
+        ->and($movement->fresh()->amount)->toBe(100_000);
+
+    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+        ->assertInertia(fn (Assert $p) => $p
+            ->has('movements', 1)
+            ->where('goal.balance', 100_000));
 });
 
 it('rejects a contribution to an archived goal', function () {

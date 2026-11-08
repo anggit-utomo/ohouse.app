@@ -10,6 +10,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @phpstan-type Row array{
+ *     id: int,
+ *     type: string,
+ *     amount: int,
+ *     signed: int,
+ *     note: string|null,
+ *     user: string,
+ *     occurred_at: string,
+ *     period_start: string
+ * }
+ */
 #[Fillable([
     'goal_id',
     'household_id',
@@ -66,16 +78,7 @@ class GoalMovement extends Model
     /**
      * The read projection shown in a goal's ledger.
      *
-     * @return array{
-     *     id: int,
-     *     type: string,
-     *     amount: int,
-     *     signed: int,
-     *     note: string|null,
-     *     user: string,
-     *     occurred_at: string,
-     *     period_start: string
-     * }
+     * @return Row
      */
     public function row(): array
     {

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\MoveToGoal;
+use App\Actions\ContributeToGoal;
 use App\Http\Requests\SaveGoalMovementRequest;
 use App\Models\Goal;
 use App\Models\Household;
@@ -14,11 +14,11 @@ class GoalMovementController extends Controller
         SaveGoalMovementRequest $request,
         Household $household,
         Goal $goal,
-        MoveToGoal $move
+        ContributeToGoal $contribute
     ): RedirectResponse {
         $data = $request->validated();
 
-        $move->contribute(
+        $contribute->handle(
             $household,
             $request->user(),
             $goal,
