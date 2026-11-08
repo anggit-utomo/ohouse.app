@@ -1,20 +1,21 @@
 ---
 description: Reviews a commit range against the ticket/spec and repo standards. Read-only.
 mode: subagent
-model: opencode-go/deepseek-v4.1-flash
+model: opencode-go/muse-spark-1.3-contributor
 permission:
-  edit: deny
-  bash:
-    "*": deny
-    "git diff*": allow
-    "git show*": allow
-    "git log*": allow
-    "git status*": allow
-    "git blame*": allow
-  skill:
-    "*": deny
-    "code-review": allow
+    edit: deny
+    bash:
+        '*': deny
+        'git diff*': allow
+        'git show*': allow
+        'git log*': allow
+        'git status*': allow
+        'git blame*': allow
+    skill:
+        '*': deny
+        'code-review': allow
 ---
+
 You receive a BASE sha, the ticket, and the spec. Load the code-review skill and
 review the diff BASE..HEAD. You cannot edit files.
 Your final message MUST start with exactly `VERDICT: PASS` or `VERDICT: FIX`.
