@@ -1,6 +1,16 @@
 import { useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Combobox,
+    ComboboxClear,
+    ComboboxContent,
+    ComboboxEmpty,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxList,
+    ComboboxTrigger,
+    ComboboxValue,
+} from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -69,15 +79,9 @@ export function GoalDrawer({
         errors.sort ??
         errors.sweep_budget_ids;
 
-    const toggleSweep = (id: number, checked: boolean) =>
-        form.setData(
-            'sweep_budget_ids',
-            checked
-                ? [...form.data.sweep_budget_ids, id]
-                : form.data.sweep_budget_ids.filter(
-                      (budgetId) => budgetId !== id,
-                  ),
-        );
+    const selectedSweepBudgets = sweepBudgets.filter((budget) =>
+        form.data.sweep_budget_ids.includes(budget.id),
+    );
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -207,29 +211,77 @@ export function GoalDrawer({
                                             leftover moves into this goal. A
                                             sweep cannot be undone.
                                         </p>
-                                        {sweepBudgets.map((budget) => (
-                                            <label
-                                                key={budget.id}
-                                                htmlFor={`sweep-${budget.id}`}
-                                                className="flex items-center gap-2 rounded-lg border p-2"
-                                            >
-                                                <Checkbox
-                                                    id={`sweep-${budget.id}`}
-                                                    checked={form.data.sweep_budget_ids.includes(
-                                                        budget.id,
-                                                    )}
-                                                    onCheckedChange={(
-                                                        checked,
-                                                    ) =>
-                                                        toggleSweep(
-                                                            budget.id,
-                                                            checked,
-                                                        )
+                                        <Combobox
+                                            items={sweepBudgets}
+                                            multiple
+                                            autoHighlight
+                                            itemToStringLabel={(budget) =>
+                                                budget.name
+                                            }
+                                            value={selectedSweepBudgets}
+                                            onValueChange={(budgets) =>
+                                                form.setData(
+                                                    'sweep_budget_ids',
+                                                    budgets.map(
+                                                        (budget) => budget.id,
+                                                    ),
+                                                )
+                                            }
+                                        >
+                                            <div className="flex items-center gap-1">
+                                                <ComboboxTrigger
+                                                    type="button"
+                                                    render={
+                                                        <Button
+                                                            variant="outline"
+                                                            className="min-w-0 flex-1 justify-between font-normal"
+                                                        />
                                                     }
+                                                >
+                                                    <ComboboxValue>
+                                                        {(
+                                                            budgets: SweepBudget[],
+                                                        ) =>
+                                                            budgets.length === 0
+                                                                ? 'Select budgets...'
+                                                                : `${budgets.length} selected`
+                                                        }
+                                                    </ComboboxValue>
+                                                </ComboboxTrigger>
+                                                {selectedSweepBudgets.length >
+                                                    0 && (
+                                                    <ComboboxClear
+                                                        type="button"
+                                                        aria-label="Clear sweep budgets"
+                                                        render={
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon-sm"
+                                                            />
+                                                        }
+                                                    />
+                                                )}
+                                            </div>
+                                            <ComboboxContent>
+                                                <ComboboxInput
+                                                    showTrigger={false}
+                                                    placeholder="Search budgets..."
                                                 />
-                                                <span>{budget.name}</span>
-                                            </label>
-                                        ))}
+                                                <ComboboxEmpty>
+                                                    No budgets found.
+                                                </ComboboxEmpty>
+                                                <ComboboxList>
+                                                    {(budget) => (
+                                                        <ComboboxItem
+                                                            key={budget.id}
+                                                            value={budget}
+                                                        >
+                                                            {budget.name}
+                                                        </ComboboxItem>
+                                                    )}
+                                                </ComboboxList>
+                                            </ComboboxContent>
+                                        </Combobox>
                                     </div>
                                 )}
 
