@@ -43,7 +43,12 @@ class CloseMonthController extends Controller
     ): RedirectResponse {
         $data = $request->validated();
 
-        $close->handle($household, Carbon::parse($data['start']), $data['decisions']);
+        $close->handle(
+            $household,
+            $request->user(),
+            Carbon::parse($data['start']),
+            $data['decisions']
+        );
 
         // straight to Set budgets: repeating budgets are filled in, add the one-off ones
         return redirect()->route('budgets.edit', [$household, 'new' => 1])

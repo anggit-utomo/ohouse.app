@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Models\BudgetMonth;
+use App\Models\GoalSweepRule;
 use App\Models\Household;
 use App\Support\Periods;
 use Illuminate\Support\Facades\DB;
@@ -51,9 +52,23 @@ class SaveBudgets
 
             $household->budgets()->active()->whereNotIn('id', $kept)->update(['archived_at' => now()]);
 
+            $this->pruneSweepRules($household);
+
             if (! $household->period_start) {
                 $household->update(['period_start' => $period->key()]);
             }
         });
+    }
+
+    /** Stale rules must never fire: only active repeating budgets may sweep. */
+    private function pruneSweepRules(Household $household): void
+    {
+        $stale = $household->budgets()
+            ->where(fn ($q) => $q->whereNotNull('archived_at')->orWhere('repeat_monthly', false))
+            ->pluck('id');
+
+        if ($stale->isNotEmpty()) {
+            GoalSweepRule::whereIn('budget_id', $stale)->delete();
+        }
     }
 }

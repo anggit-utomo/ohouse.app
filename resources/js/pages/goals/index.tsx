@@ -8,13 +8,19 @@ import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
 import GoalEmpty from '@/components/organisms/goals/goal-empty';
 import GoalList from '@/components/organisms/goals/goal-list';
 import { rupiah } from '@/lib/money';
-import type { GoalArchived, GoalSummary, HouseholdRef } from '@/types';
+import type {
+    GoalArchived,
+    GoalSummary,
+    HouseholdRef,
+    SweepBudget,
+} from '@/types';
 
 type Props = {
     household: HouseholdRef;
     goals: GoalSummary[];
     archived: GoalArchived[];
     saved: number;
+    sweepBudgets: SweepBudget[];
     canEdit: boolean;
 };
 
@@ -29,6 +35,7 @@ export default function GoalsIndex({
     goals,
     archived,
     saved,
+    sweepBudgets,
     canEdit,
 }: Props) {
     const base = `/h/${household.id}`;
@@ -110,6 +117,7 @@ export default function GoalsIndex({
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
                 householdId={household.id}
+                sweepBudgets={sweepBudgets}
             />
         </>
     );

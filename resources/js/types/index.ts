@@ -12,6 +12,7 @@ export type {
     GoalMovementRow,
     GoalSaving,
     GoalSummary,
+    SweepBudget,
 } from './goal';
 export type { HouseholdDetails, HouseholdRef, MemberOption } from './household';
 export type { MonthOption } from './period';

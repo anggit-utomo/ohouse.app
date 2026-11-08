@@ -19,6 +19,7 @@ import type {
     GoalSummary,
     HouseholdRef,
     MemberOption,
+    SweepBudget,
     TransactionDefaults,
     TransferDefaults,
 } from '@/types';
@@ -32,6 +33,7 @@ type Props = {
     budgets: BudgetSummary[];
     goals: GoalSummary[];
     saved: number;
+    sweepBudgets: SweepBudget[];
     members: MemberOption[];
     canEdit: boolean;
     defaults: TransactionDefaults;
@@ -47,6 +49,7 @@ export default function Home({
     budgets,
     goals,
     saved,
+    sweepBudgets,
     members,
     canEdit,
     defaults,
@@ -208,6 +211,7 @@ export default function Home({
                 open={isGoalDrawerOpen}
                 onOpenChange={setIsGoalDrawerOpen}
                 householdId={household.id}
+                sweepBudgets={sweepBudgets}
             />
         </>
     );

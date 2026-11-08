@@ -39,6 +39,7 @@ import type {
     GoalMovementRow,
     GoalSaving,
     HouseholdRef,
+    SweepBudget,
 } from '@/types';
 
 const OUTSIDE = 'outside';
@@ -49,6 +50,8 @@ type Props = {
     movements: GoalMovementRow[];
     savings: GoalSaving[];
     budgets: BudgetOption[];
+    sweepBudgets: SweepBudget[];
+    sweepBudgetIds: number[];
     today: string;
     archived: boolean;
     canEdit: boolean;
@@ -60,6 +63,8 @@ export default function ShowGoal({
     movements,
     savings,
     budgets,
+    sweepBudgets,
+    sweepBudgetIds,
     today,
     archived,
     canEdit,
@@ -374,6 +379,8 @@ export default function ShowGoal({
                 onOpenChange={setIsDrawerOpen}
                 householdId={household.id}
                 goal={goal}
+                sweepBudgets={sweepBudgets}
+                sweepBudgetIds={sweepBudgetIds}
             />
 
             <GoalContributionDrawer

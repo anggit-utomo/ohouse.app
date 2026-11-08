@@ -37,6 +37,12 @@ class Goal extends Model
         return $this->hasMany(GoalMovement::class);
     }
 
+    /** @return HasMany<GoalSweepRule, $this> */
+    public function sweepRules(): HasMany
+    {
+        return $this->hasMany(GoalSweepRule::class);
+    }
+
     /**
      * @param  Builder<Goal>  $q
      * @return Builder<Goal>

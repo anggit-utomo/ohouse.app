@@ -5,7 +5,9 @@ namespace App\Actions;
 use App\Models\BudgetMonth;
 use App\Models\Household;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Support\Periods;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +15,8 @@ use InvalidArgumentException;
 
 class CloseMonth
 {
+    public function __construct(private ContributeToGoal $contributions) {}
+
     /**
      * Unclosed rows of the current period, in budget order.
      *
@@ -27,7 +31,7 @@ class CloseMonth
             ->whereDate('period_start', Periods::current($household)->key())
             ->whereNull('closed_at')
             ->when(! $withArchived, fn ($q) => $q->whereHas('budget', fn ($b) => $b->active()))
-            ->with(['budget'])
+            ->with(['budget.sweepRule.goal'])
             ->withMoney()
             ->when($lock, fn ($q) => $q->lockForUpdate())
             ->get()
@@ -56,7 +60,14 @@ class CloseMonth
      * and the one-off budgets that end.
      *
      * @return array{
-     *     rows: list<array{budget_id: int, name: string, leftover: int, next_allocated: int|null}>,
+     *     rows: list<array{
+     *         budget_id: int,
+     *         name: string,
+     *         leftover: int,
+     *         next_allocated: int|null,
+     *         sweep_goal: string|null,
+     *         sweep_amount: int
+     *     }>,
      *     ending: list<string>
      * }
      */
@@ -69,12 +80,19 @@ class CloseMonth
         return [
             'rows' => array_values($open->filter(
                 fn (BudgetMonth $m) => $m->budget->repeat_monthly
-            )->map(fn (BudgetMonth $m) => [
-                'budget_id' => $m->budget_id,
-                'name' => $m->budget->name,
-                'leftover' => $this->leftoverBefore($m, $day),
-                'next_allocated' => $m->budget->default_amount,
-            ])->all()),
+            )->map(function (BudgetMonth $m) use ($day) {
+                $leftover = $this->leftoverBefore($m, $day);
+                $rule = $m->budget->sweepRule;
+
+                return [
+                    'budget_id' => $m->budget_id,
+                    'name' => $m->budget->name,
+                    'leftover' => $leftover,
+                    'next_allocated' => $m->budget->default_amount,
+                    'sweep_goal' => $rule?->goal?->name,
+                    'sweep_amount' => $rule ? max(0, $leftover) : 0,
+                ];
+            })->all()),
             'ending' => array_values($open->reject(
                 fn (BudgetMonth $m) => $m->budget->repeat_monthly || $hasLater($m)
             )->map(fn (BudgetMonth $m) => $m->budget->name)->all()),
@@ -86,11 +104,15 @@ class CloseMonth
      *
      * @param  array<int, string>  $decisions  budget_id => 'carry' | 'reset', for repeating budgets only
      */
-    public function handle(Household $household, CarbonInterface $start, array $decisions): void
-    {
+    public function handle(
+        Household $household,
+        User $by,
+        CarbonInterface $start,
+        array $decisions
+    ): void {
         $day = $start->copy()->startOfDay();
 
-        DB::transaction(function () use ($household, $day, $decisions) {
+        DB::transaction(function () use ($household, $by, $day, $decisions) {
             $lockedHousehold = Household::lockForUpdate()->findOrFail($household->id);
 
             foreach ($this->open($lockedHousehold, lock: true, withArchived: true) as $month) {
@@ -112,7 +134,25 @@ class CloseMonth
                     }
                 }
 
-                $carry = $decision === 'carry' ? $this->leftoverBefore($month, $day) : 0; // can be negative
+                $leftover = $this->leftoverBefore($month, $day); // can be negative
+                $rule = $repeats ? $budget->sweepRule : null;
+                $swept = 0;
+
+                // The sweep is written before the next period row, so the
+                // contribution cannot count itself in the leftover.
+                if ($rule && $leftover > 0) {
+                    $swept = $leftover;
+                    $this->contributions->fromSweep(
+                        $lockedHousehold,
+                        $by,
+                        $rule->goal,
+                        $swept,
+                        $month,
+                        CarbonImmutable::parse($month->period_start->toDateString()),
+                    );
+                }
+
+                $carry = $decision === 'carry' ? $leftover - $swept : 0;
 
                 if ($repeats || $moved->isNotEmpty()) {
                     $next = BudgetMonth::create([

@@ -21,6 +21,11 @@ export type GoalArchived = {
     archived_at: string | null;
 };
 
+export type SweepBudget = {
+    id: number;
+    name: string;
+};
+
 export type GoalSaving = {
     period_start: string;
     label: string;

@@ -94,6 +94,7 @@ class HomeController extends Controller
             'budgets' => $rows,
             'goals' => $goals->map(fn (Goal $g) => $g->row())->values(),
             'saved' => $goals->sum(fn (Goal $g) => $g->balance()),
+            'sweepBudgets' => $household->sweepBudgetOptions()->all(),
             'members' => $household->members()
                 ->get(['users.id', 'users.name'])
                 ->map->only(['id', 'name'])

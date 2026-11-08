@@ -10,6 +10,8 @@ use App\Models\Goal;
 use App\Models\GoalMovement;
 use App\Models\Household;
 use App\Models\User;
+use App\Support\Period;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -63,5 +65,32 @@ class ContributeToGoal
                 $note,
             );
         });
+    }
+
+    /**
+     * Records a Sweep inside the close transaction: the full leftover as a
+     * Contribution attributed to the closing Period and its source month.
+     */
+    public function fromSweep(
+        Household $household,
+        User $by,
+        Goal $goal,
+        int $amount,
+        BudgetMonth $month,
+        CarbonImmutable $periodStart
+    ): GoalMovement {
+        $this->assertCanMove($household, $goal, $amount);
+
+        return $this->record(
+            $goal,
+            $household,
+            $by,
+            GoalMovementTypeEnum::CONTRIBUTION,
+            $amount,
+            $periodStart->startOfDay(),
+            new Period($periodStart->startOfDay()),
+            $month,
+            null,
+        );
     }
 }

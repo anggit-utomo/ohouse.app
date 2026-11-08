@@ -77,7 +77,7 @@ class GoalMovement extends Model
         return $this->type->sign() * $this->amount;
     }
 
-    /** True while its Period is open; the hook Sweeps will extend. */
+    /** True while its Period is open. A Sweep's Period is closed, so it is locked. */
     public function canBeRemoved(Household $household): bool
     {
         return Periods::isOpen($household, $this->period_start->toDateString());

@@ -86,6 +86,31 @@ class Household extends Model
     }
 
     /**
+     * Active repeating budgets that may still become a Goal's Sweep source,
+     * excluding the ones another Goal already claimed.
+     *
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    public function sweepBudgetOptions(?Goal $goal = null): Collection
+    {
+        return $this->budgets()->active()
+            ->where('repeat_monthly', true)
+            ->whereDoesntHave('sweepRule', function ($query) use ($goal) {
+                if ($goal instanceof Goal) {
+                    $query->where('goal_id', '!=', $goal->id);
+                }
+            })
+            ->orderBy('sort')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (Budget $budget) => [
+                'id' => $budget->id,
+                'name' => $budget->name,
+            ])
+            ->values();
+    }
+
+    /**
      * Active budgets with what is left in the given period, for pickers.
      *
      * @return Collection<int, array{id: int, name: string, left: int}>

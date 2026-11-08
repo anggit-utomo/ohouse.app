@@ -12,6 +12,8 @@ type Row = {
     name: string;
     leftover: number;
     next_allocated: number | null;
+    sweep_goal: string | null;
+    sweep_amount: number;
 };
 
 type Props = {
@@ -66,13 +68,15 @@ export default function StartPeriod({
 
     const set = (id: number, choice: Choice) =>
         form.setData('decisions', { ...form.data.decisions, [id]: choice });
-    const total = rows.reduce(
-        (sum, r) =>
-            sum +
-            (r.next_allocated ?? 0) +
-            (form.data.decisions[r.budget_id] === 'reset' ? 0 : r.leftover),
-        0,
-    );
+    const total = rows.reduce((sum, r) => {
+        const carried =
+            form.data.decisions[r.budget_id] === 'reset'
+                ? 0
+                : r.leftover - r.sweep_amount;
+
+        return sum + (r.next_allocated ?? 0) + carried;
+    }, 0);
+    const sweeps = rows.filter((r) => r.sweep_amount > 0);
 
     return (
         <>
@@ -135,8 +139,23 @@ export default function StartPeriod({
                             </Button>
                         ))}
                     </div>
+                    {r.sweep_amount > 0 && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                            {rupiah(r.sweep_amount)} sweeps to {r.sweep_goal} at
+                            close. This cannot be undone.
+                        </p>
+                    )}
                 </div>
             ))}
+
+            {sweeps.length > 0 && (
+                <p className="rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
+                    {rupiah(sweeps.reduce((sum, r) => sum + r.sweep_amount, 0))}{' '}
+                    moves to a goal when you start the new period. A sweep
+                    cannot be undone; correct a mistake with a withdrawal in the
+                    new period.
+                </p>
+            )}
 
             {ending.length > 0 && (
                 <p className="rounded-lg border p-3 text-sm text-muted-foreground">

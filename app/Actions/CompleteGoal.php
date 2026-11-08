@@ -65,7 +65,7 @@ class CompleteGoal
                 );
             }
 
-            // Ticket 07: delete this Goal's Sweep rules here, before archiving it.
+            $locked->sweepRules()->delete();
 
             $locked->update(['archived_at' => now()]);
 

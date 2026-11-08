@@ -32,6 +32,7 @@ class GoalController extends Controller
             'goals' => $goals->map(fn (Goal $goal) => $goal->row())->values(),
             'archived' => $archived->map(fn (Goal $goal) => $goal->archivedRow())->values(),
             'saved' => $goals->sum(fn (Goal $goal) => $goal->balance()),
+            'sweepBudgets' => $household->sweepBudgetOptions()->all(),
             'canEdit' => $request->user()->can('edit', $household),
         ]);
     }
@@ -61,6 +62,8 @@ class GoalController extends Controller
             'movements' => $ledger['movements'],
             'savings' => $ledger['savings'],
             'budgets' => $household->budgetBalances(Periods::current($household)),
+            'sweepBudgets' => $household->sweepBudgetOptions($goal)->all(),
+            'sweepBudgetIds' => $goal->sweepRules()->pluck('budget_id')->all(),
             'today' => now()->toDateString(),
             'archived' => $archived,
             'canEdit' => ! $archived && $request->user()->can('edit', $household),

@@ -1,5 +1,6 @@
 import { useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -12,13 +13,15 @@ import {
     DrawerTitle,
 } from '@/components/ui/drawer';
 import { currency, plain } from '@/lib/money';
-import type { GoalDetail } from '@/types';
+import type { GoalDetail, SweepBudget } from '@/types';
 
 type Props = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     householdId: number;
     goal?: GoalDetail | null;
+    sweepBudgets?: SweepBudget[];
+    sweepBudgetIds?: number[];
 };
 
 type Data = {
@@ -26,6 +29,7 @@ type Data = {
     target_amount: string;
     target_date: string;
     sort: string;
+    sweep_budget_ids: number[];
 };
 
 const empty: Data = {
@@ -33,6 +37,7 @@ const empty: Data = {
     target_amount: '',
     target_date: '',
     sort: '',
+    sweep_budget_ids: [],
 };
 
 export function GoalDrawer({
@@ -40,6 +45,8 @@ export function GoalDrawer({
     onOpenChange,
     householdId,
     goal = null,
+    sweepBudgets = [],
+    sweepBudgetIds = [],
 }: Props) {
     const form = useForm<Data>(
         goal
@@ -48,6 +55,7 @@ export function GoalDrawer({
                   target_amount: String(goal.target),
                   target_date: goal.target_date ?? '',
                   sort: String(goal.sort),
+                  sweep_budget_ids: sweepBudgetIds,
               }
             : empty,
     );
@@ -58,7 +66,18 @@ export function GoalDrawer({
         errors.name ??
         errors.target_amount ??
         errors.target_date ??
-        errors.sort;
+        errors.sort ??
+        errors.sweep_budget_ids;
+
+    const toggleSweep = (id: number, checked: boolean) =>
+        form.setData(
+            'sweep_budget_ids',
+            checked
+                ? [...form.data.sweep_budget_ids, id]
+                : form.data.sweep_budget_ids.filter(
+                      (budgetId) => budgetId !== id,
+                  ),
+        );
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,6 +87,7 @@ export function GoalDrawer({
             target_amount: Number(d.target_amount || 0),
             target_date: d.target_date || null,
             sort: d.sort === '' ? null : Number(d.sort),
+            sweep_budget_ids: d.sweep_budget_ids,
         }));
 
         const options = {
@@ -178,6 +198,40 @@ export function GoalDrawer({
                                         }
                                     />
                                 </div>
+
+                                {sweepBudgets.length > 0 && (
+                                    <div className="grid gap-1.5">
+                                        <Label>Sweep leftovers from</Label>
+                                        <p className="text-xs text-muted-foreground">
+                                            At close, a selected budget&apos;s
+                                            leftover moves into this goal. A
+                                            sweep cannot be undone.
+                                        </p>
+                                        {sweepBudgets.map((budget) => (
+                                            <label
+                                                key={budget.id}
+                                                htmlFor={`sweep-${budget.id}`}
+                                                className="flex items-center gap-2 rounded-lg border p-2"
+                                            >
+                                                <Checkbox
+                                                    id={`sweep-${budget.id}`}
+                                                    checked={form.data.sweep_budget_ids.includes(
+                                                        budget.id,
+                                                    )}
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) =>
+                                                        toggleSweep(
+                                                            budget.id,
+                                                            checked,
+                                                        )
+                                                    }
+                                                />
+                                                <span>{budget.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
 
                                 {error && (
                                     <p className="text-sm text-destructive">
