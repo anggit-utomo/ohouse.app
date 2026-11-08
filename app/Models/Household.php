@@ -56,6 +56,19 @@ class Household extends Model
         return $this->hasMany(Goal::class);
     }
 
+    /** @return HasMany<GoalMovement, $this> */
+    public function goalMovements(): HasMany
+    {
+        return $this->hasMany(GoalMovement::class);
+    }
+
+    /** True once any Transaction or Goal movement exists, so the currency is fixed. */
+    public function hasRecordedMoney(): bool
+    {
+        return $this->transactions()->withTrashed()->exists()
+            || $this->goalMovements()->exists();
+    }
+
     /** @return HasMany<HouseholdInvite, $this> */
     public function invites(): HasMany
     {
@@ -70,12 +83,16 @@ class Household extends Model
     public function budgetBalances(Period $period): Collection
     {
         return $this->budgets()->active()->orderBy('sort')
-            ->with(['months' => fn ($q) => $q->whereDate('period_start', $period->key())->with('transactions')])
+            ->with([
+                'months' => fn ($q) => $q->whereDate('period_start', $period->key())
+                    ->with('transactions'),
+            ])
             ->get()
             ->map(fn ($b) => [
                 'id' => $b->id,
                 'name' => $b->name,
-                'left' => $b->months->first()?->balance() ?? ($b->repeat_monthly ? ($b->default_amount ?? 0) : 0),
+                'left' => $b->months->first()?->balance()
+                    ?? ($b->repeat_monthly ? ($b->default_amount ?? 0) : 0),
             ])->values();
     }
 }

@@ -22,10 +22,18 @@ class HouseholdSettingsController extends Controller
         $membership = $household->members()->whereKey($user->id)->first()->pivot;
 
         return Inertia::render('settings/household', [
-            'household' => ['id' => $household->id, 'name' => $household->name, 'currency' => $household->currency],
+            'household' => [
+                'id' => $household->id,
+                'name' => $household->name,
+                'currency' => $household->currency,
+            ],
             'currencies' => Currencies::all(),
-            'currencyLocked' => $household->transactions()->withTrashed()->exists(),
-            'user' => ['name' => $user->name, 'email' => $user->email, 'verified' => $user->hasVerifiedEmail()],
+            'currencyLocked' => $household->hasRecordedMoney(),
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'verified' => $user->hasVerifiedEmail(),
+            ],
             'isOwner' => $user->can('manage', $household),
             'ownsHousehold' => Household::where('owner_id', $user->id)->exists(),
             'push' => [
@@ -41,8 +49,11 @@ class HouseholdSettingsController extends Controller
         ]);
     }
 
-    public function update(Request $request, Household $household, ChangeCurrency $change): RedirectResponse
-    {
+    public function update(
+        Request $request,
+        Household $household,
+        ChangeCurrency $change
+    ): RedirectResponse {
         $this->authorize('manage', $household);
 
         $data = $request->validate([
@@ -67,7 +78,9 @@ class HouseholdSettingsController extends Controller
         $request->validate(['confirm' => ['required', 'string']]);
 
         if ($request->input('confirm') !== $household->name) {
-            throw ValidationException::withMessages(['confirm' => 'Type the household name exactly to delete it.']);
+            throw ValidationException::withMessages([
+                'confirm' => 'Type the household name exactly to delete it.',
+            ]);
         }
 
         $household->delete();

@@ -11,12 +11,15 @@ use Illuminate\Validation\ValidationException;
 
 class ChangeCurrency
 {
-    /** Allowed only while nothing has been recorded. Budget amounts keep the same displayed number. */
+    /**
+     * Allowed only while nothing has been recorded.
+     * Budget amounts keep the same displayed number.
+     */
     public function handle(Household $household, string $code): void
     {
-        if ($household->transactions()->withTrashed()->exists()) {
+        if ($household->hasRecordedMoney()) {
             throw ValidationException::withMessages([
-                'currency' => 'The currency can\'t be changed after transactions have been recorded.',
+                'currency' => 'The currency can\'t be changed after money has been recorded.',
             ]);
         }
 

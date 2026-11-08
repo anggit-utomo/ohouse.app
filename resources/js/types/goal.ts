@@ -12,3 +12,20 @@ export type GoalSummary = {
 export type GoalDetail = GoalSummary & {
     target_date: string | null;
 };
+
+export type GoalSaving = {
+    period_start: string;
+    label: string;
+    saved: number;
+};
+
+export type GoalMovementRow = {
+    id: number;
+    type: 'contribution' | 'withdrawal';
+    amount: number;
+    signed: number;
+    note: string | null;
+    user: string;
+    occurred_at: string;
+    period_start: string;
+};

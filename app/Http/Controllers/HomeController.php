@@ -44,7 +44,12 @@ class HomeController extends Controller
         $canEdit = $user->can('edit', $household);
         $days = (int) abs($period->start->diffInDays(now()->startOfDay()));
 
-        $goals = $household->goals()->active()->orderBy('sort')->orderBy('id')->get();
+        $goals = $household->goals()
+            ->active()
+            ->with('movements')
+            ->orderBy('sort')
+            ->orderBy('id')
+            ->get();
 
         // for transaction form in homepage
         $preselected = $household->budgets()->active()

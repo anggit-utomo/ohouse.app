@@ -5,6 +5,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CloseMonthController;
 use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\GoalController;
+use App\Http\Controllers\GoalMovementController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HouseholdSettingsController;
 use App\Http\Controllers\JoinController;
@@ -92,6 +93,8 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
                 Route::post('/', 'store')->name('store');
                 Route::get('/{goal}', 'show')->name('show');
                 Route::patch('/{goal}', 'update')->name('update');
+                Route::post('/{goal}/movements', [GoalMovementController::class, 'store'])
+                    ->name('movements.store');
             });
 
         Route::controller(TransferController::class)

@@ -9,8 +9,8 @@ use App\Models\BudgetMonth;
 use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Support\EntryTime;
 use App\Support\Periods;
-use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
@@ -20,7 +20,7 @@ class SaveTransaction
     public function create(Household $household, array $d, User $actor): Transaction
     {
         $budget = $household->budgets()->active()->whereKey($d['budget_id'])->firstOrFail();
-        $when = $this->when($d['occurred_at']);
+        $when = EntryTime::at($d['occurred_at']);
 
         $transaction = $this->openMonth($budget, $when)->transactions()->create([
             'household_id' => $household->id,
@@ -43,7 +43,7 @@ class SaveTransaction
         $this->guardEditable($transaction);
 
         $budget = $transaction->household->budgets()->active()->whereKey($d['budget_id'])->firstOrFail();
-        $when = $this->when($d['occurred_at']);
+        $when = EntryTime::at($d['occurred_at']);
         $month = $this->openMonth($budget, $when);
 
         $transaction->update([
@@ -62,14 +62,6 @@ class SaveTransaction
     {
         $this->guardEditable($transaction);
         $transaction->delete();
-    }
-
-    /** Today keeps the real time; other days are stored at noon. */
-    private function when(string $date): CarbonInterface
-    {
-        $day = Carbon::parse($date);
-
-        return $day->isToday() ? now() : $day->setTime(12, 0);
     }
 
     public function openMonth(Budget $budget, CarbonInterface $when): BudgetMonth

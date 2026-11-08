@@ -3,6 +3,7 @@
 use App\Models\Budget;
 use App\Models\BudgetMonth;
 use App\Models\Goal;
+use App\Models\GoalMovement;
 use App\Models\Household;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,16 @@ function qcHousehold(int $budgets, int $entriesEach): array
     $first = null;
 
     Goal::factory()->count($budgets)->create(['household_id' => $household->id]);
+
+    foreach ($household->goals as $goal) {
+        GoalMovement::factory()->count($entriesEach)->create([
+            'goal_id' => $goal->id,
+            'household_id' => $household->id,
+            'user_id' => $household->owner_id,
+            'occurred_at' => '2026-10-10 12:00:00',
+            'period_start' => '2026-10-01',
+        ]);
+    }
 
     foreach (range(1, $budgets) as $i) {
         $month = BudgetMonth::factory()
@@ -48,7 +59,11 @@ it('runs the same number of queries for 3 budgets and 12 budgets', function (str
     [$small, $smallBudget] = qcHousehold(3, 5);
     [$big, $bigBudget] = qcHousehold(12, 20);
 
-    $url = fn (Household $h, int $budget) => "/h/{$h->id}".str_replace('{budget}', (string) $budget, $path);
+    $url = fn (Household $h, int $budget) => "/h/{$h->id}".str_replace(
+        '{budget}',
+        (string) $budget,
+        $path
+    );
 
     expect(qcQueries($big->owner, $url($big, $bigBudget)))
         ->toBe(qcQueries($small->owner, $url($small, $smallBudget)));

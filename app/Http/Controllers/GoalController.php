@@ -6,6 +6,7 @@ use App\Actions\SaveGoal;
 use App\Http\Requests\SaveGoalRequest;
 use App\Models\Goal;
 use App\Models\Household;
+use App\Support\GoalLedger;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,8 +27,11 @@ class GoalController extends Controller
         ]);
     }
 
-    public function store(SaveGoalRequest $request, Household $household, SaveGoal $save): RedirectResponse
-    {
+    public function store(
+        SaveGoalRequest $request,
+        Household $household,
+        SaveGoal $save
+    ): RedirectResponse {
         $save->create($household, $request->validated());
 
         return back()->with('success', 'Goal created.');
@@ -35,12 +39,18 @@ class GoalController extends Controller
 
     public function show(Request $request, Household $household, Goal $goal): Response
     {
+        $goal->load(['movements.user']);
+        $ledger = GoalLedger::for($goal, $household);
+
         return Inertia::render('goals/show', [
             'household' => ['id' => $household->id],
             'goal' => [
                 ...$goal->row(),
                 'target_date' => $goal->target_date?->toDateString(),
             ],
+            'movements' => $ledger['movements'],
+            'savings' => $ledger['savings'],
+            'today' => now()->toDateString(),
             'canEdit' => $request->user()->can('edit', $household),
         ]);
     }
@@ -59,6 +69,11 @@ class GoalController extends Controller
     /** @return Collection<int, Goal> */
     private function ordered(Household $household): Collection
     {
-        return $household->goals()->active()->orderBy('sort')->orderBy('id')->get();
+        return $household->goals()
+            ->active()
+            ->with('movements')
+            ->orderBy('sort')
+            ->orderBy('id')
+            ->get();
     }
 }

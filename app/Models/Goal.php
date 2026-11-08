@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['household_id', 'name', 'target_amount', 'target_date', 'sort', 'archived_at'])]
 class Goal extends Model
@@ -29,6 +30,12 @@ class Goal extends Model
         return $this->belongsTo(Household::class);
     }
 
+    /** @return HasMany<GoalMovement, $this> */
+    public function movements(): HasMany
+    {
+        return $this->hasMany(GoalMovement::class);
+    }
+
     /**
      * @param  Builder<Goal>  $q
      * @return Builder<Goal>
@@ -38,10 +45,10 @@ class Goal extends Model
         return $q->whereNull('archived_at');
     }
 
-    /** Contributions arrive in a later ticket, so a Goal starts empty. */
+    /** A Goal's balance is its contributions minus its withdrawals, summed in PHP. */
     public function balance(): int
     {
-        return 0;
+        return $this->movements->sum(fn (GoalMovement $movement) => $movement->signedAmount());
     }
 
     /**

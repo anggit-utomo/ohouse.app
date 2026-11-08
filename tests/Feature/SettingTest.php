@@ -3,6 +3,7 @@
 use App\Models\Budget;
 use App\Models\BudgetMonth;
 use App\Models\Goal;
+use App\Models\GoalMovement;
 use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\User;
@@ -11,7 +12,10 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->travelTo('2026-10-15 09:00:00');
-    $this->household = Household::factory()->create(['name' => 'Our home', 'period_start' => '2026-10-01']);
+    $this->household = Household::factory()->create([
+        'name' => 'Our home',
+        'period_start' => '2026-10-01',
+    ]);
     $this->owner = $this->household->owner;
     $this->base = "/h/{$this->household->id}";
     $this->month = BudgetMonth::factory()->for(
@@ -21,9 +25,13 @@ beforeEach(function () {
 });
 
 it('lists the currencies and says whether the currency is locked', function () {
-    $this->actingAs($this->owner)->get("{$this->base}/settings")->assertInertia(fn (Assert $p) => $p
-        ->component('settings/household')->where('household.currency', 'IDR')->where('currencyLocked', false)
-        ->where('isOwner', true)->has('currencies', 12));
+    $this->actingAs($this->owner)->get("{$this->base}/settings")
+        ->assertInertia(fn (Assert $p) => $p
+            ->component('settings/household')
+            ->where('household.currency', 'IDR')
+            ->where('currencyLocked', false)
+            ->where('isOwner', true)
+            ->has('currencies', 12));
 
     Transaction::factory()->create([
         'household_id' => $this->household->id,
@@ -37,7 +45,10 @@ it('lists the currencies and says whether the currency is locked', function () {
 });
 
 it('changes the currency and scales the budget amounts to keep the same number', function () {
-    $this->actingAs($this->owner)->put("{$this->base}/settings", ['name' => 'Our home', 'currency' => 'USD'])
+    $this->actingAs($this->owner)->put(
+        "{$this->base}/settings",
+        ['name' => 'Our home', 'currency' => 'USD']
+    )
         ->assertSessionHas('success', 'Household saved.');
 
     expect($this->household->fresh()->currency)->toBe('USD')
@@ -49,17 +60,41 @@ it('changes the currency and scales the budget amounts to keep the same number',
         ->put("{$this->base}/settings", ['name' => 'Our home', 'currency' => 'JPY'])
         ->assertRedirect();
 
-    expect($this->month->fresh()->allocated)->toBe(2_000_000)->and($this->household->fresh()->currency)->toBe('JPY');
+    expect($this->month->fresh()->allocated)
+        ->toBe(2_000_000)
+        ->and($this->household->fresh()->currency)
+        ->toBe('JPY');
 });
 
 it('scales goal targets with the currency', function () {
-    $goal = Goal::factory()->for($this->household)->create(['target_amount' => 6_000_000]);
+    $goal = Goal::factory()->for($this->household)->create([
+        'target_amount' => 6_000_000,
+    ]);
 
     $this->actingAs($this->owner)
-        ->put("{$this->base}/settings", ['name' => 'Our home', 'currency' => 'USD'])
+        ->put(
+            "{$this->base}/settings",
+            ['name' => 'Our home', 'currency' => 'USD']
+        )
         ->assertRedirect();
 
     expect($goal->fresh()->target_amount)->toBe(600_000_000);
+});
+
+it('locks the currency once a goal contribution exists', function () {
+    $goal = Goal::factory()->for($this->household)->create();
+    GoalMovement::factory()->create([
+        'goal_id' => $goal->id,
+        'household_id' => $this->household->id,
+        'user_id' => $this->owner->id,
+    ]);
+
+    $this->actingAs($this->owner)->get("{$this->base}/settings")
+        ->assertInertia(fn (Assert $p) => $p->where('currencyLocked', true));
+
+    $this->actingAs($this->owner)
+        ->put("{$this->base}/settings", ['name' => 'Our home', 'currency' => 'USD'])
+        ->assertSessionHasErrors('currency');
 });
 
 it('refuses to change the currency once anything has been recorded, even if deleted', function () {
@@ -75,7 +110,10 @@ it('refuses to change the currency once anything has been recorded, even if dele
             ['name' => 'Our home', 'currency' => 'USD']
         )->assertSessionHasErrors('currency');
 
-    expect($this->household->fresh()->currency)->toBe('IDR')->and($this->month->fresh()->allocated)->toBe(2_000_000);
+    expect($this->household->fresh()->currency)
+        ->toBe('IDR')
+        ->and($this->month->fresh()->allocated)
+        ->toBe(2_000_000);
 });
 
 it('still lets you rename the household when the currency is locked', function () {
