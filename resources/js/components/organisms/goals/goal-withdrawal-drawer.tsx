@@ -210,7 +210,7 @@ export function GoalWithdrawalDrawer({
                             </div>
                         </div>
 
-                        <DrawerFooter className="pb-6">
+                        <DrawerFooter className="py-6">
                             <div className="grid grid-cols-2 gap-2">
                                 <Button
                                     type="submit"

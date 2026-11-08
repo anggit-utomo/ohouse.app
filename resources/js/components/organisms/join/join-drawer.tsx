@@ -110,7 +110,7 @@ export function JoinDrawer({ open, onOpenChange, initialCode = '' }: Props) {
                                 )}
                             </div>
 
-                            <DrawerFooter className="mt-4 pb-6">
+                            <DrawerFooter className="py-6">
                                 <div className="grid grid-cols-2 gap-2">
                                     <Button
                                         type="submit"

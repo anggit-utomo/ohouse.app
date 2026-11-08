@@ -237,7 +237,7 @@ export function TransactionDetailDrawer({
                             )}
                         </div>
 
-                        <DrawerFooter className="mt-4 pb-6">
+                        <DrawerFooter className="py-6">
                             {canEdit && !locked ? (
                                 <div className="flex gap-2">
                                     {isTransfer ? (

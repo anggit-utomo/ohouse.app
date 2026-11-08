@@ -134,7 +134,7 @@ export function GoalDrawer({
                                 <div className="grid gap-1.5">
                                     <Label htmlFor="goal-target">Target</Label>
                                     <div className="relative">
-                                        <span className="absolute top-2 left-3 text-sm text-muted-foreground">
+                                        <span className="absolute top-0 left-3 text-sm text-muted-foreground">
                                             {currency().symbol}
                                         </span>
                                         <Input
@@ -241,7 +241,7 @@ export function GoalDrawer({
                             </div>
                         </div>
 
-                        <DrawerFooter className="pb-6">
+                        <DrawerFooter className="py-6">
                             <div className="grid grid-cols-2 gap-2">
                                 <Button
                                     type="submit"
