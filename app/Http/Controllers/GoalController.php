@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\CompleteGoal;
 use App\Actions\SaveGoal;
+use App\Http\Requests\CompleteGoalRequest;
 use App\Http\Requests\SaveGoalRequest;
 use App\Models\Goal;
 use App\Models\Household;
@@ -19,9 +21,16 @@ class GoalController extends Controller
     {
         $goals = $household->activeGoals();
 
+        $archived = $household->goals()
+            ->whereNotNull('archived_at')
+            ->ordered()
+            ->with('movements')
+            ->get();
+
         return Inertia::render('goals/index', [
             'household' => ['id' => $household->id],
             'goals' => $goals->map(fn (Goal $goal) => $goal->row())->values(),
+            'archived' => $archived->map(fn (Goal $goal) => $goal->archivedRow())->values(),
             'saved' => $goals->sum(fn (Goal $goal) => $goal->balance()),
             'canEdit' => $request->user()->can('edit', $household),
         ]);
@@ -41,6 +50,7 @@ class GoalController extends Controller
     {
         $goal->load(['movements.user']);
         $ledger = GoalLedger::for($goal, $household);
+        $archived = $goal->archived_at !== null;
 
         return Inertia::render('goals/show', [
             'household' => ['id' => $household->id],
@@ -52,7 +62,8 @@ class GoalController extends Controller
             'savings' => $ledger['savings'],
             'budgets' => $household->budgetBalances(Periods::current($household)),
             'today' => now()->toDateString(),
-            'canEdit' => $request->user()->can('edit', $household),
+            'archived' => $archived,
+            'canEdit' => ! $archived && $request->user()->can('edit', $household),
         ]);
     }
 
@@ -62,8 +73,29 @@ class GoalController extends Controller
         Goal $goal,
         SaveGoal $save
     ): RedirectResponse {
+        abort_if($goal->archived_at !== null, 403);
+
         $save->update($goal, $request->validated());
 
         return back()->with('success', 'Goal updated.');
+    }
+
+    public function complete(
+        CompleteGoalRequest $request,
+        Household $household,
+        Goal $goal,
+        CompleteGoal $complete
+    ): RedirectResponse {
+        $data = $request->validated();
+
+        $complete->handle(
+            $household,
+            $request->user(),
+            $goal,
+            isset($data['budget_id']) ? (int) $data['budget_id'] : null,
+            isset($data['note']) ? (string) $data['note'] : null,
+        );
+
+        return back()->with('success', "{$goal->name} is complete.");
     }
 }

@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
@@ -8,18 +8,26 @@ import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
 import GoalEmpty from '@/components/organisms/goals/goal-empty';
 import GoalList from '@/components/organisms/goals/goal-list';
 import { rupiah } from '@/lib/money';
-import type { GoalSummary, HouseholdRef } from '@/types';
+import type { GoalArchived, GoalSummary, HouseholdRef } from '@/types';
 
 type Props = {
     household: HouseholdRef;
     goals: GoalSummary[];
+    archived: GoalArchived[];
     saved: number;
     canEdit: boolean;
 };
 
+const archivedOn = (date: string) =>
+    new Date(date).toLocaleDateString('en-GB', {
+        month: 'short',
+        year: 'numeric',
+    });
+
 export default function GoalsIndex({
     household,
     goals,
+    archived,
     saved,
     canEdit,
 }: Props) {
@@ -66,6 +74,34 @@ export default function GoalsIndex({
             ) : (
                 <div className="grid gap-2">
                     <GoalList goals={goals} base={base} />
+                </div>
+            )}
+
+            {archived.length > 0 && (
+                <div className="grid gap-2">
+                    <h2 className="text-base font-semibold">History</h2>
+                    {archived.map((goal) => (
+                        <Link
+                            key={goal.id}
+                            href={`${base}/goals/${goal.id}`}
+                            className="block rounded-xl border p-3"
+                        >
+                            <div className="flex items-baseline justify-between gap-2">
+                                <span className="font-semibold">
+                                    {goal.name}
+                                </span>
+                                {goal.archived_at && (
+                                    <span className="text-xs text-muted-foreground">
+                                        Archived {archivedOn(goal.archived_at)}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                                <span>{rupiah(goal.saved)} saved</span>
+                                <span>of {rupiah(goal.target)}</span>
+                            </div>
+                        </Link>
+                    ))}
                 </div>
             )}
 

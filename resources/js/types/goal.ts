@@ -13,6 +13,14 @@ export type GoalDetail = GoalSummary & {
     target_date: string | null;
 };
 
+export type GoalArchived = {
+    id: number;
+    name: string;
+    saved: number;
+    target: number;
+    archived_at: string | null;
+};
+
 export type GoalSaving = {
     period_start: string;
     label: string;

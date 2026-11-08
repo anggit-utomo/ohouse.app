@@ -31,6 +31,7 @@ final class GoalLedger
     public static function for(Goal $goal, Household $household): array
     {
         $periods = Periods::all($household)->keyBy(fn (Period $period) => $period->key());
+        $goalOpen = $goal->archived_at === null;
 
         $movements = $goal->movements
             ->sortByDesc(fn (GoalMovement $movement) => [$movement->occurred_at->timestamp, $movement->id])
@@ -56,7 +57,7 @@ final class GoalLedger
         return [
             'movements' => array_values($movements
                 ->map(fn (GoalMovement $movement) => $movement->row(
-                    $movement->canBeRemoved($household),
+                    $goalOpen && $movement->canBeRemoved($household),
                 ))
                 ->all()),
             'savings' => array_values($savings),

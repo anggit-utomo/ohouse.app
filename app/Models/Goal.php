@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\EncryptedInteger;
+use App\Enums\GoalMovementTypeEnum;
 use Database\Factories\GoalFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -91,6 +92,24 @@ class Goal extends Model
             'name' => $this->name,
             'sort' => $this->sort,
             ...$this->summary(),
+        ];
+    }
+
+    /**
+     * The history projection: what the Goal finished with, not what is left.
+     *
+     * @return array{id: int, name: string, saved: int, target: int, archived_at: string|null}
+     */
+    public function archivedRow(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'saved' => $this->movements
+                ->filter(fn (GoalMovement $movement) => $movement->type === GoalMovementTypeEnum::CONTRIBUTION)
+                ->sum('amount'),
+            'target' => $this->target_amount,
+            'archived_at' => $this->archived_at?->toDateString(),
         ];
     }
 }

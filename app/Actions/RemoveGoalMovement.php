@@ -20,6 +20,12 @@ class RemoveGoalMovement
             ]);
         }
 
+        if ($goal->archived_at !== null) {
+            throw ValidationException::withMessages([
+                'goal' => 'That goal is not open.',
+            ]);
+        }
+
         DB::transaction(function () use ($household, $goal, $movement) {
             $lockedHousehold = Household::lockForUpdate()->findOrFail($household->id);
 

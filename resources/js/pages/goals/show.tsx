@@ -1,6 +1,12 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { MinusIcon, PencilIcon, PlusIcon, Trash2 } from 'lucide-react';
+import {
+    CheckIcon,
+    MinusIcon,
+    PencilIcon,
+    PlusIcon,
+    Trash2,
+} from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
 import { PageHeader } from '@/components/page-header';
 import {
@@ -14,11 +20,19 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { GoalContributionDrawer } from '@/components/organisms/goals/goal-contribution-drawer';
 import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
 import { GoalWithdrawalDrawer } from '@/components/organisms/goals/goal-withdrawal-drawer';
 import { rupiah } from '@/lib/money';
-import { cn } from '@/lib/utils';
+import { setIfNotNull, cn } from '@/lib/utils';
 import type {
     BudgetOption,
     GoalDetail,
@@ -27,6 +41,8 @@ import type {
     HouseholdRef,
 } from '@/types';
 
+const OUTSIDE = 'outside';
+
 type Props = {
     household: HouseholdRef;
     goal: GoalDetail;
@@ -34,6 +50,7 @@ type Props = {
     savings: GoalSaving[];
     budgets: BudgetOption[];
     today: string;
+    archived: boolean;
     canEdit: boolean;
 };
 
@@ -44,12 +61,15 @@ export default function ShowGoal({
     savings,
     budgets,
     today,
+    archived,
     canEdit,
 }: Props) {
     const base = `/h/${household.id}`;
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isContributionOpen, setIsContributionOpen] = useState(false);
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
+    const [isCompleteOpen, setIsCompleteOpen] = useState(false);
+    const [destination, setDestination] = useState(OUTSIDE);
     const [pendingMovement, setPendingMovement] =
         useState<GoalMovementRow | null>(null);
 
@@ -68,6 +88,22 @@ export default function ShowGoal({
         );
     };
 
+    const completeGoal = () => {
+        router.post(
+            `${base}/goals/${goal.id}/complete`,
+            {
+                budget_id:
+                    goal.balance > 0 && destination !== OUTSIDE
+                        ? Number(destination)
+                        : null,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => setIsCompleteOpen(false),
+            },
+        );
+    };
+
     return (
         <>
             <Head title={goal.name} />
@@ -76,7 +112,8 @@ export default function ShowGoal({
                 title={goal.name}
                 href={`${base}/goals`}
                 action={
-                    canEdit && (
+                    canEdit &&
+                    !archived && (
                         <Button
                             size="sm"
                             variant="outline"
@@ -88,6 +125,13 @@ export default function ShowGoal({
                     )
                 }
             />
+
+            {archived && (
+                <div className="rounded-xl border bg-muted/40 p-3 text-sm text-muted-foreground">
+                    This goal is archived. Its history stays here and it cannot
+                    be changed.
+                </div>
+            )}
 
             <div className="rounded-xl border p-4">
                 <p className="text-muted-foreground">
@@ -134,20 +178,29 @@ export default function ShowGoal({
                 )}
             </div>
 
-            {canEdit && (
-                <div className="grid grid-cols-2 gap-2">
-                    <Button
-                        type="button"
-                        onClick={() => setIsContributionOpen(true)}
-                    >
-                        <PlusIcon className="mr-1 size-4" /> Add money
-                    </Button>
+            {canEdit && !archived && (
+                <div className="grid gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button
+                            type="button"
+                            onClick={() => setIsContributionOpen(true)}
+                        >
+                            <PlusIcon className="mr-1 size-4" /> Add money
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setIsWithdrawalOpen(true)}
+                        >
+                            <MinusIcon className="mr-1 size-4" /> Take out
+                        </Button>
+                    </div>
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setIsWithdrawalOpen(true)}
+                        onClick={() => setIsCompleteOpen(true)}
                     >
-                        <MinusIcon className="mr-1 size-4" /> Take out
+                        <CheckIcon className="mr-1 size-4" /> Complete goal
                     </Button>
                 </div>
             )}
@@ -261,6 +314,55 @@ export default function ShowGoal({
                             variant="destructive"
                         >
                             Remove
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={isCompleteOpen} onOpenChange={setIsCompleteOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Complete {goal.name}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {goal.balance > 0
+                                ? `${rupiah(goal.balance)} will leave the goal and it will move to history. This cannot be undone.`
+                                : 'The goal has no balance left. It will move to history and cannot be changed.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    {goal.balance > 0 && (
+                        <div className="grid gap-1.5">
+                            <Label>To</Label>
+                            <Select
+                                value={destination}
+                                onValueChange={setIfNotNull(setDestination)}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Outside the budget" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={OUTSIDE}>
+                                        Outside the budget
+                                    </SelectItem>
+                                    {budgets.map((budget) => (
+                                        <SelectItem
+                                            key={budget.id}
+                                            value={String(budget.id)}
+                                        >
+                                            {budget.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={completeGoal}>
+                            Complete goal
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

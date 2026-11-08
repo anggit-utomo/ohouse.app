@@ -7,6 +7,7 @@ export type {
 } from './auth';
 export type { BudgetOption, BudgetSummary } from './budget';
 export type {
+    GoalArchived,
     GoalDetail,
     GoalMovementRow,
     GoalSaving,
