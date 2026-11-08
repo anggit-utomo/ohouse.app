@@ -104,19 +104,22 @@ export function GoalWithdrawalDrawer({
                             </DrawerHeader>
 
                             <div className="grid gap-3 px-4">
-                                <div className="grid gap-1.5">
-                                    <Label htmlFor="withdrawal-amount">
+                                <div className="py-2 text-center">
+                                    <Label
+                                        htmlFor="withdrawal-amount"
+                                        className="text-muted-foreground"
+                                    >
                                         Amount
                                     </Label>
-                                    <div className="relative">
-                                        <span className="absolute top-2 left-3 text-sm text-muted-foreground">
+                                    <div className="flex items-baseline justify-center gap-2">
+                                        <span className="text-xl text-muted-foreground">
                                             {currency().symbol}
                                         </span>
-                                        <Input
+                                        <input
                                             id="withdrawal-amount"
                                             inputMode="numeric"
-                                            className="pl-10 text-right font-semibold"
                                             placeholder="0"
+                                            className="w-48 bg-transparent text-center text-4xl font-bold outline-none"
                                             value={
                                                 form.data.amount
                                                     ? plain(

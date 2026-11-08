@@ -135,17 +135,22 @@ export function GoalDrawer({
                                     />
                                 </div>
 
-                                <div className="grid gap-1.5">
-                                    <Label htmlFor="goal-target">Target</Label>
-                                    <div className="relative">
-                                        <span className="absolute top-0 left-3 text-sm text-muted-foreground">
+                                <div className="py-2 text-center">
+                                    <Label
+                                        htmlFor="goal-target"
+                                        className="text-muted-foreground"
+                                    >
+                                        Target
+                                    </Label>
+                                    <div className="flex items-baseline justify-center gap-2">
+                                        <span className="text-xl text-muted-foreground">
                                             {currency().symbol}
                                         </span>
-                                        <Input
+                                        <input
                                             id="goal-target"
                                             inputMode="numeric"
-                                            className="pl-10 text-right font-semibold"
                                             placeholder="0"
+                                            className="w-48 bg-transparent text-center text-4xl font-bold outline-none"
                                             value={
                                                 form.data.target_amount
                                                     ? plain(
