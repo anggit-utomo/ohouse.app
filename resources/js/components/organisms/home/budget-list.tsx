@@ -21,7 +21,7 @@ export default function BudgetList({
             scrollBarClassName="opacity-0 data-hovering:opacity-100 data-scrolling:opacity-100"
             className="-mx-4"
         >
-            <div className="flex items-stretch gap-3 px-4 pb-2">
+            <div className="flex items-stretch gap-3 pb-2 pl-4 [&>*:last-child]:mr-4">
                 {budgets.map((b) => (
                     <BudgetItem
                         key={b.id}
