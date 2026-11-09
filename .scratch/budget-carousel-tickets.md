@@ -95,6 +95,12 @@ Accept:
 - All 7 spec acceptance criteria pass.
 - No backend, types, or routes changed; no new tests (layout-only).
 
+## T6 — Last item trailing space
+
+Status: done
+Commit: 2b2926649857f90fa6151af3c3642085222d9f4c
+Depends: T4. Files: `resources/js/components/organisms/home/budget-list.tsx`. Do: `pl-4` + `[&>*:last-child]:mr-4` to fix cropped last card. VERDICT PASS, 0 fix rounds.
+
 ---
 
-Suggested order: T1 → T2 → T3 (parallel OK) → T4 → T5.
+Suggested order: T1 → T2 → T3 (parallel OK) → T4 → T5 → T6.
