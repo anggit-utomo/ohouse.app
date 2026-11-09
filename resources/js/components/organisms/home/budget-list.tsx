@@ -1,4 +1,5 @@
 import type { BudgetSummary } from '@/types';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import BudgetItem from './budget-item';
 
 interface BudgetListProps {
@@ -14,13 +15,23 @@ export default function BudgetList({
     canEdit,
     onMoveMoney,
 }: BudgetListProps) {
-    return budgets.map((b, idx) => (
-        <BudgetItem
-            key={`${b.id}-${idx}`}
-            base={base}
-            canEdit={canEdit}
-            b={b}
-            onMoveMoney={onMoveMoney}
-        />
-    ));
+    return (
+        <ScrollArea
+            orientation="horizontal"
+            scrollBarClassName="opacity-0 data-hovering:opacity-100 data-scrolling:opacity-100"
+            className="-mx-4"
+        >
+            <div className="flex items-stretch gap-3 px-4 pb-2">
+                {budgets.map((b) => (
+                    <BudgetItem
+                        key={b.id}
+                        b={b}
+                        base={base}
+                        canEdit={canEdit}
+                        onMoveMoney={onMoveMoney}
+                    />
+                ))}
+            </div>
+        </ScrollArea>
+    );
 }
