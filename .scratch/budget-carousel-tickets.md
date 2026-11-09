@@ -1,5 +1,7 @@
 # Tickets — Home Budgets Horizontal Card Carousel
 
+> Note: Real implementation commits (scratch drafts superseded).
+
 Source: `.scratch/budget-carousel-spec.md` + ADR-0003. Frontend-only, no backend change.
 Conventions: pnpm (never npm), `cn()`, semantic tokens, `flex gap-*`, `truncate`, strict TS, single quotes, 4-space indent.
 
@@ -8,7 +10,7 @@ Conventions: pnpm (never npm), `cn()`, semantic tokens, `flex gap-*`, `truncate`
 ## T1 — Add shadcn ScrollArea
 
 Status: done
-Commit: 182fa92b09d66ccede4a02d084cfbbb152cc765d
+Commit: 9660a05da58f2c0dabd9dc8954a19e26736c4c81
 Depends: none.
 Files: `resources/js/components/ui/scroll-area.tsx` (new, generated).
 
@@ -24,7 +26,7 @@ Accept:
 ## T2 — Minimal horizontal extension on ScrollArea
 
 Status: done
-Commit: 4d94fa8a73042216263ea2c2a014fa6b4c6864a7
+Commit: 664b50549b6bd0104ff6bf6d5ae6e42e4f2ccfa6
 Depends: T1.
 Files: `resources/js/components/ui/scroll-area.tsx` (edit, minimal).
 
@@ -42,7 +44,7 @@ Accept:
 ## T3 — BudgetItem becomes a Budget Card
 
 Status: done
-Commit: 74c69e5ba0ac4ef48bbf077124c813948867e5a8
+Commit: f7721baa2d252bf1d32db12596cbb6215dd6cb4a
 Depends: none (parallel with T1/T2).
 Files: `resources/js/components/organisms/home/budget-item.tsx` (rewrite).
 
@@ -63,7 +65,7 @@ Accept:
 ## T4 — BudgetList becomes the Budget Carousel
 
 Status: done
-Commit: c9675dac33d364ccafb1fb18fb1a939ca9c9ef41
+Commit: 70f234b003847bdf26481fad65b203cd21731ceb
 Depends: T2, T3.
 Files: `resources/js/components/organisms/home/budget-list.tsx` (rewrite).
 
@@ -80,7 +82,7 @@ Accept:
 ## T5 — Home spacing check + final verification
 
 Status: done
-Commit: 154d509152d0e8939becf6d5c312b5ad2385efc5
+Commit: 3db02bdd4c3c4560190321ad64db44f4ecb2af3b
 Depends: T4.
 Files: `resources/js/pages/home.tsx` (spacing only if needed), no logic change.
 
