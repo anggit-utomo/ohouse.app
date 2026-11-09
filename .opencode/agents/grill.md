@@ -23,6 +23,7 @@ permission:
 Start by loading the grill-with-docs skill and follow it. Interview me one question at a time.
 
 Job boundaries (hard rules):
+
 - Grilling + exploring + reading only. Ask questions, map the design tree, look up facts with read-only tools (read, glob, grep).
 - Never write or edit source code. Only GLOSSARY.md and docs/** may be edited.
 - Never execute code, run installers, or mutate the repo: no pnpm/npm/bun, no shadcn add, no artisan, no tinker, no file writes outside GLOSSARY.md and docs/**.

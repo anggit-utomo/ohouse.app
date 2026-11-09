@@ -18,7 +18,7 @@ import {
 import { rupiah } from '@/lib/money';
 import { BottomNav } from '@/components/bottom-nav';
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
-import { Bar, BarChart, Cell, XAxis } from 'recharts';
+import { Bar, BarChart, Cell, Pie, PieChart, XAxis } from 'recharts';
 import HeadTitle from '@/components/head-title';
 import type { HouseholdRef, MonthOption } from '@/types';
 
@@ -102,38 +102,19 @@ export default function Report({
 
     const recentDays = dailySpending.slice(-10);
     const maxRecent = Math.max(...recentDays.map((d) => d.amount), 0);
-    const totalBudgetSpent = budgets.reduce((sum, b) => sum + b.spent, 0) || 1;
-
-    // Dynamic Donut SVG rendering using theme OKLCH chart tokens
-    const renderDonutSlices = () => {
-        let accumulated = 0;
-
-        return budgets.map((b, i) => {
-            const share = (b.spent / totalBudgetSpent) * 100;
-            const start = accumulated;
-            accumulated += share;
-
-            return (
-                <circle
-                    key={b.id}
-                    cx="18"
-                    cy="18"
-                    r="15.91549430918954"
-                    fill="transparent"
-                    stroke={chartColors[i % chartColors.length]}
-                    strokeWidth="4.5"
-                    strokeDasharray={`${share} ${100 - share}`}
-                    strokeDashoffset={-start}
-                    className="cursor-pointer transition-opacity duration-300 hover:opacity-80"
-                    onMouseEnter={() => setHoveredBudget(b)}
-                    onMouseLeave={() => setHoveredBudget(null)}
-                    onClick={() => setHoveredBudget(b)}
-                />
-            );
-        });
-    };
 
     const activeBudget = hoveredBudget || budgets[0];
+
+    const donutData = budgets.map((b, i) => ({
+        key: `budget-${b.id}`,
+        name: b.name,
+        spent: b.spent,
+        fill: chartColors[i % chartColors.length],
+    }));
+
+    const donutConfig = Object.fromEntries(
+        donutData.map((d) => [d.key, { label: d.name, color: d.fill }]),
+    ) satisfies ChartConfig;
 
     return (
         <>
@@ -289,12 +270,58 @@ export default function Report({
 
                                 {/* Donut Chart */}
                                 <div className="relative flex items-center justify-center p-4">
-                                    <svg
-                                        viewBox="0 0 36 36"
-                                        className="h-44 w-44 -rotate-90 transform p-2"
+                                    <ChartContainer
+                                        config={donutConfig}
+                                        className="mx-auto aspect-square size-44"
                                     >
-                                        {renderDonutSlices()}
-                                    </svg>
+                                        <PieChart accessibilityLayer>
+                                            <ChartTooltip
+                                                cursor={false}
+                                                content={
+                                                    <ChartTooltipContent
+                                                        nameKey="key"
+                                                        hideLabel
+                                                        formatter={(value) =>
+                                                            rupiah(
+                                                                Number(value),
+                                                            )
+                                                        }
+                                                    />
+                                                }
+                                            />
+                                            <Pie
+                                                data={donutData}
+                                                dataKey="spent"
+                                                nameKey="key"
+                                                innerRadius={55}
+                                                outerRadius={80}
+                                                strokeWidth={4}
+                                                stroke="var(--background)"
+                                                paddingAngle={0}
+                                                onMouseEnter={(_, index) =>
+                                                    setHoveredBudget(
+                                                        budgets[index] ?? null,
+                                                    )
+                                                }
+                                                onMouseLeave={() =>
+                                                    setHoveredBudget(null)
+                                                }
+                                                onClick={(_, index) =>
+                                                    setHoveredBudget(
+                                                        budgets[index] ?? null,
+                                                    )
+                                                }
+                                            >
+                                                {donutData.map((d) => (
+                                                    <Cell
+                                                        key={d.key}
+                                                        fill={d.fill}
+                                                        className="cursor-pointer"
+                                                    />
+                                                ))}
+                                            </Pie>
+                                        </PieChart>
+                                    </ChartContainer>
                                     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
                                         <span className="text-base font-bold text-foreground">
                                             {activeBudget?.name}
