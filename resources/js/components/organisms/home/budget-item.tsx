@@ -32,7 +32,7 @@ export default function BudgetItem({
         left < 0 ? `Over by ${rupiah(-left)}` : `${rupiah(left)} left`;
 
     return (
-        <Card className="h-full w-56 shrink-0 border-0 ring-0">
+        <Card className="h-full w-54 flex-shrink-0">
             <Link
                 href={`${base}/budgets/${b.id}`}
                 className="flex flex-1 flex-col gap-(--card-spacing)"
