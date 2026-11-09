@@ -279,7 +279,15 @@ it('lets a viewer read archived history but not complete a goal', function () {
 
     $this->actingAs($viewer)->get("{$this->url}/goals")
         ->assertOk()
-        ->assertInertia(fn (Assert $p) => $p->has('archived', 1));
+        ->assertInertia(fn (Assert $p) => $p
+            ->where('canEdit', false)
+            ->has('archived', 1)
+            ->where('archived.0.saved', 300_000)
+            ->where('archived.0.target', 1_000_000)
+            ->where('archived.0.archived_at', '2026-10-15')
+            ->has('archived.0.movements', 2)
+            ->where('archived.0.movements.0.can_remove', false)
+            ->has('archived.0.savings'));
     $this->actingAs($viewer)->get("{$this->url}/goals/{$this->goal->id}")
         ->assertOk()
         ->assertInertia(fn (Assert $p) => $p->where('archived', true));

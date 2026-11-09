@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import { PlusIcon } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GoalDetailDrawer } from '@/components/organisms/goals/goal-detail-drawer';
 import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
 import GoalEmpty from '@/components/organisms/goals/goal-empty';
+import GoalHistoryItem from '@/components/organisms/goals/goal-history-item';
 import GoalList from '@/components/organisms/goals/goal-list';
 import { rupiah } from '@/lib/money';
 import type {
@@ -28,12 +29,6 @@ type Props = {
     today: string;
     canEdit: boolean;
 };
-
-const archivedOn = (date: string) =>
-    new Date(date).toLocaleDateString('en-GB', {
-        month: 'short',
-        year: 'numeric',
-    });
 
 export default function GoalsIndex({
     household,
@@ -106,26 +101,11 @@ export default function GoalsIndex({
                 <div className="grid gap-2">
                     <h2 className="text-base font-semibold">History</h2>
                     {archived.map((goal) => (
-                        <Link
+                        <GoalHistoryItem
                             key={goal.id}
-                            href={`${base}/goals/${goal.id}`}
-                            className="block rounded-xl border p-3"
-                        >
-                            <div className="flex items-baseline justify-between gap-2">
-                                <span className="font-semibold">
-                                    {goal.name}
-                                </span>
-                                {goal.archived_at && (
-                                    <span className="text-xs text-muted-foreground">
-                                        Archived {archivedOn(goal.archived_at)}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-                                <span>{rupiah(goal.saved)} saved</span>
-                                <span>of {rupiah(goal.target)}</span>
-                            </div>
-                        </Link>
+                            goal={goal}
+                            onSelect={openGoal}
+                        />
                     ))}
                 </div>
             )}

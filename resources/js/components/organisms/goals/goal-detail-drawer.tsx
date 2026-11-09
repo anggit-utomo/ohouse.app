@@ -40,7 +40,12 @@ import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
 import { GoalWithdrawalDrawer } from '@/components/organisms/goals/goal-withdrawal-drawer';
 import { rupiah } from '@/lib/money';
 import { cn, setIfNotNull } from '@/lib/utils';
-import type { BudgetOption, GoalDetail, GoalMovementRow } from '@/types';
+import type {
+    BudgetOption,
+    GoalArchived,
+    GoalDetail,
+    GoalMovementRow,
+} from '@/types';
 
 const OUTSIDE = 'outside';
 
@@ -48,7 +53,7 @@ type Props = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     householdId: number;
-    goal: GoalDetail | null;
+    goal: GoalDetail | GoalArchived | null;
     canEdit: boolean;
     budgets: BudgetOption[];
     today: string;
@@ -80,6 +85,17 @@ export function GoalDetailDrawer({
     const base = `/h/${householdId}`;
     const archived = goal.archived_at !== null;
     const editable = canEdit && !archived;
+    const archivedSaved = 'saved' in goal ? goal.saved : goal.balance;
+    const shownSaved = archived ? archivedSaved : goal.balance;
+    const shownPct = archived
+        ? goal.target > 0
+            ? Math.round((archivedSaved / goal.target) * 100)
+            : 0
+        : goal.pct;
+    const shownRemaining = archived
+        ? Math.max(0, goal.target - archivedSaved)
+        : goal.remaining;
+    const shownOver = archived ? archivedSaved > goal.target : goal.over;
     const pendingLabel =
         pendingMovement?.type === 'withdrawal' ? 'withdrawal' : 'contribution';
 
@@ -133,36 +149,45 @@ export function GoalDetailDrawer({
                         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-2">
                             <div className="rounded-xl border p-4">
                                 <p className="text-muted-foreground">
-                                    {goal.over ? 'Over target' : 'Saved so far'}
+                                    {archived
+                                        ? 'Final saved'
+                                        : shownOver
+                                          ? 'Over target'
+                                          : 'Saved so far'}
                                 </p>
                                 <p
                                     className={cn(
                                         'my-1 mb-3 text-3xl font-bold',
-                                        goal.over && 'text-destructive',
+                                        shownOver && 'text-destructive',
                                     )}
                                 >
-                                    {rupiah(goal.balance)}
+                                    {rupiah(shownSaved)}
                                 </p>
                                 <BudgetBar
-                                    pct={Math.min(goal.pct, 100)}
-                                    over={goal.over}
+                                    pct={Math.min(shownPct, 100)}
+                                    over={shownOver}
                                 />
                                 <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                                    <span>{goal.pct}% of target</span>
+                                    <span>{shownPct}% of target</span>
                                     <span>of {rupiah(goal.target)}</span>
                                 </div>
                             </div>
 
                             <div className="grid gap-1 text-sm">
-                                {goal.over ? (
+                                {archived ? (
+                                    <p className="text-muted-foreground">
+                                        Closed with {rupiah(archivedSaved)} of{' '}
+                                        {rupiah(goal.target)} saved.
+                                    </p>
+                                ) : shownOver ? (
                                     <p className="text-muted-foreground">
                                         That is{' '}
-                                        {rupiah(goal.balance - goal.target)}{' '}
-                                        past the target.
+                                        {rupiah(shownSaved - goal.target)} past
+                                        the target.
                                     </p>
                                 ) : (
                                     <p className="text-muted-foreground">
-                                        {rupiah(goal.remaining)} to go.
+                                        {rupiah(shownRemaining)} to go.
                                     </p>
                                 )}
                                 {goal.target_date && (
