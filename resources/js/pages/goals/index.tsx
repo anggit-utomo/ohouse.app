@@ -4,12 +4,15 @@ import { PlusIcon } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GoalDetailDrawer } from '@/components/organisms/goals/goal-detail-drawer';
 import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
 import GoalEmpty from '@/components/organisms/goals/goal-empty';
 import GoalList from '@/components/organisms/goals/goal-list';
 import { rupiah } from '@/lib/money';
 import type {
+    BudgetOption,
     GoalArchived,
+    GoalDetail,
     GoalSummary,
     HouseholdRef,
     SweepBudget,
@@ -17,10 +20,12 @@ import type {
 
 type Props = {
     household: HouseholdRef;
-    goals: GoalSummary[];
+    goals: GoalDetail[];
     archived: GoalArchived[];
     saved: number;
     sweepBudgets: SweepBudget[];
+    budgets: BudgetOption[];
+    today: string;
     canEdit: boolean;
 };
 
@@ -36,10 +41,23 @@ export default function GoalsIndex({
     archived,
     saved,
     sweepBudgets,
+    budgets,
+    today,
     canEdit,
 }: Props) {
     const base = `/h/${household.id}`;
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [selectedGoalId, setSelectedGoalId] = useState<number | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+    const selectedGoal =
+        [...goals, ...archived].find((goal) => goal.id === selectedGoalId) ??
+        null;
+
+    const openGoal = (goal: GoalSummary) => {
+        setSelectedGoalId(goal.id);
+        setIsDetailOpen(true);
+    };
 
     return (
         <>
@@ -80,7 +98,7 @@ export default function GoalsIndex({
                 />
             ) : (
                 <div className="grid gap-2">
-                    <GoalList goals={goals} base={base} />
+                    <GoalList goals={goals} base={base} onSelect={openGoal} />
                 </div>
             )}
 
@@ -117,6 +135,16 @@ export default function GoalsIndex({
                 onOpenChange={setIsDrawerOpen}
                 householdId={household.id}
                 sweepBudgets={sweepBudgets}
+            />
+
+            <GoalDetailDrawer
+                open={isDetailOpen}
+                onOpenChange={setIsDetailOpen}
+                householdId={household.id}
+                goal={selectedGoal}
+                canEdit={canEdit}
+                budgets={budgets}
+                today={today}
             />
         </>
     );

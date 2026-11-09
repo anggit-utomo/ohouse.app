@@ -11,14 +11,15 @@ export type GoalSummary = {
 
 export type GoalDetail = GoalSummary & {
     target_date: string | null;
+    archived_at: string | null;
+    movements: GoalMovementRow[];
+    savings: GoalSaving[];
+    sweepBudgetIds: number[];
+    sweepBudgets: SweepBudget[];
 };
 
-export type GoalArchived = {
-    id: number;
-    name: string;
+export type GoalArchived = GoalDetail & {
     saved: number;
-    target: number;
-    archived_at: string | null;
 };
 
 export type SweepBudget = {

@@ -37,6 +37,7 @@ class GoalController extends Controller
 
             return [
                 'target_date' => $goal->target_date?->toDateString(),
+                'archived_at' => $goal->archived_at?->toDateString(),
                 'movements' => $ledger['movements'],
                 'savings' => $ledger['savings'],
                 'sweepBudgetIds' => $goal->sweepRules->pluck('budget_id')->all(),
@@ -51,13 +52,15 @@ class GoalController extends Controller
                 ->values(),
             'archived' => $archived
                 ->map(fn (Goal $goal) => [
+                    ...$goal->row(),
                     ...$goal->archivedRow(),
-                    'sort' => $goal->sort,
                     ...$ledgerRow($goal),
                 ])
                 ->values(),
             'saved' => $goals->sum(fn (Goal $goal) => $goal->balance()),
             'sweepBudgets' => $household->unclaimedSweepBudgetOptions($sweepCandidates),
+            'budgets' => $household->budgetBalances(Periods::current($household)),
+            'today' => now()->toDateString(),
             'canEdit' => $request->user()->can('edit', $household),
         ]);
     }

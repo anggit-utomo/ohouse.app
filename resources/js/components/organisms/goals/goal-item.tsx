@@ -7,12 +7,14 @@ import type { GoalSummary } from '@/types';
 export default function GoalItem({
     goal,
     base,
+    onSelect,
 }: {
     goal: GoalSummary;
     base: string;
+    onSelect?: (goal: GoalSummary) => void;
 }) {
-    return (
-        <Link href={`${base}/goals/${goal.id}`} className="block py-1">
+    const body = (
+        <>
             <div className="mb-2 flex items-center justify-between">
                 <span className="flex items-center gap-0.5 font-semibold">
                     {goal.name}
@@ -25,6 +27,24 @@ export default function GoalItem({
                 <span>{rupiah(goal.balance)} saved</span>
                 <span>of {rupiah(goal.target)}</span>
             </div>
+        </>
+    );
+
+    if (onSelect) {
+        return (
+            <button
+                type="button"
+                className="block w-full py-1 text-left"
+                onClick={() => onSelect(goal)}
+            >
+                {body}
+            </button>
+        );
+    }
+
+    return (
+        <Link href={`${base}/goals`} className="block py-1">
+            {body}
         </Link>
     );
 }

@@ -159,6 +159,63 @@ it('offers each goal only its own and unclaimed sweep budgets', function () {
             ->where('sweepBudgets.0.id', $fun->id));
 });
 
+it('supplies budgets and today for goal drawer actions', function () {
+    $this->household->update(['period_start' => '2026-10-01']);
+
+    $budget = Budget::factory()->for($this->household)->create(['name' => 'Food']);
+    BudgetMonth::factory()->for($budget)->create([
+        'period_start' => '2026-10-01',
+        'allocated' => 750_000,
+    ]);
+
+    Goal::factory()->for($this->household)->create(['name' => 'Bali']);
+
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
+        ->assertInertia(fn (Assert $p) => $p
+            ->where('today', '2026-10-15')
+            ->has('budgets', 1)
+            ->where('budgets.0.id', $budget->id)
+            ->where('budgets.0.name', 'Food')
+            ->where('budgets.0.left', 750_000)
+            ->where('goals.0.archived_at', null));
+});
+
+it('gives archived goals the same detail shape so one drawer can host either', function () {
+    $this->household->update(['period_start' => '2026-10-01']);
+
+    $goal = Goal::factory()->for($this->household)->create([
+        'name' => 'Bali',
+        'target_amount' => 1_000_000,
+        'target_date' => '2027-06-01',
+        'sort' => 3,
+        'archived_at' => now(),
+    ]);
+
+    GoalMovement::factory()->create([
+        'goal_id' => $goal->id,
+        'household_id' => $this->household->id,
+        'user_id' => $this->owner->id,
+        'amount' => 400_000,
+        'occurred_at' => '2026-10-10 12:00:00',
+        'period_start' => '2026-10-01',
+    ]);
+
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
+        ->assertInertia(fn (Assert $p) => $p
+            ->where('archived.0.id', $goal->id)
+            ->where('archived.0.sort', 3)
+            ->where('archived.0.target_date', '2027-06-01')
+            ->where('archived.0.archived_at', '2026-10-15')
+            ->where('archived.0.balance', 400_000)
+            ->where('archived.0.target', 1_000_000)
+            ->where('archived.0.pct', 40)
+            ->where('archived.0.remaining', 600_000)
+            ->where('archived.0.over', false)
+            ->where('archived.0.saved', 400_000)
+            ->has('archived.0.movements', 1)
+            ->has('archived.0.savings', 1));
+});
+
 it('requires a name and a target amount', function () {
     $this->actingAs($this->owner)->post("{$this->url}/goals", [
         'name' => '',
