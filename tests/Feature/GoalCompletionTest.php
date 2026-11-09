@@ -4,6 +4,7 @@ use App\Models\Budget;
 use App\Models\BudgetMonth;
 use App\Models\Goal;
 use App\Models\GoalMovement;
+use App\Models\GoalSweepRule;
 use App\Models\Household;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -122,6 +123,61 @@ it('keeps completion the only path to archive and refuses edits once archived', 
     ])->assertForbidden();
 
     expect($this->goal->fresh()->name)->toBe('Japan');
+});
+
+it('flips the completed goal into the archived index ledger without actions', function () {
+    completionSaved($this->goal, $this->household, $this->owner, 600_000);
+    $food = completionBudget($this->household, 'Food', 1_000_000);
+    $this->goal->sweepRules()->create(['budget_id' => $food->budget_id]);
+    $index = "{$this->url}/goals";
+
+    $this->actingAs($this->owner)->from($index)
+        ->post("{$this->url}/goals/{$this->goal->id}/complete", [
+            'budget_id' => $food->budget_id,
+        ])->assertRedirect($index);
+
+    $this->actingAs($this->owner)->get($index)
+        ->assertInertia(fn (Assert $p) => $p
+            ->component('goals/index')
+            ->has('goals', 0)
+            ->has('archived', 1)
+            ->where('archived.0.id', $this->goal->id)
+            ->where('archived.0.archived_at', '2026-10-15')
+            ->where('archived.0.balance', 0)
+            ->where('archived.0.saved', 600_000)
+            ->where('archived.0.target', 1_000_000)
+            ->where('archived.0.sweepBudgetIds', [])
+            ->has('archived.0.movements', 2)
+            ->where('archived.0.movements.0.type', 'withdrawal')
+            ->where('archived.0.movements.0.amount', 600_000)
+            ->where('archived.0.movements.0.can_remove', false)
+            ->where('archived.0.movements.1.type', 'contribution')
+            ->where('archived.0.movements.1.can_remove', false)
+            ->where('saved', 0)
+            ->has('budgets', 1)
+            ->where('budgets.0.left', 1_600_000));
+
+    expect(GoalSweepRule::count())->toBe(0);
+});
+
+it('flips an empty completed goal into archived history without a movement', function () {
+    $index = "{$this->url}/goals";
+
+    $this->actingAs($this->owner)->from($index)
+        ->post("{$this->url}/goals/{$this->goal->id}/complete")
+        ->assertRedirect($index);
+
+    $this->actingAs($this->owner)->get($index)
+        ->assertInertia(fn (Assert $p) => $p
+            ->component('goals/index')
+            ->has('goals', 0)
+            ->has('archived', 1)
+            ->where('archived.0.id', $this->goal->id)
+            ->where('archived.0.balance', 0)
+            ->has('archived.0.movements', 0)
+            ->where('saved', 0));
+
+    expect(GoalMovement::count())->toBe(0);
 });
 
 it('lists archived goals in a separate history section with final figures', function () {

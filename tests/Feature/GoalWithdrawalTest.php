@@ -312,6 +312,19 @@ it('refuses at the writer level to remove a movement outside the goal or househo
     expect(GoalMovement::count())->toBe(2);
 });
 
+it('rejects a withdrawal from an archived goal', function () {
+    savedMoney($this->goal, $this->household, $this->owner, 500_000);
+    $this->goal->update(['archived_at' => now()]);
+
+    $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
+        'type' => 'withdrawal',
+        'amount' => 100_000,
+    ])->assertSessionHasErrors('goal');
+
+    expect(GoalMovement::count())->toBe(1)
+        ->and($this->goal->fresh()->balance())->toBe(500_000);
+});
+
 it('carries net goal money into the next period', function () {
     $this->travelTo('2026-10-29 09:00:00');
     $food = withdrawalBudget($this->household, 'Food', 1_000_000);
