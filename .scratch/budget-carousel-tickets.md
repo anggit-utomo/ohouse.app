@@ -101,6 +101,12 @@ Status: done
 Commit: 2b2926649857f90fa6151af3c3642085222d9f4c
 Depends: T4. Files: `resources/js/components/organisms/home/budget-list.tsx`. Do: `pl-4` + `[&>*:last-child]:mr-4` to fix cropped last card. VERDICT PASS, 0 fix rounds.
 
+## T7
+
+Status: done
+Commit: 00cc61f28a415ed6fb3ca566db4d258a658c0dc6
+VERDICT PASS.
+
 ---
 
-Suggested order: T1 → T2 → T3 (parallel OK) → T4 → T5 → T6.
+Suggested order: T1 → T2 → T3 (parallel OK) → T4 → T5 → T6 → T7.
