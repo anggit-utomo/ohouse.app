@@ -5,7 +5,6 @@ namespace App\Support;
 use App\Enums\GoalMovementTypeEnum;
 use App\Models\Goal;
 use App\Models\GoalMovement;
-use App\Models\Household;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -18,6 +17,10 @@ use Illuminate\Support\Collection;
 final class GoalLedger
 {
     /**
+     * Build a goal's ledger from one period collection shared by every goal.
+     * The open period must come first, as Periods::all() returns it.
+     *
+     * @param  Collection<int, Period>  $periods
      * @return array{
      *     movements: list<Row>,
      *     savings: list<array{
@@ -28,9 +31,10 @@ final class GoalLedger
      *     }>
      * }
      */
-    public static function for(Goal $goal, Household $household): array
+    public static function for(Goal $goal, Collection $periods): array
     {
-        $periods = Periods::all($household)->keyBy(fn (Period $period) => $period->key());
+        $periodsByKey = $periods->keyBy(fn (Period $period) => $period->key());
+        $openKey = $periodsByKey->first()?->key();
         $goalOpen = $goal->archived_at === null;
 
         $movements = $goal->movements
@@ -41,7 +45,7 @@ final class GoalLedger
             ->groupBy(fn (GoalMovement $movement) => $movement->period_start->toDateString())
             ->map(fn (Collection $group, string $key) => [
                 'period_start' => $key,
-                'label' => $periods->get($key)?->title()
+                'label' => $periodsByKey->get($key)?->title()
                     ?? CarbonImmutable::parse($key)->format('F'),
                 'saved' => $group
                     ->filter(fn (GoalMovement $movement) => $movement->type === GoalMovementTypeEnum::CONTRIBUTION)
@@ -57,7 +61,9 @@ final class GoalLedger
         return [
             'movements' => array_values($movements
                 ->map(fn (GoalMovement $movement) => $movement->row(
-                    $goalOpen && $movement->canBeRemoved($household),
+                    $goalOpen
+                        && $openKey !== null
+                        && $movement->period_start->toDateString() === $openKey,
                 ))
                 ->all()),
             'savings' => array_values($savings),

@@ -86,6 +86,57 @@ class Household extends Model
     }
 
     /**
+     * Active repeating budgets that may become a Sweep source, each with the
+     * goal that already claimed it. One query for every goal's picker.
+     *
+     * @return Collection<int, array{id: int, name: string, goal_id: int|null}>
+     */
+    public function sweepBudgetCandidates(): Collection
+    {
+        return $this->budgets()->active()
+            ->where('repeat_monthly', true)
+            ->with('sweepRule:id,budget_id,goal_id')
+            ->orderBy('sort')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (Budget $budget) => [
+                'id' => $budget->id,
+                'name' => $budget->name,
+                'goal_id' => $budget->sweepRule?->goal_id,
+            ])
+            ->values();
+    }
+
+    /**
+     * A goal's Sweep picker options, excluding budgets claimed by another goal
+     * while keeping its own. Uses the collection from sweepBudgetCandidates().
+     *
+     * @param  Collection<int, array{id: int, name: string, goal_id: int|null}>  $candidates
+     * @return list<array{id: int, name: string}>
+     */
+    public function sweepBudgetOptionsFor(Goal $goal, Collection $candidates): array
+    {
+        return array_values($candidates
+            ->filter(fn (array $budget) => $budget['goal_id'] === null || $budget['goal_id'] === $goal->id)
+            ->map(fn (array $budget) => ['id' => $budget['id'], 'name' => $budget['name']])
+            ->all());
+    }
+
+    /**
+     * Sweep budgets nobody claimed, for creating a new goal.
+     *
+     * @param  Collection<int, array{id: int, name: string, goal_id: int|null}>  $candidates
+     * @return list<array{id: int, name: string}>
+     */
+    public function unclaimedSweepBudgetOptions(Collection $candidates): array
+    {
+        return array_values($candidates
+            ->filter(fn (array $budget) => $budget['goal_id'] === null)
+            ->map(fn (array $budget) => ['id' => $budget['id'], 'name' => $budget['name']])
+            ->all());
+    }
+
+    /**
      * Active repeating budgets that may still become a Goal's Sweep source,
      * excluding the ones another Goal already claimed.
      *
@@ -93,21 +144,13 @@ class Household extends Model
      */
     public function sweepBudgetOptions(?Goal $goal = null): Collection
     {
-        return $this->budgets()->active()
-            ->where('repeat_monthly', true)
-            ->whereDoesntHave('sweepRule', function ($query) use ($goal) {
-                if ($goal instanceof Goal) {
-                    $query->where('goal_id', '!=', $goal->id);
-                }
-            })
-            ->orderBy('sort')
-            ->orderBy('id')
-            ->get()
-            ->map(fn (Budget $budget) => [
-                'id' => $budget->id,
-                'name' => $budget->name,
-            ])
-            ->values();
+        $candidates = $this->sweepBudgetCandidates();
+
+        return collect(
+            $goal instanceof Goal
+                ? $this->sweepBudgetOptionsFor($goal, $candidates)
+                : $this->unclaimedSweepBudgetOptions($candidates)
+        );
     }
 
     /**

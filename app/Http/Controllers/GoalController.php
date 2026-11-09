@@ -19,20 +19,45 @@ class GoalController extends Controller
 {
     public function index(Request $request, Household $household): Response
     {
-        $goals = $household->activeGoals();
+        $goals = $household->goals()->active()->ordered()
+            ->with(['movements.user', 'sweepRules'])
+            ->get();
 
         $archived = $household->goals()
             ->whereNotNull('archived_at')
             ->ordered()
-            ->with('movements')
+            ->with(['movements.user', 'sweepRules'])
             ->get();
+
+        $periods = Periods::all($household);
+        $sweepCandidates = $household->sweepBudgetCandidates();
+
+        $ledgerRow = function (Goal $goal) use ($household, $periods, $sweepCandidates): array {
+            $ledger = GoalLedger::for($goal, $periods);
+
+            return [
+                'target_date' => $goal->target_date?->toDateString(),
+                'movements' => $ledger['movements'],
+                'savings' => $ledger['savings'],
+                'sweepBudgetIds' => $goal->sweepRules->pluck('budget_id')->all(),
+                'sweepBudgets' => $household->sweepBudgetOptionsFor($goal, $sweepCandidates),
+            ];
+        };
 
         return Inertia::render('goals/index', [
             'household' => ['id' => $household->id],
-            'goals' => $goals->map(fn (Goal $goal) => $goal->row())->values(),
-            'archived' => $archived->map(fn (Goal $goal) => $goal->archivedRow())->values(),
+            'goals' => $goals
+                ->map(fn (Goal $goal) => [...$goal->row(), ...$ledgerRow($goal)])
+                ->values(),
+            'archived' => $archived
+                ->map(fn (Goal $goal) => [
+                    ...$goal->archivedRow(),
+                    'sort' => $goal->sort,
+                    ...$ledgerRow($goal),
+                ])
+                ->values(),
             'saved' => $goals->sum(fn (Goal $goal) => $goal->balance()),
-            'sweepBudgets' => $household->sweepBudgetOptions()->all(),
+            'sweepBudgets' => $household->unclaimedSweepBudgetOptions($sweepCandidates),
             'canEdit' => $request->user()->can('edit', $household),
         ]);
     }
@@ -50,7 +75,7 @@ class GoalController extends Controller
     public function show(Request $request, Household $household, Goal $goal): Response
     {
         $goal->load(['movements.user']);
-        $ledger = GoalLedger::for($goal, $household);
+        $ledger = GoalLedger::for($goal, Periods::all($household));
         $archived = $goal->archived_at !== null;
 
         return Inertia::render('goals/show', [
