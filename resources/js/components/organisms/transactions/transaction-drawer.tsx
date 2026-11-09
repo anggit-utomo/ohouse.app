@@ -63,19 +63,18 @@ export function TransactionDrawer({
         }
     }, [open, defaults]);
 
-    const forceClose = () => {
+    const closeDrawer = () => {
         setIsAlertOpen(false);
         onOpenChange(false);
         form.reset();
         form.clearErrors();
-        onSuccess?.();
     };
 
     const handleAttemptClose = () => {
         if (form.isDirty) {
             setIsAlertOpen(true);
         } else {
-            forceClose();
+            closeDrawer();
         }
     };
 
@@ -97,12 +96,18 @@ export function TransactionDrawer({
         if (mode === 'edit' && transactionId) {
             form.put(`${base}/${transactionId}`, {
                 replace: true,
-                onSuccess: () => forceClose(),
+                onSuccess: () => {
+                    closeDrawer();
+                    onSuccess?.();
+                },
             });
         } else {
             form.post(base, {
                 replace: true,
-                onSuccess: () => forceClose(),
+                onSuccess: () => {
+                    closeDrawer();
+                    onSuccess?.();
+                },
             });
         }
     };
@@ -192,7 +197,7 @@ export function TransactionDrawer({
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Continue Editing</AlertDialogCancel>
-                        <AlertDialogAction onClick={forceClose}>
+                        <AlertDialogAction onClick={closeDrawer}>
                             Discard
                         </AlertDialogAction>
                     </AlertDialogFooter>
