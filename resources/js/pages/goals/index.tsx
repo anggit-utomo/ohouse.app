@@ -113,7 +113,6 @@ export default function GoalsIndex({
             )}
 
             <GoalDrawer
-                key="new"
                 open={isDrawerOpen}
                 onOpenChange={setIsDrawerOpen}
                 householdId={household.id}

@@ -207,7 +207,6 @@ export default function Home({
             />
 
             <GoalDrawer
-                key="new"
                 open={isGoalDrawerOpen}
                 onOpenChange={setIsGoalDrawerOpen}
                 householdId={household.id}
