@@ -1,0 +1,12 @@
+# T5 spacing proposal for resources/js/pages/home.tsx
+# Result: NO CHANGE.
+#
+# The Budgets heading (mt-2 = 8px + layout gap-3 = 12px = 20px above),
+# the T4 carousel row (12px below the heading; pb-2 = 8px + gap-3 = 12px
+# = 20px above Goals), and the Goals heading (12px below) already share
+# an even 20/12 rhythm. The -mx-4 bleed exactly cancels AppLayout p-4 and
+# the row's px-4 restores alignment, so no margin tweak is required.
+#
+# See .scratch/T5-home-check.md for the full audit and manual checklist.
+#
+# --- diff (empty) ---
