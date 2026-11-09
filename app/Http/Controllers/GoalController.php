@@ -75,29 +75,6 @@ class GoalController extends Controller
         return back()->with('success', 'Goal created.');
     }
 
-    public function show(Request $request, Household $household, Goal $goal): Response
-    {
-        $goal->load(['movements.user']);
-        $ledger = GoalLedger::for($goal, Periods::all($household));
-        $archived = $goal->archived_at !== null;
-
-        return Inertia::render('goals/show', [
-            'household' => ['id' => $household->id],
-            'goal' => [
-                ...$goal->row(),
-                'target_date' => $goal->target_date?->toDateString(),
-            ],
-            'movements' => $ledger['movements'],
-            'savings' => $ledger['savings'],
-            'budgets' => $household->budgetBalances(Periods::current($household)),
-            'sweepBudgets' => $household->sweepBudgetOptions($goal)->all(),
-            'sweepBudgetIds' => $goal->sweepRules()->pluck('budget_id')->all(),
-            'today' => now()->toDateString(),
-            'archived' => $archived,
-            'canEdit' => ! $archived && $request->user()->can('edit', $household),
-        ]);
-    }
-
     public function update(
         SaveGoalRequest $request,
         Household $household,

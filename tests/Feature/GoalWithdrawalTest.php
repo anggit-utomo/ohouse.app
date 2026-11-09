@@ -80,14 +80,14 @@ it('takes money out to outside the budget', function () {
         ->and($withdrawal->note)->toBe('Deposit')
         ->and($withdrawal->budget_month_id)->toBeNull();
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('goal.balance', 300_000)
-            ->where('movements.0.type', 'withdrawal')
-            ->where('movements.0.note', 'Deposit')
-            ->where('movements.0.signed', -200_000)
-            ->where('movements.0.user', $this->owner->name)
-            ->where('movements.0.can_remove', true));
+            ->where('goals.0.balance', 300_000)
+            ->where('goals.0.movements.0.type', 'withdrawal')
+            ->where('goals.0.movements.0.note', 'Deposit')
+            ->where('goals.0.movements.0.signed', -200_000)
+            ->where('goals.0.movements.0.user', $this->owner->name)
+            ->where('goals.0.movements.0.can_remove', true));
 
     withdrawalBudget($this->household, 'Food', 1_000_000);
 
@@ -142,8 +142,8 @@ it('accepts a withdrawal for exactly what is saved', function () {
         'amount' => 500_000,
     ])->assertRedirect();
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
-        ->assertInertia(fn (Assert $p) => $p->where('goal.balance', 0));
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
+        ->assertInertia(fn (Assert $p) => $p->where('goals.0.balance', 0));
 });
 
 it('rejects a withdrawal in a closed period', function () {
@@ -260,7 +260,7 @@ it('lets viewers read but not withdraw or remove', function () {
     $viewer = User::factory()->create();
     $this->household->members()->attach($viewer->id, ['role' => 'viewer']);
 
-    $this->actingAs($viewer)->get("{$this->url}/goals/{$this->goal->id}")->assertOk();
+    $this->actingAs($viewer)->get("{$this->url}/goals")->assertOk();
 
     $this->actingAs($viewer)->post("{$this->url}/goals/{$this->goal->id}/movements", [
         'type' => 'withdrawal',

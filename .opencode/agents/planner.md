@@ -7,6 +7,7 @@ permission:
         '*': deny
         'docs/**': allow
         'tickets/**': allow
+        '.scratch/**': allow
     bash:
         '*': allow
         'rm *': deny

@@ -32,4 +32,4 @@ For each unblocked ticket, in dependency order:
     - Re-run `reviewer` on the same BASE..HEAD.
     - Maximum 2 fix rounds, then stop and ask me.
 
-When all tickets are done, or you hit a blocker, report and stop.
+When all tickets are done, or you hit a blocker, report and stop. And add Commit IDs to each done ticket and change the status to done.

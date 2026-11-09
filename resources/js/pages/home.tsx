@@ -11,7 +11,6 @@ import BudgetList from '@/components/organisms/home/budget-list';
 import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
 import GoalEmpty from '@/components/organisms/goals/goal-empty';
 import GoalList from '@/components/organisms/goals/goal-list';
-import { rupiah } from '@/lib/money';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
 import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
 import type {
@@ -32,7 +31,6 @@ type Props = {
     banner: { days: number } | null;
     budgets: BudgetSummary[];
     goals: GoalSummary[];
-    saved: number;
     sweepBudgets: SweepBudget[];
     members: MemberOption[];
     canEdit: boolean;
@@ -48,7 +46,6 @@ export default function Home({
     banner,
     budgets,
     goals,
-    saved,
     sweepBudgets,
     members,
     canEdit,
@@ -159,9 +156,12 @@ export default function Home({
             <div className="mt-2 flex items-center justify-between">
                 <h2 className="text-base font-semibold">Goals</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                        {rupiah(saved)} saved
-                    </span>
+                    <Link
+                        href={`${base}/goals`}
+                        className="text-xs font-medium"
+                    >
+                        View all
+                    </Link>
                     {canEdit && (
                         <Button
                             size="sm"

@@ -43,7 +43,7 @@ export default function GoalItem({
     }
 
     return (
-        <Link href={`${base}/goals/${goal.id}`} className="block py-1">
+        <Link href={`${base}/goals`} className="block py-1">
             {body}
         </Link>
     );

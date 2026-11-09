@@ -91,7 +91,6 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
             ->group(function () {
                 Route::get('/', 'index')->name('index');
                 Route::post('/', 'store')->name('store');
-                Route::get('/{goal}', 'show')->name('show');
                 Route::patch('/{goal}', 'update')->name('update');
                 Route::post('/{goal}/complete', 'complete')->name('complete');
             });

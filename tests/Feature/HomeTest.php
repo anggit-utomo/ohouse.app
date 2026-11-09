@@ -3,6 +3,7 @@
 use App\Enums\TransactionTypeEnum;
 use App\Models\Budget;
 use App\Models\BudgetMonth;
+use App\Models\Goal;
 use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\User;
@@ -32,6 +33,23 @@ function homeBudget(
 
     return $month;
 }
+
+it('shows goals on Home without a saved total and keeps sweep options for creation', function () {
+    $food = homeBudget($this->household, 'Food', 1_000_000);
+    Goal::factory()->for($this->household)->create([
+        'name' => 'Bali',
+        'target_amount' => 1_000_000,
+    ]);
+
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
+        ->component('home')
+        ->has('goals', 1)
+        ->where('goals.0.name', 'Bali')
+        ->missing('saved')
+        ->where('sweepBudgets.0.id', $food->budget_id)
+        ->where('sweepBudgets.0.name', 'Food')
+        ->where('defaults.type', 'expense'));
+});
 
 it('shows the numbers from the Home screen', function () {
     foreach ([['Food', 2_000_000, 1_640_000], ['Internet', 400_000, 400_000], ['Kitchen items', 800_000, 530_000], ['Gasoline', 700_000, 590_000], ['Transport', 600_000, 710_000]] as $i => [$n, $a, $s]) {

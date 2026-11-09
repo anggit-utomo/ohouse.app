@@ -66,11 +66,13 @@ it('empties a goal through one final withdrawal outside the budget and archives 
         ->and($withdrawal->period_start->toDateString())->toBe('2026-10-01')
         ->and($goal->balance())->toBe(0);
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('archived', true)
-            ->where('goal.balance', 0)
-            ->has('movements', 2));
+            ->has('goals', 0)
+            ->has('archived', 1)
+            ->where('archived.0.archived_at', '2026-10-15')
+            ->where('archived.0.balance', 0)
+            ->has('archived.0.movements', 2));
 });
 
 it('returns the full balance to a budget in the open period', function () {
@@ -209,7 +211,8 @@ it('lists archived goals in a separate history section with final figures', func
         ->assertInertia(fn (Assert $p) => $p
             ->has('goals', 1)
             ->where('goals.0.name', 'Laptop')
-            ->where('saved', 200_000));
+            ->where('goals.0.balance', 200_000)
+            ->missing('saved'));
 });
 
 it('renders an archived goal read-only and accepts no movements or undo', function () {
@@ -219,13 +222,13 @@ it('renders an archived goal read-only and accepts no movements or undo', functi
         ->post("{$this->url}/goals/{$this->goal->id}/complete")
         ->assertRedirect();
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('archived', true)
-            ->where('canEdit', false)
-            ->has('movements', 2)
-            ->where('movements.0.can_remove', false)
-            ->where('movements.1.can_remove', false));
+            ->has('archived', 1)
+            ->where('archived.0.archived_at', '2026-10-15')
+            ->has('archived.0.movements', 2)
+            ->where('archived.0.movements.0.can_remove', false)
+            ->where('archived.0.movements.1.can_remove', false));
 
     $this->actingAs($this->owner)->post("{$this->url}/goals/{$this->goal->id}/movements", [
         'type' => 'contribution',
@@ -256,10 +259,10 @@ it('never deletes a goal and keeps its ledger after archive', function () {
         ->delete("{$this->url}/goals/{$this->goal->id}")
         ->assertMethodNotAllowed();
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('archived', true)
-            ->has('movements', 2));
+            ->has('archived', 1)
+            ->has('archived.0.movements', 2));
 });
 
 it('lets a viewer read archived history but not complete a goal', function () {
@@ -288,9 +291,6 @@ it('lets a viewer read archived history but not complete a goal', function () {
             ->has('archived.0.movements', 2)
             ->where('archived.0.movements.0.can_remove', false)
             ->has('archived.0.savings'));
-    $this->actingAs($viewer)->get("{$this->url}/goals/{$this->goal->id}")
-        ->assertOk()
-        ->assertInertia(fn (Assert $p) => $p->where('archived', true));
 
     $this->actingAs($viewer)
         ->post("{$this->url}/goals/{$active->id}/complete")
@@ -309,7 +309,6 @@ it('hides archived goals from an outsider', function () {
     $outsider = User::factory()->create();
 
     $this->actingAs($outsider)->get("{$this->url}/goals")->assertNotFound();
-    $this->actingAs($outsider)->get("{$this->url}/goals/{$this->goal->id}")->assertNotFound();
     $this->actingAs($outsider)
         ->post("{$this->url}/goals/{$this->goal->id}/complete")
         ->assertNotFound();

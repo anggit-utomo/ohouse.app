@@ -93,7 +93,6 @@ class HomeController extends Controller
             'banner' => $canEdit && $days >= 25 ? ['days' => $days] : null,
             'budgets' => $rows,
             'goals' => $goals->map(fn (Goal $g) => $g->row())->values(),
-            'saved' => $goals->sum(fn (Goal $g) => $g->balance()),
             'sweepBudgets' => $household->sweepBudgetOptions()->all(),
             'members' => $household->members()
                 ->get(['users.id', 'users.name'])

@@ -66,21 +66,21 @@ it('adds money from outside the budget and shows it in the ledger', function () 
         ->and($movement->user_id)->toBe($this->owner->id)
         ->and($movement->period_start->toDateString())->toBe('2026-10-01');
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('goal.balance', 250_000)
-            ->where('goal.pct', 25)
-            ->where('savings.0.label', 'October')
-            ->where('savings.0.saved', 250_000)
-            ->has('movements', 1)
-            ->where('movements.0.note', 'Bonus')
-            ->where('movements.0.user', $this->owner->name)
-            ->where('movements.0.signed', 250_000));
+            ->where('goals.0.balance', 250_000)
+            ->where('goals.0.pct', 25)
+            ->where('goals.0.savings.0.label', 'October')
+            ->where('goals.0.savings.0.saved', 250_000)
+            ->has('goals.0.movements', 1)
+            ->where('goals.0.movements.0.note', 'Bonus')
+            ->where('goals.0.movements.0.user', $this->owner->name)
+            ->where('goals.0.movements.0.signed', 250_000));
 
     $this->actingAs($this->owner)->get($this->url)
         ->assertInertia(fn (Assert $p) => $p
             ->where('goals.0.balance', 250_000)
-            ->where('saved', 250_000));
+            ->missing('saved'));
 });
 
 it('leaves every budget untouched', function () {
@@ -113,12 +113,12 @@ it('shows progress beyond the target', function () {
         'amount' => 150_000,
     ])->assertRedirect();
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('goal.balance', 150_000)
-            ->where('goal.pct', 150)
-            ->where('goal.remaining', 0)
-            ->where('goal.over', true));
+            ->where('goals.0.balance', 150_000)
+            ->where('goals.0.pct', 150)
+            ->where('goals.0.remaining', 0)
+            ->where('goals.0.over', true));
 });
 
 it('lists movements newest first', function () {
@@ -130,10 +130,10 @@ it('lists movements newest first', function () {
         ])->assertRedirect();
     }
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('movements.0.amount', 75_000)
-            ->where('movements.1.amount', 100_000));
+            ->where('goals.0.movements.0.amount', 75_000)
+            ->where('goals.0.movements.1.amount', 100_000));
 });
 
 it('keeps savings totals for closed periods', function () {
@@ -153,14 +153,14 @@ it('keeps savings totals for closed periods', function () {
         'amount' => 250_000,
     ])->assertRedirect();
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('savings.0.label', 'October')
-            ->where('savings.0.saved', 250_000)
-            ->where('savings.1.label', 'September')
-            ->where('savings.1.saved', 300_000)
-            ->where('movements.0.can_remove', true)
-            ->where('movements.1.can_remove', false));
+            ->where('goals.0.savings.0.label', 'October')
+            ->where('goals.0.savings.0.saved', 250_000)
+            ->where('goals.0.savings.1.label', 'September')
+            ->where('goals.0.savings.1.saved', 300_000)
+            ->where('goals.0.movements.0.can_remove', true)
+            ->where('goals.0.movements.1.can_remove', false));
 });
 
 it('rejects an amount of zero or less', function () {
@@ -200,10 +200,10 @@ it('attributes a contribution to its period-start, not its calendar month', func
 
     expect(GoalMovement::sole()->period_start->toDateString())->toBe('2026-10-27');
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('savings.0.period_start', '2026-10-27')
-            ->where('savings.0.label', 'October'));
+            ->where('goals.0.savings.0.period_start', '2026-10-27')
+            ->where('goals.0.savings.0.label', 'October'));
 });
 
 it('keeps a movement when its budget month is deleted', function () {
@@ -226,10 +226,10 @@ it('keeps a movement when its budget month is deleted', function () {
     expect($movement->fresh()->budget_month_id)->toBeNull()
         ->and($movement->fresh()->amount)->toBe(100_000);
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->has('movements', 1)
-            ->where('goal.balance', 100_000));
+            ->has('goals.0.movements', 1)
+            ->where('goals.0.balance', 100_000));
 });
 
 it('rejects a contribution to an archived goal', function () {
@@ -247,7 +247,7 @@ it('lets viewers read but not add money', function () {
     $viewer = User::factory()->create();
     $this->household->members()->attach($viewer->id, ['role' => 'viewer']);
 
-    $this->actingAs($viewer)->get("{$this->url}/goals/{$this->goal->id}")->assertOk();
+    $this->actingAs($viewer)->get("{$this->url}/goals")->assertOk();
 
     $this->actingAs($viewer)->post("{$this->url}/goals/{$this->goal->id}/movements", [
         'type' => 'contribution',
@@ -289,8 +289,8 @@ it('moves money out of a budget without calling it spending', function () {
         ->where('budgets.0.available', 1_000_000)
         ->where('budgets.0.pct', 0));
 
-    $this->actingAs($this->owner)->get("{$this->url}/goals/{$this->goal->id}")
-        ->assertInertia(fn (Assert $p) => $p->where('goal.balance', 300_000));
+    $this->actingAs($this->owner)->get("{$this->url}/goals")
+        ->assertInertia(fn (Assert $p) => $p->where('goals.0.balance', 300_000));
 
     $this->actingAs($this->owner)->get("{$this->url}/report")
         ->assertInertia(fn (Assert $p) => $p

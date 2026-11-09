@@ -183,11 +183,11 @@ it('locks a sweep and allows recovery only by a withdrawal in the new period', f
 
     expect(GoalMovement::count())->toBe(1);
 
-    $this->actingAs($this->owner)->get("{$this->base}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->base}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('movements.0.can_remove', false)
-            ->where('savings.0.period_start', '2026-10-27')
-            ->where('savings.0.saved', 360_000));
+            ->where('goals.0.movements.0.can_remove', false)
+            ->where('goals.0.savings.0.period_start', '2026-10-27')
+            ->where('goals.0.savings.0.saved', 360_000));
 
     $this->actingAs($this->owner)->post("{$this->base}/goals/{$this->goal->id}/movements", [
         'type' => 'withdrawal',
@@ -209,12 +209,12 @@ it('moves the full leftover even when it overshoots the target', function () {
         'decisions' => sweepChoices([$food]),
     ])->assertRedirect();
 
-    $this->actingAs($this->owner)->get("{$this->base}/goals/{$this->goal->id}")
+    $this->actingAs($this->owner)->get("{$this->base}/goals")
         ->assertInertia(fn (Assert $p) => $p
-            ->where('goal.balance', 360_000)
-            ->where('goal.pct', 360)
-            ->where('goal.over', true)
-            ->where('goal.remaining', 0));
+            ->where('goals.0.balance', 360_000)
+            ->where('goals.0.pct', 360)
+            ->where('goals.0.over', true)
+            ->where('goals.0.remaining', 0));
 
     expect(GoalMovement::sole()->amount)->toBe(360_000);
 });
@@ -291,7 +291,7 @@ it('lets only members with edit rights manage sweep rules', function () {
         'sweep_budget_ids' => [$food->budget_id],
     ])->assertForbidden();
 
-    $this->actingAs($viewer)->get("{$this->base}/goals/{$this->goal->id}")
+    $this->actingAs($viewer)->get("{$this->base}/goals")
         ->assertOk()
         ->assertInertia(fn (Assert $p) => $p->where('canEdit', false));
 
