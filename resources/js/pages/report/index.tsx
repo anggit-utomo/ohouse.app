@@ -9,9 +9,16 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+    type ChartConfig,
+} from '@/components/ui/chart';
 import { rupiah } from '@/lib/money';
 import { BottomNav } from '@/components/bottom-nav';
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+import { Bar, BarChart, Cell, XAxis } from 'recharts';
 import HeadTitle from '@/components/head-title';
 import type { HouseholdRef, MonthOption } from '@/types';
 
@@ -71,6 +78,10 @@ const chartColors = [
     'var(--chart-5)',
 ];
 
+const chartConfig = {
+    amount: { label: 'Spent', color: 'var(--primary)' },
+} satisfies ChartConfig;
+
 export default function Report({
     household,
     month,
@@ -89,7 +100,8 @@ export default function Report({
     const base = `/h/${household.id}`;
     const [hoveredBudget, setHoveredBudget] = useState<BudgetItem | null>(null);
 
-    const maxDailySpent = Math.max(...dailySpending.map((d) => d.amount), 1);
+    const recentDays = dailySpending.slice(-10);
+    const maxRecent = Math.max(...recentDays.map((d) => d.amount), 0);
     const totalBudgetSpent = budgets.reduce((sum, b) => sum + b.spent, 0) || 1;
 
     // Dynamic Donut SVG rendering using theme OKLCH chart tokens
@@ -173,10 +185,11 @@ export default function Report({
                                 </span>
                                 {change !== null && previous && (
                                     <div
-                                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${change <= 0
+                                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                            change <= 0
                                                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                                                 : 'bg-destructive/10 text-destructive'
-                                            }`}
+                                        }`}
                                     >
                                         <span>
                                             {change <= 0 ? '↓' : '↑'}{' '}
@@ -198,46 +211,68 @@ export default function Report({
                             )}
 
                             {/* Daily Mini Bar Chart */}
-                            {dailySpending.length > 0 && (
+                            {recentDays.length > 0 && maxRecent > 0 && (
                                 <div className="mt-4">
-                                    <div className="flex h-14 items-end justify-between gap-1 px-1">
-                                        {dailySpending.map((day, idx) => {
-                                            const heightPct = Math.max(
-                                                (day.amount / maxDailySpent) *
-                                                100,
-                                                8,
-                                            );
-                                            const isHighest =
-                                                day.amount === maxDailySpent;
-                                            return (
-                                                <div
-                                                    key={idx}
-                                                    className="group relative flex flex-1 flex-col items-center"
-                                                >
-                                                    <div
-                                                        className={`w-full rounded-sm transition-all ${isHighest
-                                                                ? 'bg-primary'
-                                                                : 'bg-muted group-hover:bg-primary/50'
-                                                            }`}
-                                                        style={{
-                                                            height: `${heightPct}%`,
-                                                        }}
-                                                        title={`${day.label}: ${rupiah(day.amount)}`}
+                                    <ChartContainer
+                                        config={chartConfig}
+                                        className="min-h-[140px] w-full"
+                                    >
+                                        <BarChart
+                                            accessibilityLayer
+                                            data={recentDays}
+                                            margin={{
+                                                left: 0,
+                                                right: 0,
+                                                top: 4,
+                                                bottom: 0,
+                                            }}
+                                        >
+                                            <XAxis dataKey="label" hide />
+                                            <ChartTooltip
+                                                content={
+                                                    <ChartTooltipContent
+                                                        formatter={(value) =>
+                                                            rupiah(
+                                                                Number(value),
+                                                            )
+                                                        }
                                                     />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                                }
+                                            />
+                                            <Bar
+                                                dataKey="amount"
+                                                fill="var(--color-amount)"
+                                                radius={4}
+                                            >
+                                                {recentDays.map((day, idx) => (
+                                                    <Cell
+                                                        key={idx}
+                                                        fill={
+                                                            day.amount > 0 &&
+                                                            day.amount ===
+                                                                maxRecent
+                                                                ? 'var(--primary)'
+                                                                : 'var(--muted)'
+                                                        }
+                                                    />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ChartContainer>
                                     <div className="mt-2 flex items-center justify-between px-0.5 text-[11px] font-medium text-muted-foreground">
-                                        <span>
-                                            {dailySpending[0]?.label || 'Start'}
-                                        </span>
+                                        <span>{recentDays[0]?.label}</span>
                                         {busiestDay && (
                                             <span>
                                                 Busiest day · {busiestDay}
                                             </span>
                                         )}
-                                        <span>Today</span>
+                                        <span>
+                                            {
+                                                recentDays[
+                                                    recentDays.length - 1
+                                                ]?.label
+                                            }
+                                        </span>
                                     </div>
                                 </div>
                             )}
@@ -283,8 +318,8 @@ export default function Report({
                                                     style={{
                                                         backgroundColor:
                                                             chartColors[
-                                                            i %
-                                                            chartColors.length
+                                                                i %
+                                                                    chartColors.length
                                                             ],
                                                     }}
                                                 />
@@ -302,27 +337,28 @@ export default function Report({
                                                 </span>
                                                 {b.changePct != null && (
                                                     <div
-                                                        className={`flex w-12 items-center justify-end text-xs font-semibold ${(b.changePct ?? 0) >
-                                                                0
+                                                        className={`flex w-12 items-center justify-end text-xs font-semibold ${
+                                                            (b.changePct ?? 0) >
+                                                            0
                                                                 ? 'text-destructive'
                                                                 : (b.changePct ??
-                                                                    0) < 0
-                                                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                                                    : 'text-muted-foreground'
-                                                            }`}
+                                                                        0) < 0
+                                                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                                                  : 'text-muted-foreground'
+                                                        }`}
                                                     >
                                                         {(b.changePct ?? 0) >
                                                             0 && (
-                                                                <ArrowUpRight className="mr-0.5 size-3.5" />
-                                                            )}
+                                                            <ArrowUpRight className="mr-0.5 size-3.5" />
+                                                        )}
                                                         {(b.changePct ?? 0) <
                                                             0 && (
-                                                                <ArrowDownRight className="mr-0.5 size-3.5" />
-                                                            )}
+                                                            <ArrowDownRight className="mr-0.5 size-3.5" />
+                                                        )}
                                                         {(b.changePct ?? 0) ===
                                                             0 && (
-                                                                <Minus className="mr-0.5 size-3" />
-                                                            )}
+                                                            <Minus className="mr-0.5 size-3" />
+                                                        )}
                                                         {Math.abs(
                                                             b.changePct ?? 0,
                                                         )}
@@ -391,7 +427,7 @@ export default function Report({
                             <h2 className="px-1 text-base font-bold text-foreground">
                                 You and your partner
                             </h2>
-                            <div className="grid gap-3 grid-cols-2">
+                            <div className="grid grid-cols-2 gap-3">
                                 {people.map((p) => (
                                     <Card key={p.id}>
                                         <CardContent>
