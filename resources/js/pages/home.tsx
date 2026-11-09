@@ -128,6 +128,7 @@ export default function Home({
                             <Button
                                 size="sm"
                                 variant="outline"
+                                nativeButton={false}
                                 render={
                                     <Link
                                         href={`${base}/budgets`}
