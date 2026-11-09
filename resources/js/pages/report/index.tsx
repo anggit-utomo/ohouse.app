@@ -173,11 +173,10 @@ export default function Report({
                                 </span>
                                 {change !== null && previous && (
                                     <div
-                                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                            change <= 0
+                                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${change <= 0
                                                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                                                 : 'bg-destructive/10 text-destructive'
-                                        }`}
+                                            }`}
                                     >
                                         <span>
                                             {change <= 0 ? '↓' : '↑'}{' '}
@@ -205,7 +204,7 @@ export default function Report({
                                         {dailySpending.map((day, idx) => {
                                             const heightPct = Math.max(
                                                 (day.amount / maxDailySpent) *
-                                                    100,
+                                                100,
                                                 8,
                                             );
                                             const isHighest =
@@ -216,11 +215,10 @@ export default function Report({
                                                     className="group relative flex flex-1 flex-col items-center"
                                                 >
                                                     <div
-                                                        className={`w-full rounded-sm transition-all ${
-                                                            isHighest
+                                                        className={`w-full rounded-sm transition-all ${isHighest
                                                                 ? 'bg-primary'
                                                                 : 'bg-muted group-hover:bg-primary/50'
-                                                        }`}
+                                                            }`}
                                                         style={{
                                                             height: `${heightPct}%`,
                                                         }}
@@ -285,8 +283,8 @@ export default function Report({
                                                     style={{
                                                         backgroundColor:
                                                             chartColors[
-                                                                i %
-                                                                    chartColors.length
+                                                            i %
+                                                            chartColors.length
                                                             ],
                                                     }}
                                                 />
@@ -304,28 +302,27 @@ export default function Report({
                                                 </span>
                                                 {b.changePct != null && (
                                                     <div
-                                                        className={`flex w-12 items-center justify-end text-xs font-semibold ${
-                                                            (b.changePct ?? 0) >
-                                                            0
+                                                        className={`flex w-12 items-center justify-end text-xs font-semibold ${(b.changePct ?? 0) >
+                                                                0
                                                                 ? 'text-destructive'
                                                                 : (b.changePct ??
-                                                                        0) < 0
-                                                                  ? 'text-emerald-600 dark:text-emerald-400'
-                                                                  : 'text-muted-foreground'
-                                                        }`}
+                                                                    0) < 0
+                                                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                                                    : 'text-muted-foreground'
+                                                            }`}
                                                     >
                                                         {(b.changePct ?? 0) >
                                                             0 && (
-                                                            <ArrowUpRight className="mr-0.5 size-3.5" />
-                                                        )}
+                                                                <ArrowUpRight className="mr-0.5 size-3.5" />
+                                                            )}
                                                         {(b.changePct ?? 0) <
                                                             0 && (
-                                                            <ArrowDownRight className="mr-0.5 size-3.5" />
-                                                        )}
+                                                                <ArrowDownRight className="mr-0.5 size-3.5" />
+                                                            )}
                                                         {(b.changePct ?? 0) ===
                                                             0 && (
-                                                            <Minus className="mr-0.5 size-3" />
-                                                        )}
+                                                                <Minus className="mr-0.5 size-3" />
+                                                            )}
                                                         {Math.abs(
                                                             b.changePct ?? 0,
                                                         )}
@@ -394,7 +391,7 @@ export default function Report({
                             <h2 className="px-1 text-base font-bold text-foreground">
                                 You and your partner
                             </h2>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div className="grid gap-3 grid-cols-2">
                                 {people.map((p) => (
                                     <Card key={p.id}>
                                         <CardContent>

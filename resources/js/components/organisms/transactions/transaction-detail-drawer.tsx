@@ -293,10 +293,6 @@ export function TransactionDetailDrawer({
                             budgets={budgets}
                             members={members}
                             today={today}
-                            onSuccess={() => {
-                                setIsEditDrawerOpen(false);
-                                onOpenChange(false);
-                            }}
                         />
                     )}
                 </DrawerContent>
