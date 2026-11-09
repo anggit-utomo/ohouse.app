@@ -154,7 +154,7 @@ export default function Home({
                 />
             )}
 
-            <div className="mt-2 flex items-center justify-between">
+            <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold">Goals</h2>
                 <div className="flex items-center gap-2">
                     <Link
