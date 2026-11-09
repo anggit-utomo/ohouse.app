@@ -93,7 +93,10 @@ export function GoalDrawer({
             return;
         }
 
-        form.setData(initialData(goal, sweepBudgetIds));
+        const data = initialData(goal, sweepBudgetIds);
+
+        form.setDefaults(data);
+        form.setData(data);
         form.clearErrors();
     }, [open, goal, sweepBudgetIds]);
 
