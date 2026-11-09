@@ -22,7 +22,6 @@ import type {
     MemberOption,
     MonthOption,
     TransactionDefaults,
-    TransactionDetail,
     TransactionRow,
 } from '@/types';
 
@@ -69,12 +68,19 @@ export default function History({
     const url = `/h/${household.id}/transactions`;
     const [q, setQ] = useState(filters.q);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [selectedTransaction, setSelectedTransaction] =
-        useState<TransactionDetail | null>(null);
+    const [selectedTransactionId, setSelectedTransactionId] = useState<
+        number | null
+    >(null);
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
+    const selectedRow =
+        transactions.find((row) => row.id === selectedTransactionId) ?? null;
+    const selectedTransaction = selectedRow
+        ? toTransactionDetail(selectedRow)
+        : null;
+
     const handleOpenDetail = (row: TransactionRow) => {
-        setSelectedTransaction(toTransactionDetail(row));
+        setSelectedTransactionId(row.id);
         setIsDetailDrawerOpen(true);
     };
 
