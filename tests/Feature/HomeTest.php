@@ -34,6 +34,14 @@ function homeBudget(
     return $month;
 }
 
+function homeRecentEntry(BudgetMonth $month, array $over = []): Transaction
+{
+    return Transaction::factory()->create(array_merge([
+        'household_id' => $month->budget->household_id,
+        'budget_month_id' => $month->id,
+    ], $over));
+}
+
 it('shows goals on Home without a saved total and keeps sweep options for creation', function () {
     $food = homeBudget($this->household, 'Food', 1_000_000);
     Goal::factory()->for($this->household)->create([
@@ -193,4 +201,84 @@ it('lets viewers see a budget but not the action buttons', function () {
     $this->actingAs($viewer)
         ->get("{$this->url}/budgets/{$food->budget_id}")
         ->assertInertia(fn (Assert $p) => $p->where('canEdit', false));
+});
+
+it('shows the five newest current-period transactions on Home', function () {
+    $food = homeBudget($this->household, 'Food', 1_000_000);
+
+    foreach (range(1, 6) as $day) {
+        homeRecentEntry($food, [
+            'note' => "Entry {$day}",
+            'amount' => 10_000 * $day,
+            'occurred_at' => "2026-10-0{$day} 12:00:00",
+        ]);
+    }
+
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
+        ->has('recentTransactions', 5)
+        ->where('recentTransactions.0.title', 'Entry 6')
+        ->where('recentTransactions.0.signed', -60_000)
+        ->where('recentTransactions.1.title', 'Entry 5')
+        ->where('recentTransactions.4.title', 'Entry 2'));
+});
+
+it('collapses a transfer pair into one recent row titled Moved', function () {
+    $source = homeBudget($this->household, 'Source', 1_000_000);
+    $destination = homeBudget($this->household, 'Destination', 1_000_000);
+
+    $this->actingAs($this->owner)->post("{$this->url}/transfers", [
+        'from_budget_id' => $source->budget_id,
+        'to_budget_id' => $destination->budget_id,
+        'amount' => 50_000,
+    ])->assertRedirect();
+
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
+        ->has('recentTransactions', 1)
+        ->where('recentTransactions.0.title', 'Moved Source → Destination')
+        ->where('recentTransactions.0.budget', 'Transfer')
+        ->where('recentTransactions.0.signed', 0)
+        ->where('recentTransactions.0.transfer_id', fn ($id) => is_string($id)));
+});
+
+it('keeps five recent rows when the newest entries are all moves', function () {
+    $source = homeBudget($this->household, 'Source', 1_000_000);
+    $destination = homeBudget($this->household, 'Destination', 1_000_000);
+
+    foreach (range(1, 6) as $i) {
+        $this->actingAs($this->owner)->post("{$this->url}/transfers", [
+            'from_budget_id' => $source->budget_id,
+            'to_budget_id' => $destination->budget_id,
+            'amount' => 10_000,
+        ])->assertRedirect();
+    }
+
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
+        ->has('recentTransactions', 5)
+        ->where('recentTransactions', fn ($rows) => collect($rows)->every(
+            fn (array $row) => str_starts_with($row['title'], 'Moved Source → Destination')
+        )));
+});
+
+it('leaves prior and closed-period transactions off Home', function () {
+    $food = homeBudget($this->household, 'Food', 1_000_000);
+    $september = BudgetMonth::factory()->for($food->budget)->create([
+        'period_start' => '2026-09-01',
+        'period_end' => '2026-09-30',
+        'allocated' => 1_000_000,
+    ]);
+
+    homeRecentEntry($food, ['note' => 'Groceries', 'occurred_at' => '2026-10-05 12:00:00']);
+    homeRecentEntry($september, ['note' => 'Last month', 'occurred_at' => '2026-09-20 12:00:00']);
+    $september->update(['closed_at' => now()]);
+
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
+        ->has('recentTransactions', 1)
+        ->where('recentTransactions.0.title', 'Groceries'));
+});
+
+it('returns no recent transactions when the period has none', function () {
+    homeBudget($this->household, 'Food', 1_000_000);
+
+    $this->actingAs($this->owner)->get($this->url)->assertInertia(fn (Assert $p) => $p
+        ->has('recentTransactions', 0));
 });

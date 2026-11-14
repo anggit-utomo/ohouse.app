@@ -2,9 +2,11 @@
 
 namespace App\Support;
 
+use App\Enums\TransactionTypeEnum;
 use App\Models\Budget;
 use App\Models\BudgetMonth;
 use App\Models\Transaction;
+use Illuminate\Support\Collection;
 
 /**
  * @phpstan-type Row array{
@@ -40,6 +42,36 @@ final class TransactionRow
             signed: $transaction->signedAmount(),
             left: $month->balance(),
         );
+    }
+
+    /**
+     * History and Home rows: a transfer collapses to one row for the whole move.
+     * Callers order the entries first; this keeps that order.
+     *
+     * @param  Collection<int, Transaction>  $transactions
+     * @return Collection<int, Row>
+     */
+    public static function forHistoryList(Collection $transactions): Collection
+    {
+        $pairs = Transaction::whereIn('transfer_id', $transactions->pluck('transfer_id')->filter()->unique())
+            ->with('budgetMonth.budget')->get()->groupBy('transfer_id');
+
+        $moveTitle = function (Transaction $t) use ($pairs): ?string {
+            if ($t->transfer_id === null) {
+                return null;
+            }
+
+            $pair = $pairs[$t->transfer_id] ?? collect();
+            $from = $pair->firstWhere('type', TransactionTypeEnum::TRANSFER_OUT)?->budgetMonth->budget->name;
+            $to = $pair->firstWhere('type', TransactionTypeEnum::TRANSFER_IN)?->budgetMonth->budget->name;
+
+            return "Moved {$from} → {$to}";
+        };
+
+        return $transactions
+            ->unique(fn (Transaction $t) => $t->transfer_id ?? "t{$t->id}")
+            ->values()
+            ->map(fn (Transaction $t) => self::forHistory($t, $moveTitle($t)));
     }
 
     /**

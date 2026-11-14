@@ -20,6 +20,7 @@ import type {
     MemberOption,
     SweepBudget,
     TransactionDefaults,
+    TransactionRow,
     TransferDefaults,
 } from '@/types';
 
@@ -31,6 +32,7 @@ type Props = {
     banner: { days: number } | null;
     budgets: BudgetSummary[];
     goals: GoalSummary[];
+    recentTransactions: TransactionRow[];
     sweepBudgets: SweepBudget[];
     members: MemberOption[];
     canEdit: boolean;

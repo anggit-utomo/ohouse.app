@@ -36,19 +36,6 @@ class TransactionController extends Controller
             ))
             ->values();
 
-        $pairs = Transaction::whereIn('transfer_id', $rows->pluck('transfer_id')->filter()->unique())
-            ->with('budgetMonth.budget')->get()->groupBy('transfer_id');
-
-        $moveTitle = function (Transaction $t) use ($pairs): string {
-            $pair = $pairs[$t->transfer_id] ?? collect();
-            $from = $pair->firstWhere('type', TransactionTypeEnum::TRANSFER_OUT)?->budgetMonth->budget->name;
-            $to = $pair->firstWhere('type', TransactionTypeEnum::TRANSFER_IN)?->budgetMonth->budget->name;
-
-            return "Moved {$from} → {$to}";
-        };
-
-        $rows = $rows->unique(fn (Transaction $t) => $t->transfer_id ?? "t{$t->id}")->values();
-
         $preselected = $household->budgets()->active()->whereKey($request->integer('budget'))->value('id');
         $defaults = [
             'type' => 'expense',
@@ -75,10 +62,7 @@ class TransactionController extends Controller
                 'expense' => $rows->filter(fn ($t) => $t->type === TransactionTypeEnum::EXPENSE)->sum('amount'),
                 'income' => $rows->filter(fn ($t) => $t->type === TransactionTypeEnum::INCOME)->sum('amount'),
             ],
-            'transactions' => $rows->map(fn (Transaction $t) => TransactionRow::forHistory(
-                $t,
-                $t->transfer_id !== null ? $moveTitle($t) : null,
-            )),
+            'transactions' => TransactionRow::forHistoryList($rows),
             'canEdit' => $request->user()->can('edit', $household),
             'budgets' => $household->budgetBalances($period),
             'defaults' => $defaults,

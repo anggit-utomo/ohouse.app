@@ -7,6 +7,7 @@ use App\Models\BudgetMonth;
 use App\Models\Goal;
 use App\Models\Household;
 use App\Support\Periods;
+use App\Support\TransactionRow;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -46,6 +47,15 @@ class HomeController extends Controller
         $days = (int) abs($period->start->diffInDays(now()->startOfDay()));
 
         $goals = $household->activeGoals();
+
+        // Over-fetch so a run of collapsed transfers cannot leave fewer than five rows.
+        $recent = $household->transactions()
+            ->with(['budgetMonth.budget', 'budgetMonth.transactions', 'budgetMonth.goalMovements', 'user'])
+            ->whereBetween('occurred_at', [$period->start->startOfDay(), $period->endOrNow()])
+            ->orderByDesc('occurred_at')
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get();
 
         // for transaction form in homepage
         $preselected = $household->budgets()->active()
@@ -93,6 +103,7 @@ class HomeController extends Controller
             'banner' => $canEdit && $days >= 25 ? ['days' => $days] : null,
             'budgets' => $rows,
             'goals' => $goals->map(fn (Goal $g) => $g->row())->values(),
+            'recentTransactions' => TransactionRow::forHistoryList($recent)->take(5)->values(),
             'sweepBudgets' => $household->sweepBudgetOptions()->all(),
             'members' => $household->members()
                 ->get(['users.id', 'users.name'])
