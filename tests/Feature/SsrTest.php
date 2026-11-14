@@ -9,6 +9,7 @@ use Illuminate\Foundation\Vite;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use Illuminate\Testing\TestResponse;
 use Inertia\Ssr\SsrErrorType;
@@ -108,6 +109,27 @@ test('public pages fall back to the client shell when the renderer is stopped', 
         fn (SsrRenderFailed $event) => $event->type === SsrErrorType::Connection,
     );
 })->with('public pages');
+
+test('renderer failures are logged while falling back to the client shell', function () {
+    Log::spy();
+
+    Http::fake(function (Request $request) {
+        return Http::failedConnection()($request);
+    });
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('<div id="app"></div>', false)
+        ->assertDontSee('data-server-rendered', false);
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->withArgs(fn (string $message, array $context) => str_contains($message, 'SSR')
+            && $context['component'] === 'welcome'
+            && $context['url'] === '/'
+            && $context['type'] === 'connection'
+            && $context['error'] !== '');
+});
 
 test('the renderer receives the same page payload as the fallback shell', function () {
     $renderedPage = null;

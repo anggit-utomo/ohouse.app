@@ -2,6 +2,7 @@
 node_modules
 vendor
 tests
+bootstrap/ssr
 public/build
 public/hot
 storage/logs/*

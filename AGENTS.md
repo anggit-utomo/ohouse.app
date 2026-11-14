@@ -122,10 +122,27 @@ Wayfinder helpers in TS where practical.
 
 ## Deployment notes
 
-`deploy.sh` builds the image, starts PostgreSQL, runs migrations, and prunes old
-images. Production runs the app behind Caddy plus a queue worker and
-`schedule:work` (see `compose.prod.yaml`). Web push requires the queue worker
-and VAPID configuration in `.env`.
+`deploy.sh` builds the image, starts PostgreSQL, refreshes the internal Inertia
+renderer, force-recreates the web and worker containers, runs migrations, and
+prunes old images. Production runs the app behind Caddy plus a queue worker,
+`schedule:work`, and the internal `ssr` service (see `compose.prod.yaml`). Web
+push requires the queue worker and VAPID configuration in `.env`.
+
+The web and `ssr` services use the same image; only the start command differs.
+The renderer listens on `13714` inside the compose network and never publishes
+a port. The app reaches it at `INERTIA_SSR_URL=http://ssr:13714`; a renderer
+error or timeout falls back to client rendering after `INERTIA_SSR_TIMEOUT`
+(default 2s) and logs an `Inertia SSR render failed` warning, so a renderer
+outage never returns a 500.
+
+Verify a deploy from the host:
+
+```bash
+curl -s https://$APP_DOMAIN/ | grep -q 'data-server-rendered="true"'
+podman stop budget-ssr
+curl -s -o /dev/null -w '%{http_code}\n' https://$APP_DOMAIN/   # still 200
+podman start budget-ssr
+```
 
 ===
 

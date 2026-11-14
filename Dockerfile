@@ -15,11 +15,18 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN composer install --no-dev --optimize-autoloader
-RUN pnpm run build && rm -rf node_modules
+
+# Build both the client assets and the self-contained Inertia SSR bundle in
+# bootstrap/ssr. Dependencies are inlined, so node_modules can be removed here
+# and never copied into the runtime image.
+RUN pnpm run build:ssr && rm -rf node_modules
 
 # --- runtime
 FROM docker.io/dunglas/frankenphp:1.13.4-php8.4-alpine
 RUN install-php-extensions pdo_pgsql opcache intl zip bcmath
+# One image, two entrypoints: FrankenPHP for the web service and Node for the
+# internal Inertia renderer (`node bootstrap/ssr/ssr.mjs`).
+RUN apk add --no-cache nodejs
 WORKDIR /app
 COPY --from=build /app /app
 COPY docker/Caddyfile /etc/frankenphp/Caddyfile

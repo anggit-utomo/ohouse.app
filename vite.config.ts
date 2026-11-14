@@ -80,6 +80,12 @@ export default defineConfig(({ isSsrBuild }) => ({
     },
     ...(isSsrBuild
         ? {
+              // The production image removes node_modules, so the renderer
+              // bundle has to carry its dependencies instead of importing them
+              // from the filesystem at runtime.
+              ssr: {
+                  noExternal: true,
+              },
               build: {
                   rollupOptions: {
                       output: {
