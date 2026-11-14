@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Budget;
 use App\Models\BudgetMonth;
 use App\Models\Household;
@@ -468,4 +469,116 @@ test('closed period pages pass their locked state to the renderer', function () 
         ->and($pages[1]['component'])->toBe('budgets/show')
         ->and($pages[1]['props']['closed'])->toBeTrue()
         ->and($pages[1]['props']['monthLabel'])->toContain('September');
+});
+
+test('the log reports when the renderer served the page', function () {
+    Log::spy();
+
+    Http::fake([
+        'http://127.0.0.1:13714/render' => Http::response([
+            'head' => [],
+            'body' => '<div data-server-rendered="true" id="app"></div>',
+        ]),
+    ]);
+
+    $this->get('/')->assertOk();
+
+    Log::shouldHaveReceived('info')->withArgs(
+        fn (string $message, array $context) => $message === 'Inertia page render outcome.'
+            && $context === [
+                'mode' => 'rendered',
+                'component' => 'welcome',
+                'url' => '/',
+            ],
+    );
+});
+
+test('the log reports when a failed renderer served the fallback', function () {
+    Log::spy();
+
+    Http::fake(fn (Request $request) => Http::failedConnection()($request));
+
+    $this->get('/')->assertOk();
+
+    Log::shouldHaveReceived('info')->withArgs(
+        fn (string $message, array $context) => $message === 'Inertia page render outcome.'
+            && $context === [
+                'mode' => 'fallback',
+                'component' => 'welcome',
+                'url' => '/',
+                'reason' => 'renderer-unavailable',
+            ],
+    );
+});
+
+test('the log reports when rendering is switched off', function () {
+    config(['inertia.ssr.enabled' => false]);
+
+    Log::spy();
+    Http::fake();
+
+    $this->get('/')->assertOk();
+
+    Log::shouldHaveReceived('info')->withArgs(
+        fn (string $message, array $context) => $message === 'Inertia page render outcome.'
+            && $context['mode'] === 'fallback'
+            && $context['reason'] === 'disabled',
+    );
+
+    Http::assertNothingSent();
+});
+
+test('the log only reports full page renders', function () {
+    $household = Household::factory()->create();
+    $owner = $household->owner;
+    $owner->forceFill(['current_household_id' => $household->id])->save();
+
+    $version = app(HandleInertiaRequests::class)
+        ->version(request());
+
+    Log::spy();
+
+    Http::fake([
+        'http://127.0.0.1:13714/render' => Http::response([
+            'head' => [],
+            'body' => '<div data-server-rendered="true" id="app"></div>',
+        ]),
+    ]);
+
+    $this->actingAs($owner)
+        ->get("/h/{$household->id}", [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => (string) $version,
+        ])
+        ->assertOk();
+
+    $this->get('/manifest.webmanifest')->assertOk();
+
+    Log::shouldNotHaveReceived('info');
+});
+
+test('a settings page renders through the renderer without per-page wiring', function () {
+    $household = Household::factory()->create();
+    $owner = $household->owner;
+    $owner->forceFill(['current_household_id' => $household->id])->save();
+
+    $renderedPage = [];
+
+    Http::fake(function (Request $request) use (&$renderedPage) {
+        $renderedPage = json_decode($request->body(), true);
+
+        return Http::response([
+            'head' => [],
+            'body' => '<div data-server-rendered="true" id="app"><p>'
+                .$renderedPage['component']
+                .'</p></div>',
+        ]);
+    });
+
+    $this->actingAs($owner)
+        ->get("/h/{$household->id}/settings")
+        ->assertOk()
+        ->assertSee('<p>settings/household</p>', false);
+
+    expect($renderedPage['component'])->toBe('settings/household');
 });

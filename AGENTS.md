@@ -13,9 +13,10 @@ Use `pnpm` (not npm) and `composer`.
 
 ```bash
 composer setup        # first-time install, .env, key, migrate, pnpm install, build
-composer dev          # php artisan dev: Vite + queue listener + logs
-pnpm dev              # Vite only
-pnpm build            # production assets
+composer dev          # php artisan dev: Vite (with SSR) + queue listener + logs
+pnpm dev              # Vite only, but it also hosts the SSR renderer
+pnpm build            # production assets (client only)
+pnpm build:ssr        # production assets plus the renderer bundle
 pnpm check            # vp lint + format check (add --fix via pnpm check:fix)
 pnpm types:check      # tsc --noEmit
 composer lint         # Pint (auto-fix)
@@ -119,6 +120,87 @@ Wayfinder helpers in TS where practical.
   outcomes (balances, linked transfer ids, encryption at rest).
 - Add/adjust tests alongside behavior changes; run `composer test` before
   finishing so Pint, PHPStan, and Pest all pass.
+
+## Server-side rendering
+
+Every Inertia page is pre-rendered to HTML and the server sends that HTML with
+the first response. `resources/js/ssr.tsx` mirrors `app.tsx` (same page
+resolution and layouts) and uses an eager glob (`pages: { path: './pages',
+lazy: false }`), so adding a file under `resources/js/pages` gets server
+rendering with no registration, opt-in, or extra wiring. The client hydrates the
+returned markup, or mounts from scratch when the server sent the fallback shell.
+A renderer error, timeout, or outage logs a warning and returns the client-only
+shell; the web request never 500s because rendering failed.
+
+### Local development
+
+`composer dev` is the single command and already starts the renderer. Inertia 3's
+Vite plugin registers a `/__inertia_ssr` endpoint on the Vite dev server, and the
+Laravel adapter sends every initial page load there while Vite runs hot. Do not
+add `php artisan inertia:start-ssr` to dev: it needs the built bundle and is
+ignored while Vite is hot. The loopback renderer URL
+(`INERTIA_SSR_URL=http://127.0.0.1:13714`) applies to built assets, for example
+when reproducing production locally with `pnpm build:ssr` and
+`php artisan inertia:start-ssr`.
+
+Vite warms the SSR module graph for a few seconds after it starts. Requests in
+that window fall back safely and log `SSR skipped, module graph is still warming
+up...`; reload once warmup finishes.
+
+### Checking rendered versus fallback
+
+```bash
+curl -s http://localhost:8000/login | grep -o 'data-server-rendered="true"'
+php artisan pail --timeout=0            # or tail storage/logs/laravel.log
+```
+
+- The Vite terminal prints `SSR auth/login 12ms` for each rendered request.
+- `app/Http/Middleware/LogSsrRenderOutcome` logs one line per initial page:
+  `Inertia page render outcome.` with `mode` `rendered` or `fallback`, plus
+  `component`, `url`, and a `reason` (`renderer-unavailable` or `disabled`).
+  Partial Inertia visits and non-Inertia routes do not log it. It is info level,
+  so keep `LOG_LEVEL` at `info` or `debug` to see rendered outcomes.
+- Renderer failures also log `Inertia SSR render failed; serving the client-only
+  response.` at warning level with the error type, hint, stack, and source
+  location.
+
+To see the fallback, stop Vite (or set `INERTIA_SSR_ENABLED=false` while using
+built assets) and reload: the response is still 200 and contains
+`<div id="app"></div>` without `data-server-rendered`.
+
+### Guard convention for browser-only APIs
+
+Never read `window`, `document`, `navigator`, `localStorage`, `matchMedia`, or
+other browser globals at module scope or directly during render. A module-scope
+read runs in Node and the renderer reports it as a `browser-api` failure.
+
+- Guard optional browser work with `typeof window === 'undefined'` (or
+  `typeof document === 'undefined'`) before touching it.
+- Put browser work in `useEffect`, event handlers, or client-only components so
+  it runs after hydration.
+- Follow `resources/js/hooks/use-appearance.ts`; it is the reference pattern. The
+  bootstrap at the end of `app.tsx` shows the top-level guard.
+- There is no per-page SSR opt-in: every page under `resources/js/pages` is
+  rendered. Guard the browser API instead of excluding the page.
+
+### Largest-paint check
+
+LCP cannot be measured in CI here: the suite has no browser, and the number only
+means something with a real device/network profile on the host serving the app.
+Measure manually:
+
+1. `pnpm build:ssr`, then run `php artisan inertia:start-ssr` and
+   `php artisan serve` against seeded data.
+2. In Chrome DevTools → Performance, enable 4× CPU slowdown and the Slow 4G
+   preset, disable cache, and hard-reload `/login` and `/h/{household}`.
+3. Repeat with the renderer stopped (or `INERTIA_SSR_ENABLED=false`) and compare
+   the LCP marker. The SSR run should paint page content before hydration; the
+   fallback waits for the JS bundle.
+
+A local check on 2026-11-14 (built assets, 4× CPU, Slow 4G, loopback) measured
+LCP 3.0s rendered versus 4.2s fallback on `/login`, and 3.2s versus 4.4s on a
+seeded household Home. Treat these as order-of-magnitude evidence, not a
+regression threshold; re-measure on the target host.
 
 ## Deployment notes
 
