@@ -1,7 +1,12 @@
 <?php
 
+use Illuminate\Foundation\Vite;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\HtmlString;
+use Inertia\Ssr\SsrErrorType;
+use Inertia\Ssr\SsrRenderFailed;
 
 beforeEach(function () {
     config([
@@ -9,6 +14,39 @@ beforeEach(function () {
         'inertia.ssr.url' => 'http://127.0.0.1:13714',
         'inertia.ssr.ensure_bundle_exists' => false,
     ]);
+
+    // The withoutVite() fake ignores useHotFile(), so swap in a stub that also
+    // reports no hot server. The gateway then always uses inertia.ssr.url and
+    // the HTTP fakes below intercept every request, even when public/hot
+    // exists because a Vite dev server is running.
+    $this->swap(Vite::class, new class extends Vite
+    {
+        public function __invoke($entrypoints, $buildDirectory = null)
+        {
+            return new HtmlString('');
+        }
+
+        public function __call($method, $parameters)
+        {
+            return '';
+        }
+
+        public function __toString()
+        {
+            return '';
+        }
+
+        public function isRunningHot()
+        {
+            return false;
+        }
+    });
+
+    Http::preventStrayRequests();
+});
+
+afterEach(function () {
+    Http::allowStrayRequests();
 });
 
 dataset('public pages', [
@@ -30,7 +68,7 @@ test('public pages use the renderer output when it is available', function (stri
         ->assertSee('<title>Rendered title</title>', false);
 })->with('public pages');
 
-test('public pages fall back to the client shell when the renderer fails', function (string $url) {
+test('public pages fall back to the client shell when the renderer returns an error', function (string $url) {
     Http::fake([
         'http://127.0.0.1:13714/render' => Http::response(status: 500),
     ]);
@@ -39,6 +77,30 @@ test('public pages fall back to the client shell when the renderer fails', funct
         ->assertOk()
         ->assertSee('<div id="app"></div>', false)
         ->assertDontSee('data-server-rendered', false);
+})->with('public pages');
+
+test('public pages fall back to the client shell when the renderer is stopped', function (string $url) {
+    Event::fake([SsrRenderFailed::class]);
+
+    $contactedUrls = [];
+
+    Http::fake(function (Request $request) use (&$contactedUrls) {
+        $contactedUrls[] = $request->url();
+
+        return Http::failedConnection()($request);
+    });
+
+    $this->get($url)
+        ->assertOk()
+        ->assertSee('<div id="app"></div>', false)
+        ->assertDontSee('data-server-rendered', false);
+
+    expect($contactedUrls)->toBe(['http://127.0.0.1:13714/render']);
+
+    Event::assertDispatched(
+        SsrRenderFailed::class,
+        fn (SsrRenderFailed $event) => $event->type === SsrErrorType::Connection,
+    );
 })->with('public pages');
 
 test('the renderer receives the same page payload as the fallback shell', function () {
