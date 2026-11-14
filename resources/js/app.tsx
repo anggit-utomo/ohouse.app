@@ -1,14 +1,8 @@
 import { createInertiaApp, router } from '@inertiajs/react';
-import { Toaster } from '@/components/ui/sonner';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { initializeTheme } from '@/hooks/use-appearance';
-import AppLayout from '@/layouts/app-layout';
-import AuthLayout from '@/layouts/auth-layout';
 import { toast } from 'sonner';
+import { initializeTheme } from '@/hooks/use-appearance';
+import { pageTitle, resolveLayout, withApp } from './inertia-app';
 import { setCurrency } from './lib/money';
-import { createRoot } from 'react-dom/client';
-
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 // a message the server flashed after an action
 router.on('success', (event) => {
@@ -50,44 +44,21 @@ router.on('networkError', () => {
 router.on('navigate', (event) => setCurrency(event.detail.page.props.currency));
 
 void createInertiaApp({
-    setup({ el, App, props }) {
-        setCurrency(props.initialPage.props.currency);
-
-        if (!el) {
-            throw new Error('Inertia root element not found.');
-        }
-
-        createRoot(el).render(
-            <TooltipProvider delay={0}>
-                <App {...props} />
-                <Toaster position="top-right" richColors />
-            </TooltipProvider>,
-        );
-    },
-    title: (title) => (title ? `${title} - ${appName}` : appName),
-    layout: (name) => {
-        switch (true) {
-            case name === 'welcome':
-                return null;
-            case name.startsWith('auth/'):
-                return AuthLayout;
-            case name.startsWith('settings/'):
-                return [AppLayout];
-            default:
-                return AppLayout;
-        }
-    },
-    strictMode: true,
+    title: pageTitle,
+    layout: resolveLayout,
     progress: {
         color: '#4B5563',
     },
+    withApp,
 });
 
-// This will set light / dark mode on load...
-initializeTheme();
+if (typeof window !== 'undefined') {
+    // This will set light / dark mode on load...
+    initializeTheme();
 
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-    window.addEventListener('load', () =>
-        navigator.serviceWorker.register('/sw.js'),
-    );
+    if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            void navigator.serviceWorker.register('/sw.js');
+        });
+    }
 }

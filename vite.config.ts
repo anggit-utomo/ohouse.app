@@ -7,10 +7,11 @@ import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
 import { defineConfig, lazyPlugins } from 'vite-plus';
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
     plugins: lazyPlugins(() => [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            ssr: 'resources/js/ssr.tsx',
             refresh: true,
             fonts: [
                 bunny('Instrument Sans', {
@@ -77,4 +78,15 @@ export default defineConfig({
             stylesheet: 'resources/css/app.css',
         },
     },
-});
+    ...(isSsrBuild
+        ? {
+              build: {
+                  rollupOptions: {
+                      output: {
+                          entryFileNames: 'ssr.mjs',
+                      },
+                  },
+              },
+          }
+        : {}),
+}));
