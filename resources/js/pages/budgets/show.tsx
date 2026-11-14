@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { ChevronLeft } from 'lucide-react';
 import { BudgetBar } from '@/components/budget-bar';
+import ClosedPeriodNotice from '@/components/closed-period-notice';
 import { MovedToGoals, ReturnedFromGoals } from '@/components/moved-to-goals';
 import { Button } from '@/components/ui/button';
 import { rupiah } from '@/lib/money';
@@ -113,6 +114,8 @@ export default function ShowBudget({
                 <MovedToGoals amount={summary.moved} />
                 <ReturnedFromGoals amount={summary.returned} />
             </div>
+
+            {closed && <ClosedPeriodNotice />}
 
             {canEdit && !closed && (
                 <div className="grid grid-cols-2 gap-2">

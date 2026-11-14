@@ -1,5 +1,5 @@
 import { usePasskeyRegister } from '@laravel/passkeys/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,28 +9,40 @@ type Props = {
     onSuccess: () => void;
 };
 
+/** A suggested passkey name from the browser, or empty outside a browser. */
+const suggestedName = (): string => {
+    if (typeof navigator === 'undefined') {
+        return '';
+    }
+
+    const ua = navigator.userAgent;
+
+    const browser = [
+        { pattern: /Edg|Edge/, name: 'Edge' },
+        { pattern: /OPR|Opera|OPiOS/, name: 'Opera' },
+        { pattern: /Firefox|FxiOS/, name: 'Firefox' },
+        { pattern: /Chrome|CriOS/, name: 'Chrome' },
+        { pattern: /Safari/, name: 'Safari' },
+    ].find(({ pattern }) => pattern.test(ua))?.name;
+
+    const os = [
+        { pattern: /iPhone/, name: 'iPhone' },
+        { pattern: /iPad|Macintosh(?=.*Mobile)/, name: 'iPad' },
+        { pattern: /Android/, name: 'Android' },
+        { pattern: /Mac/, name: 'Mac' },
+        { pattern: /Windows/, name: 'Windows' },
+    ].find(({ pattern }) => pattern.test(ua))?.name;
+
+    return [browser, os].filter(Boolean).join(' on ') || '';
+};
+
 export default function PasskeyRegistration({ onSuccess }: Props) {
-    const [name, setName] = useState(() => {
-        const ua = navigator.userAgent;
+    // Detect after mount so the first client render matches the server HTML.
+    const [name, setName] = useState('');
 
-        const browser = [
-            { pattern: /Edg|Edge/, name: 'Edge' },
-            { pattern: /OPR|Opera|OPiOS/, name: 'Opera' },
-            { pattern: /Firefox|FxiOS/, name: 'Firefox' },
-            { pattern: /Chrome|CriOS/, name: 'Chrome' },
-            { pattern: /Safari/, name: 'Safari' },
-        ].find(({ pattern }) => pattern.test(ua))?.name;
-
-        const os = [
-            { pattern: /iPhone/, name: 'iPhone' },
-            { pattern: /iPad|Macintosh(?=.*Mobile)/, name: 'iPad' },
-            { pattern: /Android/, name: 'Android' },
-            { pattern: /Mac/, name: 'Mac' },
-            { pattern: /Windows/, name: 'Windows' },
-        ].find(({ pattern }) => pattern.test(ua))?.name;
-
-        return [browser, os].filter(Boolean).join(' on ') || '';
-    });
+    useEffect(() => {
+        setName(suggestedName());
+    }, []);
 
     const [showForm, setShowForm] = useState(false);
     const { register, isLoading, error, isSupported } = usePasskeyRegister({

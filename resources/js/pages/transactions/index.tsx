@@ -12,6 +12,7 @@ import {
 import { rupiah } from '@/lib/money';
 import { toTransactionDetail } from '@/lib/transactions';
 import { BottomNav } from '@/components/bottom-nav';
+import ClosedPeriodNotice from '@/components/closed-period-notice';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
 import { TransactionDetailDrawer } from '@/components/organisms/transactions/transaction-detail-drawer';
@@ -151,6 +152,8 @@ export default function History({
                     ))}
                 </SelectContent>
             </Select>
+
+            {closed && <ClosedPeriodNotice />}
 
             <form
                 onSubmit={(e) => {
