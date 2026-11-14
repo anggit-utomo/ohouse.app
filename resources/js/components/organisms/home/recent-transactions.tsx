@@ -6,11 +6,13 @@ import TransactionListItem from '../transactions/transaction-list-item';
 interface RecentTransactionsProps {
     householdId: number;
     rows: TransactionRow[];
+    onSelect: (row: TransactionRow) => void;
 }
 
 export default function RecentTransactions({
     householdId,
     rows,
+    onSelect,
 }: RecentTransactionsProps) {
     if (rows.length === 0) {
         return null;
@@ -30,7 +32,11 @@ export default function RecentTransactions({
 
             <div>
                 {rows.map((row) => (
-                    <TransactionListItem key={row.id} row={row} />
+                    <TransactionListItem
+                        key={row.id}
+                        row={row}
+                        onSelect={onSelect}
+                    />
                 ))}
             </div>
         </section>

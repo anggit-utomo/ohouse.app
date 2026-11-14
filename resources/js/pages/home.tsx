@@ -13,7 +13,9 @@ import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
 import GoalEmpty from '@/components/organisms/goals/goal-empty';
 import GoalList from '@/components/organisms/goals/goal-list';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
+import { TransactionDetailDrawer } from '@/components/organisms/transactions/transaction-detail-drawer';
 import { MoveMoneyDrawer } from '@/components/organisms/transfers/move-money-drawer';
+import { toTransactionDetail } from '@/lib/transactions';
 import type {
     BudgetSummary,
     GoalSummary,
@@ -61,12 +63,28 @@ export default function Home({
         useState(false);
     const [isMoveDrawerOpen, setIsMoveDrawerOpen] = useState(false);
     const [isGoalDrawerOpen, setIsGoalDrawerOpen] = useState(false);
+    const [selectedTransactionId, setSelectedTransactionId] = useState<
+        number | null
+    >(null);
+    const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
     const [moveDefaults, setMoveDefaults] = useState<TransferDefaults>({
         from_budget_id: '',
         to_budget_id: '',
         amount: '',
         note: '',
     });
+
+    const selectedRow =
+        recentTransactions.find((row) => row.id === selectedTransactionId) ??
+        null;
+    const selectedTransaction = selectedRow
+        ? toTransactionDetail(selectedRow)
+        : null;
+
+    const openDetailDrawer = (row: TransactionRow) => {
+        setSelectedTransactionId(row.id);
+        setIsDetailDrawerOpen(true);
+    };
 
     const openMoveDrawer = (toBudgetId?: number) => {
         setMoveDefaults({
@@ -193,6 +211,7 @@ export default function Home({
             <RecentTransactions
                 householdId={household.id}
                 rows={recentTransactions}
+                onSelect={openDetailDrawer}
             />
 
             <BottomNav householdId={household.id} active="home" />
@@ -204,6 +223,20 @@ export default function Home({
                 defaults={defaults}
                 budgets={budgets}
                 members={members}
+                today={today}
+            />
+
+            {/* Home is always the open Period, so the detail is never locked. */}
+            <TransactionDetailDrawer
+                open={isDetailDrawerOpen}
+                onOpenChange={setIsDetailDrawerOpen}
+                householdId={household.id}
+                transaction={selectedTransaction}
+                locked={false}
+                canEdit={canEdit}
+                budgets={budgets}
+                members={members}
+                defaults={defaults}
                 today={today}
             />
 
