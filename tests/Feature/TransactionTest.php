@@ -202,6 +202,37 @@ it('filters history by period, type, person and search text', function () {
         ->and($get('?month=2026-09'))->toBe(['Last month']);
 });
 
+it('renders history rows with the fields the shared list item shows, newest first', function () {
+    $wife = User::factory()->create(['name' => 'Wife']);
+    $this->household->members()->attach($wife->id, ['role' => 'editor']);
+
+    entry($this->food, [
+        'amount' => 85_000,
+        'note' => 'Groceries',
+        'occurred_at' => '2026-10-14 08:15:00',
+        'user_id' => $this->owner->id,
+    ]);
+    entry($this->food, [
+        'amount' => 500_000,
+        'type' => TransactionTypeEnum::INCOME,
+        'note' => 'Bonus',
+        'occurred_at' => '2026-10-15 07:30:00',
+        'user_id' => $wife->id,
+    ]);
+
+    $this->actingAs($this->owner)->get($this->base)->assertInertia(fn (Assert $p) => $p
+        ->component('transactions/index')
+        ->has('transactions', 2)
+        ->where('transactions.0.title', 'Bonus')
+        ->where('transactions.0.user', 'Wife')
+        ->where('transactions.0.budget', 'Food')
+        ->where('transactions.0.signed', 500_000)
+        ->where('transactions.0.occurred_at', fn (string $at) => str_starts_with($at, '2026-10-15T07:30:00'))
+        ->where('transactions.1.title', 'Groceries')
+        ->where('transactions.1.user', $this->owner->name)
+        ->where('transactions.1.signed', -85_000));
+});
+
 it('marks a selected closed period in transaction history', function () {
     $september = octoberBudget($this->household, 'Gas', 700_000, '2026-09-01');
     entry($september, ['occurred_at' => '2026-09-10 12:00:00']);

@@ -1,6 +1,5 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,11 +10,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { rupiah } from '@/lib/money';
-import { isTransferType, toTransactionDetail } from '@/lib/transactions';
+import { toTransactionDetail } from '@/lib/transactions';
 import { BottomNav } from '@/components/bottom-nav';
 import HeadTitle from '@/components/head-title';
 import { TransactionDrawer } from '@/components/organisms/transactions/transaction-drawer';
 import { TransactionDetailDrawer } from '@/components/organisms/transactions/transaction-detail-drawer';
+import TransactionListItem from '@/components/organisms/transactions/transaction-list-item';
 import type {
     BudgetOption,
     HouseholdRef,
@@ -205,38 +205,11 @@ export default function History({
                         {day}
                     </p>
                     {rows.map((t) => (
-                        <button
+                        <TransactionListItem
                             key={t.id}
-                            type="button"
-                            className="flex w-full items-center gap-3 py-2.5 text-left"
-                            onClick={() => handleOpenDetail(t)}
-                        >
-                            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                                {t.user.charAt(0).toUpperCase()}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                                <span className="block truncate font-semibold">
-                                    {t.title}
-                                </span>
-                                <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <Badge variant="outline">{t.budget}</Badge>
-                                    {new Date(t.occurred_at).toLocaleTimeString(
-                                        'en-GB',
-                                        {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        },
-                                    )}
-                                </span>
-                            </span>
-                            <span
-                                className={`font-semibold ${t.signed > 0 ? 'text-green-700' : ''}`}
-                            >
-                                {isTransferType(t.type)
-                                    ? rupiah(t.amount)
-                                    : `${t.signed > 0 ? '+' : '-'}${rupiah(Math.abs(t.signed))}`}
-                            </span>
-                        </button>
+                            row={t}
+                            onSelect={handleOpenDetail}
+                        />
                     ))}
                 </div>
             ))}
