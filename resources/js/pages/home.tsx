@@ -8,6 +8,7 @@ import BalanceComponent from '@/components/organisms/home/balance';
 import AlertBanner from '@/components/organisms/home/alert-banner';
 import BudgetEmpty from '@/components/organisms/home/budget-empty';
 import BudgetList from '@/components/organisms/home/budget-list';
+import RecentTransactions from '@/components/organisms/home/recent-transactions';
 import { GoalDrawer } from '@/components/organisms/goals/goal-drawer';
 import GoalEmpty from '@/components/organisms/goals/goal-empty';
 import GoalList from '@/components/organisms/goals/goal-list';
@@ -48,6 +49,7 @@ export default function Home({
     banner,
     budgets,
     goals,
+    recentTransactions,
     sweepBudgets,
     members,
     canEdit,
@@ -187,6 +189,11 @@ export default function Home({
             ) : (
                 <GoalList goals={goals} base={base} />
             )}
+
+            <RecentTransactions
+                householdId={household.id}
+                rows={recentTransactions}
+            />
 
             <BottomNav householdId={household.id} active="home" />
 

@@ -20,14 +20,10 @@ export default function TransactionListItem({
     onSelect,
 }: {
     row: TransactionRow;
-    onSelect: (row: TransactionRow) => void;
+    onSelect?: (row: TransactionRow) => void;
 }) {
-    return (
-        <button
-            type="button"
-            className="flex w-full items-center gap-3 py-2.5 text-left"
-            onClick={() => onSelect(row)}
-        >
+    const body = (
+        <>
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
                 {row.user.charAt(0).toUpperCase()}
             </span>
@@ -48,6 +44,24 @@ export default function TransactionListItem({
             >
                 {amountLabel(row)}
             </span>
-        </button>
+        </>
+    );
+
+    if (onSelect) {
+        return (
+            <button
+                type="button"
+                className="flex w-full items-center gap-3 py-2.5 text-left"
+                onClick={() => onSelect(row)}
+            >
+                {body}
+            </button>
+        );
+    }
+
+    return (
+        <div className="flex w-full items-center gap-3 py-2.5 text-left">
+            {body}
+        </div>
     );
 }
