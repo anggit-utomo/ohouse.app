@@ -19,6 +19,7 @@ class TransactionController extends Controller
 {
     public function index(Request $request, Household $household): Response
     {
+        $this->authorize('view', $household);
         $period = Periods::find($household, $request->query('month'));
         $type = in_array($request->query('type'), ['expense', 'income'], true) ? $request->query('type') : null;
         $person = $request->integer('person') ?: null;
@@ -86,6 +87,8 @@ class TransactionController extends Controller
         Transaction $transaction,
         SaveTransaction $save
     ): RedirectResponse {
+        abort_unless($transaction->household_id === $household->id, 404);
+
         $save->update($transaction, $request->validated());
 
         return back()->with('success', 'Transaction updated.');
@@ -93,6 +96,7 @@ class TransactionController extends Controller
 
     public function destroy(Household $household, Transaction $transaction, SaveTransaction $save): RedirectResponse
     {
+        abort_unless($transaction->household_id === $household->id, 404);
         $this->authorize('delete', $transaction);
 
         $month = $transaction->budgetMonth->period_start->toDateString();

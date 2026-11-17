@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use LogicException;
 
 #[Fillable([
     'household_id',
@@ -41,7 +40,9 @@ class Transaction extends Model
         // Closed months are locked: add a correction in the current month instead.
         $guard = function (Transaction $t) {
             if ($t->budgetMonth?->isClosed()) {
-                throw new LogicException('This month is closed. Add a correction entry instead.');
+                throw ValidationException::withMessages([
+                    'period' => 'This period is closed. Add a correction in the current period instead.',
+                ]);
             }
         };
 

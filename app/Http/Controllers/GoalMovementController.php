@@ -21,6 +21,7 @@ class GoalMovementController extends Controller
         ContributeToGoal $contribute,
         WithdrawFromGoal $withdraw
     ): RedirectResponse {
+        abort_unless($goal->household_id === $household->id, 404);
         $data = $request->validated();
         $type = $data['type'];
 
@@ -46,6 +47,8 @@ class GoalMovementController extends Controller
         GoalMovement $movement,
         RemoveGoalMovement $remove
     ): RedirectResponse {
+        abort_unless($goal->household_id === $household->id, 404);
+        abort_unless($movement->household_id === $household->id && $movement->goal_id === $goal->id, 404);
         $this->authorize('edit', $household);
 
         $remove->handle($household, $goal, $movement);

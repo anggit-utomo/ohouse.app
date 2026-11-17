@@ -81,6 +81,7 @@ class GoalController extends Controller
         Goal $goal,
         SaveGoal $save
     ): RedirectResponse {
+        abort_unless($goal->household_id === $household->id, 404);
         abort_if($goal->archived_at !== null, 403);
 
         $save->update($goal, $request->validated());
@@ -94,6 +95,7 @@ class GoalController extends Controller
         Goal $goal,
         CompleteGoal $complete
     ): RedirectResponse {
+        abort_unless($goal->household_id === $household->id, 404);
         $data = $request->validated();
 
         $complete->handle(

@@ -59,11 +59,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::controller(PushSubscriptionController::class)
         ->prefix('push')
+        ->name('push.')
         ->group(function () {
-            Route::post('subscribe', 'store');
-            Route::delete('subscribe', 'destroy');
-            Route::delete('devices/{id}', 'remove')->whereNumber('id');
-            Route::post('test', 'test')->middleware('throttle:6,1');
+            Route::post('subscribe', 'store')->name('subscribe');
+            Route::delete('subscribe', 'destroy')->name('unsubscribe');
+            Route::delete('devices/{id}', 'remove')->whereNumber('id')->name('devices.remove');
+            Route::post('test', 'test')->middleware('throttle:6,1')->name('test');
         });
 });
 
@@ -126,17 +127,17 @@ Route::middleware(['auth', 'verified', 'household.member', 'throttle:household']
             ->group(function () {
                 Route::get('/', 'show')->name('show');
                 Route::post('/invite', 'invite')->name('invite');
-                Route::patch('/members/{member}', 'update')->whereNumber('member');
-                Route::delete('/members/{member}', 'destroy')->whereNumber('member');
+                Route::patch('/members/{member}', 'update')->whereNumber('member')->name('members.update');
+                Route::delete('/members/{member}', 'destroy')->whereNumber('member')->name('members.destroy');
             });
 
         // Settings Routes Group
         Route::prefix('settings')->group(function () {
             // Main Household Settings Page
             Route::get('/', [HouseholdSettingsController::class, 'show'])->name('household.settings');
-            Route::put('/', [HouseholdSettingsController::class, 'update']);
-            Route::delete('/', [HouseholdSettingsController::class, 'destroy']);
-            Route::patch('/notifications', [NotificationSettingsController::class, 'update']);
+            Route::put('/', [HouseholdSettingsController::class, 'update'])->name('household.settings.update');
+            Route::delete('/', [HouseholdSettingsController::class, 'destroy'])->name('household.settings.destroy');
+            Route::patch('/notifications', [NotificationSettingsController::class, 'update'])->name('household.settings.notifications.update');
 
             // Profile Routes (Directly mapped to AccountController for update/destroy)
             Route::get('/profile', [OpenHouseholdSettings::class, 'profile'])->name('profile.edit');

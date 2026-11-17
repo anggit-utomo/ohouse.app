@@ -18,6 +18,8 @@ class BudgetController extends Controller
 {
     public function edit(Request $request, Household $household): Response
     {
+        $this->authorize('view', $household);
+
         $period = Periods::current($household);
 
         $budgets = $household->budgets()->active()->orderBy('sort')
@@ -51,6 +53,8 @@ class BudgetController extends Controller
 
     public function show(Request $request, Household $household, Budget $budget): Response
     {
+        $this->authorize('view', $household);
+        abort_unless($budget->household_id === $household->id, 404);
         $period = Periods::find($household, $request->query('month'));
 
         $month = $budget->months()
