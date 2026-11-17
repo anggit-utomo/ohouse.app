@@ -205,7 +205,7 @@ export default function Home({
                     onNew={() => setIsGoalDrawerOpen(true)}
                 />
             ) : (
-                <GoalList goals={goals} base={base} />
+                <GoalList goals={goals} base={base} card />
             )}
 
             <RecentTransactions

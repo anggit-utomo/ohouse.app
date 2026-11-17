@@ -15,6 +15,20 @@ export default function BudgetList({
     canEdit,
     onMoveMoney,
 }: BudgetListProps) {
+    if (budgets.length === 1) {
+        return (
+            <div className="py-3">
+                <BudgetItem
+                    b={budgets[0]}
+                    base={base}
+                    canEdit={canEdit}
+                    onMoveMoney={onMoveMoney}
+                    single
+                />
+            </div>
+        );
+    }
+
     return (
         <ScrollArea
             orientation="horizontal"

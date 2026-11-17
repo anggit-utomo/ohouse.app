@@ -20,6 +20,7 @@ interface BudgetItemProps {
     base: string;
     canEdit: boolean;
     onMoveMoney?: (budgetId: number) => void;
+    single?: boolean;
 }
 
 export default function BudgetItem({
@@ -27,12 +28,15 @@ export default function BudgetItem({
     base,
     canEdit,
     onMoveMoney,
+    single = false,
 }: BudgetItemProps) {
     const leftText = (left: number) =>
         left < 0 ? `Over by ${rupiah(-left)}` : `${rupiah(left)} left`;
 
     return (
-        <Card className="h-full w-54 flex-shrink-0">
+        <Card
+            className={cn('h-full', single ? 'w-full' : 'w-54 flex-shrink-0')}
+        >
             <Link
                 href={`${base}/budgets/${b.id}`}
                 className="flex flex-1 flex-col gap-(--card-spacing)"
