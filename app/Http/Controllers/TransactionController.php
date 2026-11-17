@@ -31,10 +31,13 @@ class TransactionController extends Controller
             ->when($type, fn ($x) => $x->where('type', $type))
             ->when($person, fn ($x) => $x->where('user_id', $person))
             ->orderByDesc('occurred_at')->orderByDesc('id')
+            // Encrypted note/budget name forces PHP filtering — bound scan to avoid OOM
+            ->limit(500)
             ->get()
             ->when($q !== '', fn ($c) => $c->filter(
                 fn (Transaction $t) => Str::contains(($t->note ?? '').' '.$t->budgetMonth->budget->name, $q, ignoreCase: true)
             ))
+            ->take(200)
             ->values();
 
         $preselected = $household->budgets()->active()->whereKey($request->integer('budget'))->value('id');
