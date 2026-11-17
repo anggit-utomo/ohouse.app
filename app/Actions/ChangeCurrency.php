@@ -3,7 +3,6 @@
 namespace App\Actions;
 
 use App\Models\BudgetMonth;
-use App\Models\Goal;
 use App\Models\Household;
 use App\Support\Currencies;
 use Illuminate\Support\Facades\DB;
@@ -17,41 +16,43 @@ class ChangeCurrency
      */
     public function handle(Household $household, string $code): void
     {
-        if ($household->hasRecordedMoney()) {
-            throw ValidationException::withMessages([
-                'currency' => 'The currency can\'t be changed after money has been recorded.',
-            ]);
-        }
-
         $from = Currencies::exponent($household->currency);
         $to = Currencies::exponent($code);
 
         DB::transaction(function () use ($household, $code, $from, $to) {
+            $locked = Household::lockForUpdate()->findOrFail($household->id);
+
+            if ($locked->hasRecordedMoney()) {
+                throw ValidationException::withMessages([
+                    'currency' => 'The currency can\'t be changed after money has been recorded.',
+                ]);
+            }
+
             if ($from !== $to) {
                 $scale = fn (int $amount) => $to > $from
                     ? $amount * 10 ** ($to - $from)
                     : intdiv($amount, 10 ** ($from - $to));
 
-                $household->budgets()->get()->each(
-                    fn ($b) => $b->update(
-                        [
-                            'default_amount' => $scale($b->default_amount),
-                        ]
-                    )
-                );
+                $household->budgets()->chunkById(100, function ($budgets) use ($scale) {
+                    foreach ($budgets as $budget) {
+                        $budget->update(['default_amount' => $scale($budget->default_amount)]);
+                    }
+                });
 
-                BudgetMonth::forHousehold($household)->get()->each(
-                    fn ($m) => $m->update([
-                        'allocated' => $scale($m->allocated),
-                        'carried_in' => $scale($m->carried_in),
-                    ])
-                );
+                BudgetMonth::forHousehold($household)->chunkById(100, function ($months) use ($scale) {
+                    foreach ($months as $month) {
+                        $month->update([
+                            'allocated' => $scale($month->allocated),
+                            'carried_in' => $scale($month->carried_in),
+                        ]);
+                    }
+                });
 
-                $household->goals()->get()->each(
-                    fn (Goal $goal) => $goal->update([
-                        'target_amount' => $scale($goal->target_amount),
-                    ])
-                );
+                $household->goals()->chunkById(100, function ($goals) use ($scale) {
+                    foreach ($goals as $goal) {
+                        $goal->update(['target_amount' => $scale($goal->target_amount)]);
+                    }
+                });
             }
 
             $household->update(['currency' => $code]);
