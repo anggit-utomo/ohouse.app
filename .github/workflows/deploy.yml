@@ -1,0 +1,113 @@
+name: deploy
+
+on:
+  workflow_run:
+    workflows: ['tests']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a05db0ff6c4d3286d536d719340019f # v3.12.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@184bdaa0721073962dff0199c8d82744fcb6dda2 # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@4483ead31bb37430ff5a8d56ffe6c8fb15a1c9d1 # v5.5.1
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=short
+
+      - name: Build and push
+        uses: docker/build-push-action@263435318d21b8e386c1446016a434a5d84ad48 # v6.18.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS over SSH
+        uses: appleboy/ssh-action@02dc373cbc2f85f0075cfd03d53d3746b7bb6b0b6 # v1.2.4
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          script_stop: true
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+            cd ~/ohouse 2>/dev/null || cd /home/deploy/ohouse 2>/dev/null || { echo "ohouse project dir not found"; exit 1; }
+
+            # --- .env from GitHub (single blob secret PROD_ENV_FILE) ---
+            # Use --no-log trick: avoid echoing secret length; write atomically.
+            umask 077
+            cat > .env.tmp <<'ENV_EOF'
+            ${{ secrets.PROD_ENV_FILE }}
+            ENV_EOF
+            mv .env.tmp .env
+
+            # --- GHCR pull (PAT with read:packages) ---
+            echo "${{ secrets.GHCR_PAT }}" | podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+            # Resolve image name lowercased (GHCR requires lowercase)
+            IMAGE="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"
+            # Ensure compose.prod.yaml points at GHCR (sed is idempotent)
+            # If you already updated compose.prod.yaml, this is a no-op.
+            if grep -q "localhost/budget-app" compose.prod.yaml; then
+              sed -i "s|localhost/budget-app|$IMAGE|g" compose.prod.yaml
+            fi
+
+            COMPOSE="podman-compose -f compose.prod.yaml"
+
+            $COMPOSE pull
+
+            $COMPOSE up -d db
+            until podman exec budget-db pg_isready -q; do sleep 1; done
+
+            $COMPOSE up -d --force-recreate ssr
+            $COMPOSE up -d --force-recreate app worker scheduler
+
+            until podman exec budget-app php -v >/dev/null 2>&1; do sleep 1; done
+            # Wait for ssr health before migrating (optional but cheap)
+            for i in $(seq 1 30); do
+              if podman exec budget-ssr wget -qO- http://127.0.0.1:13714/health >/dev/null 2>&1; then break; fi
+              sleep 1
+            done
+
+            podman exec budget-app php artisan migrate --force
+
+            podman image prune -f
+            echo "deploy done: $(podman images --format '{{.Repository}}:{{.Tag}}' | grep -E 'ghcr.io' | head -n 5)"
