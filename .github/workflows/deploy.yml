@@ -65,11 +65,10 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_SSH_PORT || 22 }}
-          script_stop: true
           command_timeout: 10m
           script: |
             set -euo pipefail
-            cd ~/ohouse 2>/dev/null || cd /home/deploy/ohouse 2>/dev/null || { echo "ohouse project dir not found"; exit 1; }
+            cd ~/budget 2>/dev/null || cd /home/deploy/budget 2>/dev/null || { echo "budget project dir not found"; exit 1; }
 
             # --- .env from GitHub (single blob secret PROD_ENV_FILE) ---
             umask 077
