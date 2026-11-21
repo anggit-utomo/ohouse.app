@@ -1,6 +1,6 @@
 services:
     app:
-        image: ghcr.io/anggitariutomo/ohouse:latest
+        image: ghcr.io/anggit-utomo/ohouse.app:latest
         container_name: budget-app
         restart: unless-stopped
         env_file: .env
@@ -25,7 +25,7 @@ services:
             - shared-net
 
     ssr:
-        image: ghcr.io/anggitariutomo/ohouse:latest
+        image: ghcr.io/anggit-utomo/ohouse.app:latest
         container_name: budget-ssr
         restart: unless-stopped
         env_file: .env
@@ -42,7 +42,7 @@ services:
             - default
 
     worker:
-        image: ghcr.io/anggitariutomo/ohouse:latest
+        image: ghcr.io/anggit-utomo/ohouse.app:latest
         container_name: budget-worker
         restart: unless-stopped
         env_file: .env
@@ -53,7 +53,7 @@ services:
             - default
 
     scheduler:
-        image: ghcr.io/anggitariutomo/ohouse:latest
+        image: ghcr.io/anggit-utomo/ohouse.app:latest
         container_name: budget-scheduler
         restart: unless-stopped
         env_file: .env
