@@ -22,7 +22,6 @@ services:
         depends_on:
             # Soft dependency: wait for the container to start, not for health,
             # so a cold start never blocks the web service on the renderer.
-            - db
             - ssr
         networks:
             - default
@@ -57,10 +56,9 @@ services:
         cpus: 0.5
         env_file: .env
         command: php artisan queue:work --sleep=3 --tries=3 --backoff=10 --max-time=3600
-        depends_on:
-            - db
         networks:
             - default
+            - shared-net
 
     scheduler:
         image: ghcr.io/anggit-utomo/ohouse.app:latest
@@ -71,27 +69,9 @@ services:
         cpus: 0.2
         env_file: .env
         command: php artisan schedule:work
-        depends_on:
-            - db
         networks:
             - default
-
-    db:
-        image: docker.io/library/postgres:17-alpine
-        container_name: budget-db
-        restart: unless-stopped
-        mem_limit: 512m
-        mem_reservation: 256m
-        cpus: 0.5
-        command: postgres -c shared_buffers=128MB -c effective_cache_size=384MB -c max_connections=30 -c work_mem=4MB
-        environment:
-            POSTGRES_DB: ${DB_DATABASE}
-            POSTGRES_USER: ${DB_USERNAME}
-            POSTGRES_PASSWORD: ${DB_PASSWORD}
-        volumes:
-            - pgdata:/var/lib/postgresql/data
-        networks:
-            - default
+            - shared-net
 
 networks:
     default:
