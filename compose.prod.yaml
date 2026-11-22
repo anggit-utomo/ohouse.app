@@ -1,5 +1,6 @@
 services:
     app:
+        build: .
         image: ghcr.io/anggit-utomo/ohouse.app:latest
         container_name: budget-app
         restart: unless-stopped
@@ -80,6 +81,5 @@ networks:
         external: true
 
 volumes:
-    pgdata:
     caddy_data:
     caddy_config:
