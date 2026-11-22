@@ -70,6 +70,10 @@ jobs:
             set -euo pipefail
             cd ~/budget 2>/dev/null || cd /home/deploy/budget 2>/dev/null || { echo "budget project dir not found"; exit 1; }
 
+            # --- pull latest code (compose now http-only, no host ports) ---
+            git fetch origin master
+            git reset --hard origin/master
+
             # --- .env from GitHub (single blob secret PROD_ENV_FILE) ---
             umask 077
             cat > .env.tmp <<'ENV_EOF'
