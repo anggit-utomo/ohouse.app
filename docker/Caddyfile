@@ -3,33 +3,17 @@
     order php_server before file_server
 }
 
-{$SERVER_NAME} {
+# Behind shared VPS Caddy on shared-net — TLS at edge, http only here.
+:80 {
     root * /app/public
     encode zstd gzip
     php_server
 
     header {
-        Strict-Transport-Security "max-age=31536000"
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
         -Server
     }
-}
-
-api.pucukpisang.my.id {
-    reverse_proxy 9router:20128
-}
-
-sim-api.anggit.dev {
-   reverse_proxy sim-edge:80
-}
-
-sim-dashboard.anggit.dev {
-   reverse_proxy sim-edge:80
-}
-
-sim-docs.anggit.dev {
-   reverse_proxy sim-edge:80
 }

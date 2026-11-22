@@ -10,19 +10,12 @@ services:
         pids_limit: 128
         env_file: .env
         environment:
-            SERVER_NAME: ${APP_DOMAIN}
-            # Internal renderer address; never published outside the compose network.
+            # No SERVER_NAME TLS — TLS at shared VPS Caddy
             INERTIA_SSR_URL: http://ssr:13714
-        ports:
-            - '80:80'
-            - '443:443'
-            - '443:443/udp'
-        volumes:
-            - caddy_data:/data
-            - caddy_config:/config
+            TRUSTED_PROXIES: "*"
+        expose:
+            - '80'
         depends_on:
-            # Soft dependency: wait for the container to start, not for health,
-            # so a cold start never blocks the web service on the renderer.
             - ssr
         networks:
             - default
@@ -79,7 +72,3 @@ networks:
         driver: bridge
     shared-net:
         external: true
-
-volumes:
-    caddy_data:
-    caddy_config:
