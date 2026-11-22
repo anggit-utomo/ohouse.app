@@ -91,9 +91,6 @@ jobs:
 
             $COMPOSE pull
 
-            $COMPOSE up -d db
-            until podman exec budget-db pg_isready -q; do sleep 1; done
-
             $COMPOSE up -d --force-recreate ssr
             $COMPOSE up -d --force-recreate app worker scheduler
 
