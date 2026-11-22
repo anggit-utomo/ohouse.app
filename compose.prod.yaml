@@ -12,7 +12,7 @@ services:
         environment:
             # No SERVER_NAME TLS — TLS at shared VPS Caddy
             INERTIA_SSR_URL: http://ssr:13714
-            TRUSTED_PROXIES: "*"
+            TRUSTED_PROXIES: '*'
         expose:
             - '80'
         depends_on:
